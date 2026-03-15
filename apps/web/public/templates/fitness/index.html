@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IRONFORGE GYM — Push Your Limits</title>
+  <title>SUMMIT FIT — Rise Above Your Limits</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
       theme: {
         extend: {
           fontFamily: { heading: ['Oswald', 'sans-serif'], body: ['Roboto', 'sans-serif'] },
-          colors: { dark: '#0A0A0A', panel: '#1A1A1A', fire: { 500: '#FF3D00', 400: '#FF6B35', 300: '#FF8A50' } }
+          colors: { slate: '#0C0F14', panel: '#161A22', volt: { 500: '#F97316', 400: '#FB923C', 300: '#FDBA74' } }
         }
       }
     }
@@ -20,43 +20,43 @@
   <style>
     .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
     .fade-in.visible { opacity: 1; transform: translateY(0); }
-    .hero-overlay { background: linear-gradient(to bottom, rgba(10,10,10,0.5), rgba(10,10,10,0.85)); }
+    .hero-overlay { background: linear-gradient(to bottom, rgba(12,15,20,0.45), rgba(12,15,20,0.85)); }
   </style>
 </head>
-<body class="bg-dark text-white font-body">
+<body class="bg-slate text-white font-body">
   <!-- Navigation -->
-  <nav class="fixed top-0 w-full z-50 bg-dark/90 backdrop-blur-md border-b border-white/5">
+  <nav class="fixed top-0 w-full z-50 bg-slate/90 backdrop-blur-md border-b border-white/5">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-      <a href="#" class="font-heading text-2xl font-bold tracking-wider">IRON<span class="text-fire-500">FORGE</span></a>
+      <a href="#" class="font-heading text-2xl font-bold tracking-wider">SUMMIT<span class="text-volt-500">FIT</span></a>
       <div class="hidden md:flex items-center gap-8">
-        <a href="#programs" class="text-sm font-medium tracking-wider text-gray-300 hover:text-fire-500 transition-colors">PROGRAMS</a>
-        <a href="#trainers" class="text-sm font-medium tracking-wider text-gray-300 hover:text-fire-500 transition-colors">TRAINERS</a>
-        <a href="#pricing" class="text-sm font-medium tracking-wider text-gray-300 hover:text-fire-500 transition-colors">PRICING</a>
-        <a href="#contact" class="px-5 py-2.5 bg-fire-500 hover:bg-fire-400 text-white rounded text-sm font-bold tracking-wider transition-colors">JOIN NOW</a>
+        <a href="#programs" class="text-sm font-medium tracking-wider text-gray-300 hover:text-volt-500 transition-colors">PROGRAMS</a>
+        <a href="#trainers" class="text-sm font-medium tracking-wider text-gray-300 hover:text-volt-500 transition-colors">COACHES</a>
+        <a href="#pricing" class="text-sm font-medium tracking-wider text-gray-300 hover:text-volt-500 transition-colors">PRICING</a>
+        <a href="#contact" class="px-5 py-2.5 bg-volt-500 hover:bg-volt-400 text-white rounded text-sm font-bold tracking-wider transition-colors">JOIN NOW</a>
       </div>
       <button id="mobile-toggle" class="md:hidden flex flex-col gap-1.5">
         <span class="w-6 h-0.5 bg-white"></span><span class="w-6 h-0.5 bg-white"></span><span class="w-6 h-0.5 bg-white"></span>
       </button>
     </div>
-    <div id="mobile-menu" class="hidden md:hidden bg-dark border-t border-white/5 px-4 py-4 space-y-3">
+    <div id="mobile-menu" class="hidden md:hidden bg-slate border-t border-white/5 px-4 py-4 space-y-3">
       <a href="#programs" class="block text-sm font-medium tracking-wider text-gray-300">PROGRAMS</a>
-      <a href="#trainers" class="block text-sm font-medium tracking-wider text-gray-300">TRAINERS</a>
+      <a href="#trainers" class="block text-sm font-medium tracking-wider text-gray-300">COACHES</a>
       <a href="#pricing" class="block text-sm font-medium tracking-wider text-gray-300">PRICING</a>
-      <a href="#contact" class="block text-sm font-bold tracking-wider text-fire-500">JOIN NOW</a>
+      <a href="#contact" class="block text-sm font-bold tracking-wider text-volt-500">JOIN NOW</a>
     </div>
   </nav>
 
   <!-- Hero -->
   <section class="relative h-screen flex items-center justify-center">
-    <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600&q=80" alt="Gym interior" class="absolute inset-0 w-full h-full object-cover">
+    <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1600&q=80" alt="Athlete training" class="absolute inset-0 w-full h-full object-cover">
     <div class="hero-overlay absolute inset-0"></div>
     <div class="relative z-10 text-center px-4 fade-in">
-      <p class="text-fire-500 text-sm tracking-[0.4em] font-bold mb-4 font-heading">ELITE FITNESS CENTER</p>
-      <h1 class="font-heading text-6xl md:text-8xl font-bold mb-6 uppercase leading-none">Push Your<br>Limits</h1>
-      <p class="text-lg text-gray-300 max-w-xl mx-auto mb-8">World-class equipment. Expert trainers. Zero excuses. Your transformation starts today.</p>
+      <p class="text-volt-500 text-sm tracking-[0.4em] font-bold mb-4 font-heading">PERFORMANCE TRAINING CENTER</p>
+      <h1 class="font-heading text-6xl md:text-8xl font-bold mb-6 uppercase leading-none">Rise Above<br>Your Limits</h1>
+      <p class="text-lg text-gray-300 max-w-xl mx-auto mb-8">Performance-driven training. Expert coaches. Zero compromise. Your next level starts here.</p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a href="#pricing" class="px-8 py-4 bg-fire-500 hover:bg-fire-400 text-white font-heading font-bold tracking-wider text-lg rounded transition-colors">START FREE TRIAL</a>
-        <a href="#programs" class="px-8 py-4 border-2 border-white/30 hover:border-fire-500 text-white font-heading font-bold tracking-wider text-lg rounded transition-colors">VIEW PROGRAMS</a>
+        <a href="#pricing" class="px-8 py-4 bg-volt-500 hover:bg-volt-400 text-white font-heading font-bold tracking-wider text-lg rounded transition-colors">START FREE TRIAL</a>
+        <a href="#programs" class="px-8 py-4 border-2 border-white/30 hover:border-volt-500 text-white font-heading font-bold tracking-wider text-lg rounded transition-colors">VIEW PROGRAMS</a>
       </div>
     </div>
   </section>
@@ -65,39 +65,39 @@
   <section id="programs" class="py-24 px-4 bg-panel">
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
-        <p class="text-fire-500 text-sm tracking-[0.3em] font-bold font-heading mb-2">WHAT WE OFFER</p>
+        <p class="text-volt-500 text-sm tracking-[0.3em] font-bold font-heading mb-2">WHAT WE OFFER</p>
         <h2 class="font-heading text-4xl md:text-5xl font-bold uppercase">Our Programs</h2>
       </div>
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="bg-dark border border-white/5 rounded-xl p-8 hover:border-fire-500/50 transition-colors group fade-in">
-          <div class="w-14 h-14 rounded-lg bg-fire-500/10 flex items-center justify-center mb-5 group-hover:bg-fire-500/20 transition-colors"><svg class="w-7 h-7 text-fire-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M3 12h18M3 18h18"/></svg></div>
-          <h3 class="font-heading text-xl font-bold uppercase mb-2">Strength Training</h3>
-          <p class="text-gray-400 text-sm leading-relaxed">Build raw power with free weights, machines, and progressive overload programming tailored to your goals.</p>
+        <div class="bg-slate border border-white/5 rounded-xl p-8 hover:border-volt-500/50 transition-colors group fade-in">
+          <div class="w-14 h-14 rounded-lg bg-volt-500/10 flex items-center justify-center mb-5 group-hover:bg-volt-500/20 transition-colors"><svg class="w-7 h-7 text-volt-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M3 12h18M3 18h18"/></svg></div>
+          <h3 class="font-heading text-xl font-bold uppercase mb-2">Olympic Lifting</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Master the snatch and clean & jerk with precision coaching. Progressive programming from beginner to competition-ready.</p>
         </div>
-        <div class="bg-dark border border-white/5 rounded-xl p-8 hover:border-fire-500/50 transition-colors group fade-in">
-          <div class="w-14 h-14 rounded-lg bg-fire-500/10 flex items-center justify-center mb-5 group-hover:bg-fire-500/20 transition-colors"><svg class="w-7 h-7 text-fire-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
-          <h3 class="font-heading text-xl font-bold uppercase mb-2">HIIT Classes</h3>
-          <p class="text-gray-400 text-sm leading-relaxed">High-intensity intervals that torch calories, boost metabolism, and leave you feeling unstoppable.</p>
+        <div class="bg-slate border border-white/5 rounded-xl p-8 hover:border-volt-500/50 transition-colors group fade-in">
+          <div class="w-14 h-14 rounded-lg bg-volt-500/10 flex items-center justify-center mb-5 group-hover:bg-volt-500/20 transition-colors"><svg class="w-7 h-7 text-volt-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+          <h3 class="font-heading text-xl font-bold uppercase mb-2">Metabolic Conditioning</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">High-output interval circuits that shred fat, spike VO2 max, and build bulletproof endurance.</p>
         </div>
-        <div class="bg-dark border border-white/5 rounded-xl p-8 hover:border-fire-500/50 transition-colors group fade-in">
-          <div class="w-14 h-14 rounded-lg bg-fire-500/10 flex items-center justify-center mb-5 group-hover:bg-fire-500/20 transition-colors"><svg class="w-7 h-7 text-fire-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></div>
-          <h3 class="font-heading text-xl font-bold uppercase mb-2">CrossFit</h3>
-          <p class="text-gray-400 text-sm leading-relaxed">Functional movements at high intensity. Build endurance, strength, and mental grit in our WOD sessions.</p>
+        <div class="bg-slate border border-white/5 rounded-xl p-8 hover:border-volt-500/50 transition-colors group fade-in">
+          <div class="w-14 h-14 rounded-lg bg-volt-500/10 flex items-center justify-center mb-5 group-hover:bg-volt-500/20 transition-colors"><svg class="w-7 h-7 text-volt-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></div>
+          <h3 class="font-heading text-xl font-bold uppercase mb-2">Functional Fitness</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Real-world movement patterns that build athletic capacity. Lift, carry, climb, and sprint better every day.</p>
         </div>
-        <div class="bg-dark border border-white/5 rounded-xl p-8 hover:border-fire-500/50 transition-colors group fade-in">
-          <div class="w-14 h-14 rounded-lg bg-fire-500/10 flex items-center justify-center mb-5 group-hover:bg-fire-500/20 transition-colors"><svg class="w-7 h-7 text-fire-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
-          <h3 class="font-heading text-xl font-bold uppercase mb-2">Boxing</h3>
-          <p class="text-gray-400 text-sm leading-relaxed">Learn technique, improve footwork, and unleash power. Bags, pads, and ring work with pro coaches.</p>
+        <div class="bg-slate border border-white/5 rounded-xl p-8 hover:border-volt-500/50 transition-colors group fade-in">
+          <div class="w-14 h-14 rounded-lg bg-volt-500/10 flex items-center justify-center mb-5 group-hover:bg-volt-500/20 transition-colors"><svg class="w-7 h-7 text-volt-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+          <h3 class="font-heading text-xl font-bold uppercase mb-2">Muay Thai</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">The art of eight limbs. Develop devastating striking, clinch work, and fight-ready cardio with Thai boxing pros.</p>
         </div>
-        <div class="bg-dark border border-white/5 rounded-xl p-8 hover:border-fire-500/50 transition-colors group fade-in">
-          <div class="w-14 h-14 rounded-lg bg-fire-500/10 flex items-center justify-center mb-5 group-hover:bg-fire-500/20 transition-colors"><svg class="w-7 h-7 text-fire-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>
-          <h3 class="font-heading text-xl font-bold uppercase mb-2">Yoga & Recovery</h3>
-          <p class="text-gray-400 text-sm leading-relaxed">Balance your training with flexibility, mindfulness, and active recovery. Restore your body and mind.</p>
+        <div class="bg-slate border border-white/5 rounded-xl p-8 hover:border-volt-500/50 transition-colors group fade-in">
+          <div class="w-14 h-14 rounded-lg bg-volt-500/10 flex items-center justify-center mb-5 group-hover:bg-volt-500/20 transition-colors"><svg class="w-7 h-7 text-volt-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>
+          <h3 class="font-heading text-xl font-bold uppercase mb-2">Mobility & Recovery</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Guided stretching, foam rolling, and corrective exercises. Train hard, recover harder, perform longer.</p>
         </div>
-        <div class="bg-dark border border-white/5 rounded-xl p-8 hover:border-fire-500/50 transition-colors group fade-in">
-          <div class="w-14 h-14 rounded-lg bg-fire-500/10 flex items-center justify-center mb-5 group-hover:bg-fire-500/20 transition-colors"><svg class="w-7 h-7 text-fire-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
-          <h3 class="font-heading text-xl font-bold uppercase mb-2">Personal Training</h3>
-          <p class="text-gray-400 text-sm leading-relaxed">One-on-one coaching with certified experts. Customized nutrition plans and workout programming.</p>
+        <div class="bg-slate border border-white/5 rounded-xl p-8 hover:border-volt-500/50 transition-colors group fade-in">
+          <div class="w-14 h-14 rounded-lg bg-volt-500/10 flex items-center justify-center mb-5 group-hover:bg-volt-500/20 transition-colors"><svg class="w-7 h-7 text-volt-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
+          <h3 class="font-heading text-xl font-bold uppercase mb-2">1-on-1 Coaching</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Personalized programming, nutrition protocols, and accountability from certified performance coaches.</p>
         </div>
       </div>
     </div>
@@ -107,21 +107,21 @@
   <section id="trainers" class="py-24 px-4">
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
-        <p class="text-fire-500 text-sm tracking-[0.3em] font-bold font-heading mb-2">MEET THE TEAM</p>
-        <h2 class="font-heading text-4xl md:text-5xl font-bold uppercase">Elite Trainers</h2>
+        <p class="text-volt-500 text-sm tracking-[0.3em] font-bold font-heading mb-2">MEET THE TEAM</p>
+        <h2 class="font-heading text-4xl md:text-5xl font-bold uppercase">Elite Coaches</h2>
       </div>
       <div class="grid md:grid-cols-3 gap-8">
         <div class="group fade-in">
-          <div class="relative overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=600&q=80" alt="Trainer" class="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"><div class="absolute inset-0 bg-gradient-to-t from-dark/80 to-transparent"></div><div class="absolute bottom-4 left-4"><p class="font-heading text-xl font-bold uppercase">Marcus Cole</p><p class="text-fire-400 text-sm font-medium">Strength & Conditioning</p></div></div>
-          <p class="text-gray-400 text-sm">NASM Certified, 12+ years experience. Former D1 athlete and competitive powerlifter.</p>
+          <div class="relative overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&q=80" alt="Coach" class="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"><div class="absolute inset-0 bg-gradient-to-t from-slate/80 to-transparent"></div><div class="absolute bottom-4 left-4"><p class="font-heading text-xl font-bold uppercase">Andrei Petrov</p><p class="text-volt-400 text-sm font-medium">Olympic Lifting & Strength</p></div></div>
+          <p class="text-gray-400 text-sm">USAW Level 3 Coach, 14 years experience. Former national weightlifting competitor. Specializes in strength periodization.</p>
         </div>
         <div class="group fade-in">
-          <div class="relative overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80" alt="Trainer" class="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"><div class="absolute inset-0 bg-gradient-to-t from-dark/80 to-transparent"></div><div class="absolute bottom-4 left-4"><p class="font-heading text-xl font-bold uppercase">Sarah Park</p><p class="text-fire-400 text-sm font-medium">HIIT & CrossFit</p></div></div>
-          <p class="text-gray-400 text-sm">CrossFit L3 Coach. Competed in 4 CrossFit Games regionals. Specializes in metabolic conditioning.</p>
+          <div class="relative overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1548690312-e3b507d8c110?w=600&q=80" alt="Coach" class="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"><div class="absolute inset-0 bg-gradient-to-t from-slate/80 to-transparent"></div><div class="absolute bottom-4 left-4"><p class="font-heading text-xl font-bold uppercase">Tamika Rhodes</p><p class="text-volt-400 text-sm font-medium">MetCon & Functional Fitness</p></div></div>
+          <p class="text-gray-400 text-sm">ACE Certified, former collegiate sprinter. 10 years coaching experience. Expert in metabolic programming and body recomposition.</p>
         </div>
         <div class="group fade-in">
-          <div class="relative overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=600&q=80" alt="Trainer" class="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"><div class="absolute inset-0 bg-gradient-to-t from-dark/80 to-transparent"></div><div class="absolute bottom-4 left-4"><p class="font-heading text-xl font-bold uppercase">David Reyes</p><p class="text-fire-400 text-sm font-medium">Boxing & MMA</p></div></div>
-          <p class="text-gray-400 text-sm">Former amateur boxing champion. 15 years coaching experience. Expert in fight conditioning.</p>
+          <div class="relative overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=600&q=80" alt="Coach" class="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"><div class="absolute inset-0 bg-gradient-to-t from-slate/80 to-transparent"></div><div class="absolute bottom-4 left-4"><p class="font-heading text-xl font-bold uppercase">Kai Nakamura</p><p class="text-volt-400 text-sm font-medium">Muay Thai & Combat Conditioning</p></div></div>
+          <p class="text-gray-400 text-sm">Third-degree Kru, trained in Thailand. 18 years in martial arts. Builds fighters and transforms beginners alike.</p>
         </div>
       </div>
     </div>
@@ -131,43 +131,43 @@
   <section id="pricing" class="py-24 px-4 bg-panel">
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
-        <p class="text-fire-500 text-sm tracking-[0.3em] font-bold font-heading mb-2">MEMBERSHIP</p>
+        <p class="text-volt-500 text-sm tracking-[0.3em] font-bold font-heading mb-2">MEMBERSHIP</p>
         <h2 class="font-heading text-4xl md:text-5xl font-bold uppercase">Choose Your Plan</h2>
       </div>
       <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-        <div class="bg-dark border border-white/5 rounded-xl p-8 fade-in hover:border-white/20 transition-colors">
-          <h3 class="font-heading text-xl font-bold uppercase mb-1">Starter</h3>
-          <p class="text-gray-500 text-sm mb-6">Perfect for beginners</p>
-          <div class="mb-6"><span class="font-heading text-5xl font-bold">$29</span><span class="text-gray-500 text-sm">/month</span></div>
-          <ul class="space-y-3 text-sm text-gray-400 mb-8"><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Gym floor access</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Locker room access</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>2 group classes/week</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Fitness assessment</li></ul>
-          <a href="#contact" class="block text-center py-3 border border-white/20 hover:border-fire-500 rounded font-heading font-bold tracking-wider text-sm transition-colors">GET STARTED</a>
+        <div class="bg-slate border border-white/5 rounded-xl p-8 fade-in hover:border-white/20 transition-colors">
+          <h3 class="font-heading text-xl font-bold uppercase mb-1">Base Camp</h3>
+          <p class="text-gray-500 text-sm mb-6">Great for getting started</p>
+          <div class="mb-6"><span class="font-heading text-5xl font-bold">$35</span><span class="text-gray-500 text-sm">/month</span></div>
+          <ul class="space-y-3 text-sm text-gray-400 mb-8"><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Full gym floor access</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Locker & shower access</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>3 group classes/week</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Movement assessment</li></ul>
+          <a href="#contact" class="block text-center py-3 border border-white/20 hover:border-volt-500 rounded font-heading font-bold tracking-wider text-sm transition-colors">GET STARTED</a>
         </div>
-        <div class="bg-dark border-2 border-fire-500 rounded-xl p-8 relative fade-in scale-105">
-          <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-fire-500 text-white text-xs font-bold px-4 py-1 rounded-full font-heading tracking-wider">MOST POPULAR</span>
-          <h3 class="font-heading text-xl font-bold uppercase mb-1">Pro</h3>
-          <p class="text-gray-500 text-sm mb-6">For serious athletes</p>
-          <div class="mb-6"><span class="font-heading text-5xl font-bold text-fire-500">$59</span><span class="text-gray-500 text-sm">/month</span></div>
-          <ul class="space-y-3 text-sm text-gray-400 mb-8"><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Unlimited gym access</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>All group classes</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Nutrition consultation</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>1 PT session/month</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Sauna & recovery zone</li></ul>
-          <a href="#contact" class="block text-center py-3 bg-fire-500 hover:bg-fire-400 rounded font-heading font-bold tracking-wider text-sm transition-colors">JOIN NOW</a>
+        <div class="bg-slate border-2 border-volt-500 rounded-xl p-8 relative fade-in scale-105">
+          <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-volt-500 text-white text-xs font-bold px-4 py-1 rounded-full font-heading tracking-wider">MOST POPULAR</span>
+          <h3 class="font-heading text-xl font-bold uppercase mb-1">Summit</h3>
+          <p class="text-gray-500 text-sm mb-6">For dedicated athletes</p>
+          <div class="mb-6"><span class="font-heading text-5xl font-bold text-volt-500">$69</span><span class="text-gray-500 text-sm">/month</span></div>
+          <ul class="space-y-3 text-sm text-gray-400 mb-8"><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>24/7 gym access</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Unlimited group classes</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Nutrition guidance</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>2 PT sessions/month</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Cold plunge & sauna</li></ul>
+          <a href="#contact" class="block text-center py-3 bg-volt-500 hover:bg-volt-400 rounded font-heading font-bold tracking-wider text-sm transition-colors">JOIN NOW</a>
         </div>
-        <div class="bg-dark border border-white/5 rounded-xl p-8 fade-in hover:border-white/20 transition-colors">
-          <h3 class="font-heading text-xl font-bold uppercase mb-1">Elite</h3>
-          <p class="text-gray-500 text-sm mb-6">The ultimate experience</p>
-          <div class="mb-6"><span class="font-heading text-5xl font-bold">$99</span><span class="text-gray-500 text-sm">/month</span></div>
-          <ul class="space-y-3 text-sm text-gray-400 mb-8"><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Everything in Pro</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>4 PT sessions/month</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Custom meal plans</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Recovery therapy</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-fire-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>VIP area access</li></ul>
-          <a href="#contact" class="block text-center py-3 border border-white/20 hover:border-fire-500 rounded font-heading font-bold tracking-wider text-sm transition-colors">GO ELITE</a>
+        <div class="bg-slate border border-white/5 rounded-xl p-8 fade-in hover:border-white/20 transition-colors">
+          <h3 class="font-heading text-xl font-bold uppercase mb-1">Apex</h3>
+          <p class="text-gray-500 text-sm mb-6">The complete package</p>
+          <div class="mb-6"><span class="font-heading text-5xl font-bold">$119</span><span class="text-gray-500 text-sm">/month</span></div>
+          <ul class="space-y-3 text-sm text-gray-400 mb-8"><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Everything in Summit</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Weekly PT sessions</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Custom macro plans</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Sports massage therapy</li><li class="flex items-center gap-2"><svg class="w-4 h-4 text-volt-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Athlete lounge access</li></ul>
+          <a href="#contact" class="block text-center py-3 border border-white/20 hover:border-volt-500 rounded font-heading font-bold tracking-wider text-sm transition-colors">GO APEX</a>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Transformation Stats -->
-  <section class="py-20 px-4 bg-fire-500">
+  <section class="py-20 px-4 bg-volt-500">
     <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center fade-in">
-      <div><p class="font-heading text-5xl md:text-6xl font-bold text-dark">5K+</p><p class="text-dark/70 text-sm font-medium mt-1">Active Members</p></div>
-      <div><p class="font-heading text-5xl md:text-6xl font-bold text-dark">150+</p><p class="text-dark/70 text-sm font-medium mt-1">Classes Weekly</p></div>
-      <div><p class="font-heading text-5xl md:text-6xl font-bold text-dark">98%</p><p class="text-dark/70 text-sm font-medium mt-1">Satisfaction Rate</p></div>
-      <div><p class="font-heading text-5xl md:text-6xl font-bold text-dark">12</p><p class="text-dark/70 text-sm font-medium mt-1">Expert Trainers</p></div>
+      <div><p class="font-heading text-5xl md:text-6xl font-bold text-slate">3.2K+</p><p class="text-slate/70 text-sm font-medium mt-1">Active Members</p></div>
+      <div><p class="font-heading text-5xl md:text-6xl font-bold text-slate">120+</p><p class="text-slate/70 text-sm font-medium mt-1">Classes Weekly</p></div>
+      <div><p class="font-heading text-5xl md:text-6xl font-bold text-slate">97%</p><p class="text-slate/70 text-sm font-medium mt-1">Retention Rate</p></div>
+      <div><p class="font-heading text-5xl md:text-6xl font-bold text-slate">9</p><p class="text-slate/70 text-sm font-medium mt-1">Certified Coaches</p></div>
     </div>
   </section>
 
@@ -175,21 +175,21 @@
   <section class="py-24 px-4 bg-panel">
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
-        <p class="text-fire-500 text-sm tracking-[0.3em] font-bold font-heading mb-2">SUCCESS STORIES</p>
+        <p class="text-volt-500 text-sm tracking-[0.3em] font-bold font-heading mb-2">SUCCESS STORIES</p>
         <h2 class="font-heading text-4xl md:text-5xl font-bold uppercase">Real Results</h2>
       </div>
       <div class="grid md:grid-cols-3 gap-8">
-        <div class="bg-dark border border-white/5 p-8 rounded-xl fade-in">
-          <p class="text-gray-400 text-sm leading-relaxed mb-6">"Lost 35 lbs in 6 months. The trainers at IronForge don't just push you — they teach you how to push yourself. Best investment I've ever made in my health."</p>
-          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80" alt="Member" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Mike Donovan</p><p class="text-xs text-fire-400">Member since 2023</p></div></div>
+        <div class="bg-slate border border-white/5 p-8 rounded-xl fade-in">
+          <p class="text-gray-400 text-sm leading-relaxed mb-6">"Down 42 lbs in 8 months. Summit Fit gave me structure, accountability, and a community that genuinely cares. I've never been in better shape — mentally or physically."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80" alt="Member" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Nathan Briggs</p><p class="text-xs text-volt-400">Member since 2024</p></div></div>
         </div>
-        <div class="bg-dark border border-white/5 p-8 rounded-xl fade-in">
-          <p class="text-gray-400 text-sm leading-relaxed mb-6">"I came in intimidated and left feeling empowered. The community here is incredible — everyone cheers you on. The CrossFit program changed my entire mindset."</p>
-          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" alt="Member" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Jessica Torres</p><p class="text-xs text-fire-400">Member since 2024</p></div></div>
+        <div class="bg-slate border border-white/5 p-8 rounded-xl fade-in">
+          <p class="text-gray-400 text-sm leading-relaxed mb-6">"I joined for Muay Thai and stayed for everything else. Coach Kai is the real deal, and the MetCon classes with Tamika are addictive. This place has become my second home."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80" alt="Member" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Amanda Cho</p><p class="text-xs text-volt-400">Member since 2023</p></div></div>
         </div>
-        <div class="bg-dark border border-white/5 p-8 rounded-xl fade-in">
-          <p class="text-gray-400 text-sm leading-relaxed mb-6">"Training for my first marathon at 45 seemed impossible. Coach Marcus built a program that got me across the finish line in under 4 hours. Unbelievable support."</p>
-          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80" alt="Member" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Robert Chen</p><p class="text-xs text-fire-400">Member since 2022</p></div></div>
+        <div class="bg-slate border border-white/5 p-8 rounded-xl fade-in">
+          <p class="text-gray-400 text-sm leading-relaxed mb-6">"Competed in my first powerlifting meet at 52. Andrei built a program around my body and my goals. Never thought I'd deadlift 405 — and now I'm chasing 450."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&q=80" alt="Member" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Victor Sands</p><p class="text-xs text-volt-400">Member since 2022</p></div></div>
         </div>
       </div>
     </div>
@@ -199,21 +199,21 @@
   <section id="contact" class="py-24 px-4">
     <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-16">
       <div class="fade-in">
-        <p class="text-fire-500 text-sm tracking-[0.3em] font-bold font-heading mb-2">GET STARTED</p>
-        <h2 class="font-heading text-4xl md:text-5xl font-bold uppercase mb-6">Start Your Journey</h2>
-        <p class="text-gray-400 leading-relaxed mb-8">Ready to transform? Book a free tour and trial session. No commitment, no pressure — just results.</p>
+        <p class="text-volt-500 text-sm tracking-[0.3em] font-bold font-heading mb-2">GET STARTED</p>
+        <h2 class="font-heading text-4xl md:text-5xl font-bold uppercase mb-6">Start Your Climb</h2>
+        <p class="text-gray-400 leading-relaxed mb-8">Ready to level up? Book a free tour and trial session. No pressure, no gimmicks — just a facility and team built to help you perform.</p>
         <div class="space-y-4 text-sm text-gray-400">
-          <p class="flex items-center gap-3"><svg class="w-5 h-5 text-fire-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>450 Industrial Blvd, Suite 100, Austin, TX 78701</p>
-          <p class="flex items-center gap-3"><svg class="w-5 h-5 text-fire-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Open 5:00 AM — 11:00 PM, 7 Days a Week</p>
-          <p class="flex items-center gap-3"><svg class="w-5 h-5 text-fire-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>info@ironforgegym.com</p>
+          <p class="flex items-center gap-3"><svg class="w-5 h-5 text-volt-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>1820 Blake Street, Unit B, Denver, CO 80202</p>
+          <p class="flex items-center gap-3"><svg class="w-5 h-5 text-volt-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Open 5:00 AM — 10:00 PM, 7 Days a Week</p>
+          <p class="flex items-center gap-3"><svg class="w-5 h-5 text-volt-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>hello@summitfit.com</p>
         </div>
       </div>
       <form class="bg-panel p-8 rounded-xl border border-white/5 fade-in space-y-4">
-        <div class="grid grid-cols-2 gap-4"><input type="text" placeholder="First Name" class="bg-dark border border-white/10 rounded px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-fire-500"><input type="text" placeholder="Last Name" class="bg-dark border border-white/10 rounded px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-fire-500"></div>
-        <input type="email" placeholder="Email Address" class="w-full bg-dark border border-white/10 rounded px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-fire-500">
-        <input type="tel" placeholder="Phone Number" class="w-full bg-dark border border-white/10 rounded px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-fire-500">
-        <select class="w-full bg-dark border border-white/10 rounded px-4 py-3 text-sm text-gray-500 focus:outline-none focus:border-fire-500"><option>Select Membership</option><option>Starter — $29/mo</option><option>Pro — $59/mo</option><option>Elite — $99/mo</option></select>
-        <button class="w-full bg-fire-500 hover:bg-fire-400 text-white py-3 rounded font-heading font-bold tracking-wider text-sm transition-colors">CLAIM FREE TRIAL</button>
+        <div class="grid grid-cols-2 gap-4"><input type="text" placeholder="First Name" class="bg-slate border border-white/10 rounded px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-volt-500"><input type="text" placeholder="Last Name" class="bg-slate border border-white/10 rounded px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-volt-500"></div>
+        <input type="email" placeholder="Email Address" class="w-full bg-slate border border-white/10 rounded px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-volt-500">
+        <input type="tel" placeholder="Phone Number" class="w-full bg-slate border border-white/10 rounded px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-volt-500">
+        <select class="w-full bg-slate border border-white/10 rounded px-4 py-3 text-sm text-gray-500 focus:outline-none focus:border-volt-500"><option>Select Membership</option><option>Base Camp — $35/mo</option><option>Summit — $69/mo</option><option>Apex — $119/mo</option></select>
+        <button class="w-full bg-volt-500 hover:bg-volt-400 text-white py-3 rounded font-heading font-bold tracking-wider text-sm transition-colors">CLAIM FREE TRIAL</button>
       </form>
     </div>
   </section>
@@ -221,16 +221,16 @@
   <!-- Footer -->
   <footer class="bg-panel border-t border-white/5 py-16 px-4">
     <div class="max-w-7xl mx-auto grid md:grid-cols-4 gap-8">
-      <div><a href="#" class="font-heading text-2xl font-bold tracking-wider">IRON<span class="text-fire-500">FORGE</span></a><p class="text-gray-500 text-sm mt-3 leading-relaxed">Forging stronger bodies and minds since 2015. No shortcuts, no excuses.</p></div>
-      <div><h4 class="font-heading font-bold text-sm mb-4 text-fire-500 tracking-wider">PROGRAMS</h4><ul class="space-y-2 text-sm text-gray-500"><li>Strength Training</li><li>HIIT Classes</li><li>CrossFit</li><li>Boxing</li></ul></div>
-      <div><h4 class="font-heading font-bold text-sm mb-4 text-fire-500 tracking-wider">HOURS</h4><ul class="space-y-2 text-sm text-gray-500"><li>Mon-Fri: 5AM — 11PM</li><li>Saturday: 6AM — 10PM</li><li>Sunday: 7AM — 9PM</li><li>Holidays: 8AM — 6PM</li></ul></div>
-      <div><h4 class="font-heading font-bold text-sm mb-4 text-fire-500 tracking-wider">FOLLOW US</h4><ul class="space-y-2 text-sm text-gray-500"><li>Instagram</li><li>YouTube</li><li>TikTok</li><li>Facebook</li></ul></div>
+      <div><a href="#" class="font-heading text-2xl font-bold tracking-wider">SUMMIT<span class="text-volt-500">FIT</span></a><p class="text-gray-500 text-sm mt-3 leading-relaxed">Building stronger athletes since 2018. No shortcuts, no limits.</p></div>
+      <div><h4 class="font-heading font-bold text-sm mb-4 text-volt-500 tracking-wider">PROGRAMS</h4><ul class="space-y-2 text-sm text-gray-500"><li>Olympic Lifting</li><li>MetCon</li><li>Functional Fitness</li><li>Muay Thai</li></ul></div>
+      <div><h4 class="font-heading font-bold text-sm mb-4 text-volt-500 tracking-wider">HOURS</h4><ul class="space-y-2 text-sm text-gray-500"><li>Mon-Fri: 5AM — 10PM</li><li>Saturday: 6AM — 8PM</li><li>Sunday: 7AM — 6PM</li><li>Holidays: 8AM — 4PM</li></ul></div>
+      <div><h4 class="font-heading font-bold text-sm mb-4 text-volt-500 tracking-wider">FOLLOW US</h4><ul class="space-y-2 text-sm text-gray-500"><li>Instagram</li><li>YouTube</li><li>TikTok</li><li>Strava</li></ul></div>
     </div>
-    <div class="max-w-7xl mx-auto mt-12 pt-8 border-t border-white/5 text-center text-xs text-gray-600">&copy; 2026 IronForge Gym. All rights reserved.</div>
+    <div class="max-w-7xl mx-auto mt-12 pt-8 border-t border-white/5 text-center text-xs text-gray-600">&copy; 2026 Summit Fit. All rights reserved.</div>
   </footer>
 
   <!-- Edit with AI Button -->
-  <button class="fixed bottom-6 right-6 z-50 bg-fire-500 hover:bg-fire-400 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-bold font-heading tracking-wider">
+  <button class="fixed bottom-6 right-6 z-50 bg-volt-500 hover:bg-volt-400 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-bold font-heading tracking-wider">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
     Edit with AI
   </button>

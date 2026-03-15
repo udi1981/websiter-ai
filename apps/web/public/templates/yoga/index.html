@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flow State Studio — Find Your Inner Balance</title>
+  <title>Lotus Path — Holistic Wellness Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { sans: ['Nunito', 'sans-serif'], serif: ['Cormorant Garamond', 'serif'] },
-          colors: { sage: { 50: '#F0F5F1', 100: '#DCE8DE', 200: '#B8D1BC', 400: '#6B8F71', 500: '#4A7A52', 600: '#2D5A3D', 700: '#1F4029', 900: '#0F1D14' }, cream: '#FFF8F0', warm: '#F5EDE3' }
+          fontFamily: { sans: ['Inter', 'sans-serif'], serif: ['Cormorant Garamond', 'serif'] },
+          colors: { sage: { 50: '#F6F7F2', 100: '#E8EBD8', 200: '#D4DAB5', 400: '#8B9A5C', 500: '#6B7E3E', 600: '#556432', 700: '#3F4B26', 800: '#2A321A', 900: '#1A1F10' }, warmgold: '#C5A55A' }
         }
       }
     }
@@ -20,48 +20,44 @@
   <style>
     .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
     .fade-in.visible { opacity: 1; transform: translateY(0); }
-    .hero-overlay { background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.5)); }
+    .hero-overlay { background: linear-gradient(to bottom, rgba(26,31,16,0.4), rgba(26,31,16,0.65)); }
   </style>
 </head>
-<body class="bg-cream text-gray-800 font-sans">
+<body class="bg-sage-50 text-sage-900 font-sans">
   <!-- Navigation -->
-  <nav class="fixed top-0 w-full z-50 bg-cream/90 backdrop-blur-md border-b border-sage-100">
+  <nav class="fixed top-0 w-full z-50 bg-sage-50/90 backdrop-blur-md border-b border-sage-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-      <a href="#" class="font-serif text-2xl font-bold text-sage-600">Flow State</a>
+      <a href="#" class="font-serif text-2xl font-semibold text-sage-800">Lotus Path</a>
       <div class="hidden md:flex items-center gap-8">
-        <a href="#home" class="text-sm font-medium hover:text-sage-600 transition-colors">Home</a>
-        <a href="#classes" class="text-sm font-medium hover:text-sage-600 transition-colors">Classes</a>
-        <a href="#instructors" class="text-sm font-medium hover:text-sage-600 transition-colors">Instructors</a>
-        <a href="#pricing" class="text-sm font-medium hover:text-sage-600 transition-colors">Pricing</a>
-        <a href="#contact" class="text-sm font-medium hover:text-sage-600 transition-colors">Contact</a>
-        <a href="#pricing" class="px-5 py-2 bg-sage-600 hover:bg-sage-700 text-white rounded-full text-sm font-medium transition-colors">Join Now</a>
+        <a href="#classes" class="text-sm text-sage-400 hover:text-sage-700 transition-colors">Classes</a>
+        <a href="#instructors" class="text-sm text-sage-400 hover:text-sage-700 transition-colors">Instructors</a>
+        <a href="#pricing" class="text-sm text-sage-400 hover:text-sage-700 transition-colors">Pricing</a>
+        <a href="#contact" class="text-sm text-sage-400 hover:text-sage-700 transition-colors">Contact</a>
+        <a href="#contact" class="px-5 py-2 bg-sage-700 hover:bg-sage-800 text-white rounded-lg text-sm font-medium transition-colors">Join Us</a>
       </div>
       <button id="mobile-toggle" class="md:hidden flex flex-col gap-1.5">
-        <span class="w-6 h-0.5 bg-gray-800 transition-transform"></span>
-        <span class="w-6 h-0.5 bg-gray-800 transition-opacity"></span>
-        <span class="w-6 h-0.5 bg-gray-800 transition-transform"></span>
+        <span class="w-6 h-0.5 bg-sage-800"></span><span class="w-6 h-0.5 bg-sage-800"></span><span class="w-6 h-0.5 bg-sage-800"></span>
       </button>
     </div>
-    <div id="mobile-menu" class="hidden md:hidden bg-cream border-t border-sage-100 px-4 py-4 space-y-3">
-      <a href="#home" class="block text-sm font-medium">Home</a>
-      <a href="#classes" class="block text-sm font-medium">Classes</a>
-      <a href="#instructors" class="block text-sm font-medium">Instructors</a>
-      <a href="#pricing" class="block text-sm font-medium">Pricing</a>
-      <a href="#contact" class="block text-sm font-medium">Contact</a>
+    <div id="mobile-menu" class="hidden md:hidden bg-sage-50 border-t border-sage-100 px-4 py-4 space-y-3">
+      <a href="#classes" class="block text-sm text-sage-400">Classes</a>
+      <a href="#instructors" class="block text-sm text-sage-400">Instructors</a>
+      <a href="#pricing" class="block text-sm text-sage-400">Pricing</a>
+      <a href="#contact" class="block text-sm text-sage-700 font-medium">Join Us</a>
     </div>
   </nav>
 
   <!-- Hero -->
-  <section id="home" class="relative h-screen flex items-center justify-center">
-    <img src="https://images.unsplash.com/photo-1545389336-cf090694435e?w=1600&q=80" alt="Yoga practice" class="absolute inset-0 w-full h-full object-cover">
+  <section class="relative h-screen flex items-center justify-center">
+    <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1600&q=80" alt="Meditation at sunrise" class="absolute inset-0 w-full h-full object-cover">
     <div class="hero-overlay absolute inset-0"></div>
     <div class="relative z-10 text-center text-white px-4">
-      <p class="text-sm tracking-[0.3em] uppercase mb-4 fade-in">Yoga & Wellness Studio</p>
-      <h1 class="font-serif text-5xl sm:text-7xl font-bold mb-6 leading-tight fade-in">Find Your<br>Inner Balance</h1>
-      <p class="text-lg text-white/80 max-w-xl mx-auto mb-8 fade-in">Discover peace, strength, and flexibility through mindful movement. Join our welcoming community and transform your practice.</p>
+      <p class="text-sm tracking-[0.3em] uppercase mb-4 fade-in">Yoga &middot; Meditation &middot; Breathwork</p>
+      <h1 class="font-serif text-5xl sm:text-7xl font-semibold mb-6 leading-tight fade-in">Find Your<br>Inner Stillness</h1>
+      <p class="text-lg text-white/80 max-w-xl mx-auto mb-8 fade-in">A sanctuary for body and mind. Join our community of practitioners exploring movement, breath, and mindfulness in the heart of the city.</p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center fade-in">
-        <a href="#pricing" class="px-8 py-3 bg-sage-600 hover:bg-sage-700 text-white rounded-full font-medium transition-colors">Start Your Journey</a>
-        <a href="#classes" class="px-8 py-3 border-2 border-white hover:bg-white hover:text-gray-900 text-white rounded-full font-medium transition-colors">View Classes</a>
+        <a href="#pricing" class="px-8 py-3 bg-warmgold hover:bg-yellow-600 text-white rounded-full font-medium transition-colors">VIEW MEMBERSHIPS</a>
+        <a href="#classes" class="px-8 py-3 border-2 border-white hover:bg-white hover:text-sage-900 text-white rounded-full font-medium transition-colors">EXPLORE CLASSES</a>
       </div>
     </div>
   </section>
@@ -70,57 +66,63 @@
   <section id="classes" class="py-20 lg:py-28 px-4">
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
-        <p class="text-sage-500 tracking-[0.2em] uppercase text-sm mb-2">Our Offerings</p>
-        <h2 class="font-serif text-4xl sm:text-5xl font-bold text-gray-900">Classes & Practices</h2>
+        <p class="text-warmgold tracking-[0.2em] uppercase text-sm mb-2">Our Offerings</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-semibold">Classes & Programs</h2>
       </div>
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
-          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=600&q=80" alt="Vinyasa Flow" class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"></div>
-          <div class="p-6"><h3 class="font-serif text-xl font-bold mb-1">Vinyasa Flow</h3><p class="text-sage-500 text-xs font-semibold mb-2">INTERMEDIATE &bull; 60 MIN</p><p class="text-gray-500 text-sm">Dynamic, breath-synchronized movement that builds heat, strength, and flexibility through flowing sequences.</p></div>
+        <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all fade-in">
+          <img src="https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=600&q=80" alt="Vinyasa flow" class="w-full h-48 object-cover">
+          <div class="p-6"><h3 class="font-serif text-xl font-semibold mb-2">Vinyasa Flow</h3><p class="text-sage-400 text-sm mb-3">Dynamic sequences linking breath to movement. Build strength, flexibility, and focus.</p><p class="text-warmgold text-sm font-medium">Mon / Wed / Fri — 7:00 AM</p></div>
         </div>
-        <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
-          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&q=80" alt="Hatha Yoga" class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"></div>
-          <div class="p-6"><h3 class="font-serif text-xl font-bold mb-1">Hatha Yoga</h3><p class="text-sage-500 text-xs font-semibold mb-2">ALL LEVELS &bull; 75 MIN</p><p class="text-gray-500 text-sm">A gentle, foundational practice focusing on proper alignment, breathing techniques, and held postures.</p></div>
+        <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all fade-in">
+          <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&q=80" alt="Yin yoga" class="w-full h-48 object-cover">
+          <div class="p-6"><h3 class="font-serif text-xl font-semibold mb-2">Yin & Restore</h3><p class="text-sage-400 text-sm mb-3">Deep, slow stretching with long holds. Release tension and calm the nervous system.</p><p class="text-warmgold text-sm font-medium">Tue / Thu — 6:30 PM</p></div>
         </div>
-        <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
-          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1552196563-55cd4e45efb3?w=600&q=80" alt="Yin Yoga" class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"></div>
-          <div class="p-6"><h3 class="font-serif text-xl font-bold mb-1">Yin Yoga</h3><p class="text-sage-500 text-xs font-semibold mb-2">ALL LEVELS &bull; 90 MIN</p><p class="text-gray-500 text-sm">Slow, meditative practice with long-held floor poses that deeply stretch connective tissues and calm the mind.</p></div>
+        <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all fade-in">
+          <img src="https://images.unsplash.com/photo-1593811167562-9cef47bfc4d7?w=600&q=80" alt="Meditation" class="w-full h-48 object-cover">
+          <div class="p-6"><h3 class="font-serif text-xl font-semibold mb-2">Guided Meditation</h3><p class="text-sage-400 text-sm mb-3">Mindfulness and breathwork sessions for clarity, peace, and emotional regulation.</p><p class="text-warmgold text-sm font-medium">Daily — 12:00 PM</p></div>
         </div>
-        <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
-          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&q=80" alt="Hot Yoga" class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"></div>
-          <div class="p-6"><h3 class="font-serif text-xl font-bold mb-1">Hot Yoga</h3><p class="text-sage-500 text-xs font-semibold mb-2">INTERMEDIATE &bull; 60 MIN</p><p class="text-gray-500 text-sm">Practiced in a heated room to deepen stretches, promote detoxification, and increase cardiovascular endurance.</p></div>
+        <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all fade-in">
+          <img src="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&q=80" alt="Power yoga" class="w-full h-48 object-cover">
+          <div class="p-6"><h3 class="font-serif text-xl font-semibold mb-2">Power Yoga</h3><p class="text-sage-400 text-sm mb-3">High-intensity practice for athletes and fitness enthusiasts. Sweat, stretch, strengthen.</p><p class="text-warmgold text-sm font-medium">Mon / Wed — 5:30 PM</p></div>
         </div>
-        <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
-          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1508672019048-805c876b67e2?w=600&q=80" alt="Meditation" class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"></div>
-          <div class="p-6"><h3 class="font-serif text-xl font-bold mb-1">Guided Meditation</h3><p class="text-sage-500 text-xs font-semibold mb-2">ALL LEVELS &bull; 45 MIN</p><p class="text-gray-500 text-sm">Cultivate mindfulness and inner peace through guided breathwork, visualization, and seated meditation techniques.</p></div>
+        <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all fade-in">
+          <img src="https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=600&q=80" alt="Prenatal yoga" class="w-full h-48 object-cover">
+          <div class="p-6"><h3 class="font-serif text-xl font-semibold mb-2">Prenatal Yoga</h3><p class="text-sage-400 text-sm mb-3">Gentle, supportive practice for expecting mothers. Ease discomfort and prepare for birth.</p><p class="text-warmgold text-sm font-medium">Sat — 10:00 AM</p></div>
         </div>
-        <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
-          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&q=80" alt="Prenatal Yoga" class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"></div>
-          <div class="p-6"><h3 class="font-serif text-xl font-bold mb-1">Prenatal Yoga</h3><p class="text-sage-500 text-xs font-semibold mb-2">SPECIALIZED &bull; 60 MIN</p><p class="text-gray-500 text-sm">Safe, nurturing practice designed for expecting mothers with modified poses, breathing, and relaxation.</p></div>
+        <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all fade-in">
+          <img src="https://images.unsplash.com/photo-1545389336-cf090694435e?w=600&q=80" alt="Sound bath" class="w-full h-48 object-cover">
+          <div class="p-6"><h3 class="font-serif text-xl font-semibold mb-2">Sound Bath</h3><p class="text-sage-400 text-sm mb-3">Crystal singing bowls and gongs create deep vibrational healing. Pure relaxation.</p><p class="text-warmgold text-sm font-medium">Fri — 7:30 PM</p></div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Instructors -->
-  <section id="instructors" class="py-20 lg:py-28 bg-sage-50 px-4">
+  <section id="instructors" class="py-20 lg:py-28 bg-sage-800 text-white px-4">
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
-        <p class="text-sage-500 tracking-[0.2em] uppercase text-sm mb-2">Our Team</p>
-        <h2 class="font-serif text-4xl sm:text-5xl font-bold text-gray-900">Meet Your Instructors</h2>
+        <p class="text-warmgold tracking-[0.2em] uppercase text-sm mb-2">Our Team</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-semibold">Meet Our Instructors</h2>
       </div>
-      <div class="grid md:grid-cols-3 gap-8">
-        <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
-          <img src="https://images.unsplash.com/photo-1594381898411-846e7d193883?w=600&q=80" alt="Aria Chen" class="w-full h-72 object-cover">
-          <div class="p-6 text-center"><h3 class="font-serif text-xl font-bold mb-1">Aria Chen</h3><p class="text-sage-500 text-sm font-semibold mb-2">Vinyasa & Hot Yoga</p><p class="text-gray-500 text-sm">E-RYT 500 certified with 12 years of teaching. Trained in Bali and Rishikesh with a focus on breath-centered flow.</p></div>
+      <div class="grid sm:grid-cols-3 gap-8">
+        <div class="text-center fade-in">
+          <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&q=80" alt="Priya" class="w-40 h-40 rounded-full object-cover mx-auto mb-4">
+          <h3 class="font-serif text-xl font-semibold">Priya Nair</h3>
+          <p class="text-warmgold text-sm mb-2">Founder & Lead Teacher</p>
+          <p class="text-white/50 text-sm">RYT-500 with 14 years of teaching. Trained in Mysore, India. Specializes in Ashtanga and Vinyasa.</p>
         </div>
-        <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
-          <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80" alt="Maya Torres" class="w-full h-72 object-cover">
-          <div class="p-6 text-center"><h3 class="font-serif text-xl font-bold mb-1">Maya Torres</h3><p class="text-sage-500 text-sm font-semibold mb-2">Yin & Meditation</p><p class="text-gray-500 text-sm">A former psychologist turned yoga teacher. Specializes in restorative practices and mindfulness-based stress reduction.</p></div>
+        <div class="text-center fade-in">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&q=80" alt="Jonas" class="w-40 h-40 rounded-full object-cover mx-auto mb-4">
+          <h3 class="font-serif text-xl font-semibold">Jonas Berg</h3>
+          <p class="text-warmgold text-sm mb-2">Meditation & Breathwork</p>
+          <p class="text-white/50 text-sm">Former monk, certified breathwork facilitator. Guides mindfulness with warmth and depth.</p>
         </div>
-        <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
-          <img src="https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=600&q=80" alt="James Okafor" class="w-full h-72 object-cover">
-          <div class="p-6 text-center"><h3 class="font-serif text-xl font-bold mb-1">James Okafor</h3><p class="text-sage-500 text-sm font-semibold mb-2">Hatha & Prenatal</p><p class="text-gray-500 text-sm">RYT 500 with a background in physical therapy. Passionate about making yoga accessible and inclusive for every body.</p></div>
+        <div class="text-center fade-in">
+          <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&q=80" alt="Luna" class="w-40 h-40 rounded-full object-cover mx-auto mb-4">
+          <h3 class="font-serif text-xl font-semibold">Luna Reyes</h3>
+          <p class="text-warmgold text-sm mb-2">Yin & Restorative</p>
+          <p class="text-white/50 text-sm">Physical therapist turned yoga teacher. Brings a healing, anatomy-informed approach to every session.</p>
         </div>
       </div>
     </div>
@@ -130,162 +132,101 @@
   <section id="pricing" class="py-20 lg:py-28 px-4">
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
-        <p class="text-sage-500 tracking-[0.2em] uppercase text-sm mb-2">Memberships</p>
-        <h2 class="font-serif text-4xl sm:text-5xl font-bold text-gray-900">Simple, Flexible Pricing</h2>
+        <p class="text-warmgold tracking-[0.2em] uppercase text-sm mb-2">Memberships</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-semibold">Choose Your Path</h2>
       </div>
       <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-        <div class="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-shadow fade-in">
-          <h3 class="font-serif text-xl font-bold mb-1">Drop-In</h3>
-          <p class="text-gray-400 text-sm mb-4">Perfect for trying us out</p>
-          <p class="font-serif text-4xl font-bold text-sage-600 mb-6">$25<span class="text-base font-normal text-gray-400">/class</span></p>
-          <ul class="space-y-3 text-sm text-gray-600 mb-8">
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-sage-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Any single class</li>
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-sage-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Mat & towel included</li>
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-sage-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>No commitment</li>
+        <div class="bg-white p-8 rounded-2xl shadow-sm text-center fade-in">
+          <h3 class="font-serif text-xl font-semibold mb-1">Drop-In</h3>
+          <p class="text-sage-400 text-sm mb-5">Single class access</p>
+          <p class="text-4xl font-bold mb-6">$22<span class="text-lg text-sage-200 font-normal">/class</span></p>
+          <ul class="space-y-3 text-sm text-sage-400 mb-8 text-left">
+            <li class="flex items-center gap-2"><span class="text-warmgold">&#10003;</span> Any class on schedule</li>
+            <li class="flex items-center gap-2"><span class="text-warmgold">&#10003;</span> Mat & props provided</li>
+            <li class="flex items-center gap-2"><span class="text-warmgold">&#10003;</span> No commitment</li>
           </ul>
-          <a href="#contact" class="block text-center py-3 border-2 border-sage-600 text-sage-600 hover:bg-sage-600 hover:text-white rounded-xl font-medium transition-colors">Get Started</a>
+          <a href="#contact" class="block py-3 border border-sage-200 hover:border-sage-400 rounded-xl text-sm font-medium transition-colors">Book a Class</a>
         </div>
-        <div class="bg-sage-600 text-white rounded-2xl p-8 shadow-xl relative fade-in">
-          <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-sage-400 text-white text-xs font-bold px-4 py-1 rounded-full">MOST POPULAR</span>
-          <h3 class="font-serif text-xl font-bold mb-1">Unlimited</h3>
-          <p class="text-white/70 text-sm mb-4">For dedicated practitioners</p>
-          <p class="font-serif text-4xl font-bold mb-6">$129<span class="text-base font-normal text-white/70">/month</span></p>
-          <ul class="space-y-3 text-sm text-white/90 mb-8">
-            <li class="flex items-center gap-2"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Unlimited classes</li>
-            <li class="flex items-center gap-2"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Priority booking</li>
-            <li class="flex items-center gap-2"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>1 free guest pass/month</li>
-            <li class="flex items-center gap-2"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Online class library</li>
+        <div class="bg-sage-800 text-white p-8 rounded-2xl shadow-lg relative text-center fade-in">
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-warmgold text-sage-900 rounded-full text-xs font-bold">BEST VALUE</div>
+          <h3 class="font-serif text-xl font-semibold mb-1">Unlimited</h3>
+          <p class="text-white/50 text-sm mb-5">Full access, every day</p>
+          <p class="text-4xl font-bold mb-6">$89<span class="text-lg text-white/30 font-normal">/mo</span></p>
+          <ul class="space-y-3 text-sm text-white/60 mb-8 text-left">
+            <li class="flex items-center gap-2"><span class="text-warmgold">&#10003;</span> Unlimited classes</li>
+            <li class="flex items-center gap-2"><span class="text-warmgold">&#10003;</span> Workshops included</li>
+            <li class="flex items-center gap-2"><span class="text-warmgold">&#10003;</span> Guest passes (2/mo)</li>
+            <li class="flex items-center gap-2"><span class="text-warmgold">&#10003;</span> 10% retail discount</li>
           </ul>
-          <a href="#contact" class="block text-center py-3 bg-white text-sage-600 hover:bg-sage-50 rounded-xl font-medium transition-colors">Get Started</a>
+          <a href="#contact" class="block py-3 bg-warmgold hover:bg-yellow-600 text-sage-900 rounded-xl text-sm font-bold transition-colors">Start Free Trial</a>
         </div>
-        <div class="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-shadow fade-in">
-          <h3 class="font-serif text-xl font-bold mb-1">10-Class Pack</h3>
-          <p class="text-gray-400 text-sm mb-4">Flexible, no expiry</p>
-          <p class="font-serif text-4xl font-bold text-sage-600 mb-6">$199<span class="text-base font-normal text-gray-400">/pack</span></p>
-          <ul class="space-y-3 text-sm text-gray-600 mb-8">
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-sage-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>10 classes, any type</li>
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-sage-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Never expires</li>
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-sage-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Shareable with friends</li>
+        <div class="bg-white p-8 rounded-2xl shadow-sm text-center fade-in">
+          <h3 class="font-serif text-xl font-semibold mb-1">10-Class Pack</h3>
+          <p class="text-sage-400 text-sm mb-5">Flexible schedule</p>
+          <p class="text-4xl font-bold mb-6">$180<span class="text-lg text-sage-200 font-normal">/pack</span></p>
+          <ul class="space-y-3 text-sm text-sage-400 mb-8 text-left">
+            <li class="flex items-center gap-2"><span class="text-warmgold">&#10003;</span> 10 classes, use anytime</li>
+            <li class="flex items-center gap-2"><span class="text-warmgold">&#10003;</span> Valid for 3 months</li>
+            <li class="flex items-center gap-2"><span class="text-warmgold">&#10003;</span> Shareable with a friend</li>
           </ul>
-          <a href="#contact" class="block text-center py-3 border-2 border-sage-600 text-sage-600 hover:bg-sage-600 hover:text-white rounded-xl font-medium transition-colors">Get Started</a>
+          <a href="#contact" class="block py-3 border border-sage-200 hover:border-sage-400 rounded-xl text-sm font-medium transition-colors">Buy Pack</a>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Schedule -->
-  <section class="py-20 lg:py-28 bg-warm px-4">
-    <div class="max-w-5xl mx-auto">
-      <div class="text-center mb-16 fade-in">
-        <p class="text-sage-500 tracking-[0.2em] uppercase text-sm mb-2">Weekly Rhythm</p>
-        <h2 class="font-serif text-4xl sm:text-5xl font-bold text-gray-900">Class Schedule</h2>
-      </div>
-      <div class="bg-white rounded-2xl shadow-sm overflow-hidden fade-in">
-        <div class="grid grid-cols-4 bg-sage-600 text-white text-sm font-semibold">
-          <div class="p-4">Day</div><div class="p-4">Morning</div><div class="p-4">Afternoon</div><div class="p-4">Evening</div>
-        </div>
-        <div class="grid grid-cols-4 text-sm border-b border-gray-100"><div class="p-4 font-semibold">Monday</div><div class="p-4 text-gray-500">Vinyasa 7AM</div><div class="p-4 text-gray-500">Hatha 12PM</div><div class="p-4 text-gray-500">Yin 7PM</div></div>
-        <div class="grid grid-cols-4 text-sm border-b border-gray-100 bg-sage-50/50"><div class="p-4 font-semibold">Tuesday</div><div class="p-4 text-gray-500">Hot Yoga 6:30AM</div><div class="p-4 text-gray-500">Prenatal 1PM</div><div class="p-4 text-gray-500">Meditation 7PM</div></div>
-        <div class="grid grid-cols-4 text-sm border-b border-gray-100"><div class="p-4 font-semibold">Wednesday</div><div class="p-4 text-gray-500">Hatha 7AM</div><div class="p-4 text-gray-500">Vinyasa 12PM</div><div class="p-4 text-gray-500">Hot Yoga 6:30PM</div></div>
-        <div class="grid grid-cols-4 text-sm border-b border-gray-100 bg-sage-50/50"><div class="p-4 font-semibold">Thursday</div><div class="p-4 text-gray-500">Vinyasa 7AM</div><div class="p-4 text-gray-500">Yin 12PM</div><div class="p-4 text-gray-500">Meditation 7PM</div></div>
-        <div class="grid grid-cols-4 text-sm border-b border-gray-100"><div class="p-4 font-semibold">Friday</div><div class="p-4 text-gray-500">Hot Yoga 6:30AM</div><div class="p-4 text-gray-500">Hatha 12PM</div><div class="p-4 text-gray-500">Yin 6PM</div></div>
-        <div class="grid grid-cols-4 text-sm border-b border-gray-100 bg-sage-50/50"><div class="p-4 font-semibold">Saturday</div><div class="p-4 text-gray-500">Vinyasa 9AM</div><div class="p-4 text-gray-500">Prenatal 11AM</div><div class="p-4 text-gray-500">—</div></div>
-        <div class="grid grid-cols-4 text-sm"><div class="p-4 font-semibold">Sunday</div><div class="p-4 text-gray-500">Meditation 9AM</div><div class="p-4 text-gray-500">Yin 11AM</div><div class="p-4 text-gray-500">—</div></div>
       </div>
     </div>
   </section>
 
   <!-- Testimonials -->
-  <section class="py-20 lg:py-28 px-4">
+  <section class="py-20 lg:py-28 bg-sage-100 px-4">
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
-        <p class="text-sage-500 tracking-[0.2em] uppercase text-sm mb-2">Community Voices</p>
-        <h2 class="font-serif text-4xl sm:text-5xl font-bold text-gray-900">What Our Students Say</h2>
+        <p class="text-warmgold tracking-[0.2em] uppercase text-sm mb-2">Community</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-semibold">Student Stories</h2>
       </div>
       <div class="grid md:grid-cols-3 gap-8">
-        <div class="bg-sage-50 p-8 rounded-2xl fade-in">
-          <div class="flex gap-1 mb-4 text-sage-500">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-          <p class="text-gray-600 mb-6 italic">"Flow State has completely changed my relationship with my body. The instructors are incredibly knowledgeable and the studio feels like a sanctuary from the busy city."</p>
-          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80" alt="Emma" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Emma Richardson</p><p class="text-gray-400 text-xs">Member for 2 years</p></div></div>
+        <div class="bg-white p-8 rounded-2xl shadow-sm fade-in">
+          <p class="text-sage-800/70 mb-6 italic">"Lotus Path changed my relationship with my body. After years of high-intensity training, I finally found balance. Priya's classes are pure magic."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80" alt="Derek" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Derek Huang</p><p class="text-sage-400 text-xs">Member since 2023</p></div></div>
         </div>
-        <div class="bg-sage-50 p-8 rounded-2xl fade-in">
-          <div class="flex gap-1 mb-4 text-sage-500">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-          <p class="text-gray-600 mb-6 italic">"I started as a complete beginner and never felt judged. The Hatha classes gave me a strong foundation, and now I'm doing things I never thought possible. Life-changing."</p>
-          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80" alt="David" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">David Nakamura</p><p class="text-gray-400 text-xs">Member for 8 months</p></div></div>
+        <div class="bg-white p-8 rounded-2xl shadow-sm fade-in">
+          <p class="text-sage-800/70 mb-6 italic">"The sound bath on Friday evenings is my weekly reset. I sleep better, stress less, and I've met wonderful people in this community."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&q=80" alt="Mia" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Mia Sorensen</p><p class="text-sage-400 text-xs">Member since 2024</p></div></div>
         </div>
-        <div class="bg-sage-50 p-8 rounded-2xl fade-in">
-          <div class="flex gap-1 mb-4 text-sage-500">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-          <p class="text-gray-600 mb-6 italic">"The prenatal classes were amazing during my pregnancy. Maya was so attentive and made every session feel safe and empowering. I can't recommend this studio enough."</p>
-          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80" alt="Sophie" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Sophie Andersson</p><p class="text-gray-400 text-xs">Prenatal Student</p></div></div>
+        <div class="bg-white p-8 rounded-2xl shadow-sm fade-in">
+          <p class="text-sage-800/70 mb-6 italic">"I started yoga at 62 and wish I'd done it decades ago. The instructors adapt every pose for my needs. I feel stronger and more flexible than I have in years."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=100&q=80" alt="William" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">William Torres</p><p class="text-sage-400 text-xs">Member since 2024</p></div></div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Contact -->
-  <section id="contact" class="py-20 lg:py-28 bg-sage-50 px-4">
-    <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-16 fade-in">
-        <p class="text-sage-500 tracking-[0.2em] uppercase text-sm mb-2">Visit Us</p>
-        <h2 class="font-serif text-4xl sm:text-5xl font-bold text-gray-900">Find Our Studio</h2>
+  <section id="contact" class="py-20 lg:py-28 px-4">
+    <div class="max-w-3xl mx-auto text-center fade-in">
+      <p class="text-warmgold tracking-[0.2em] uppercase text-sm mb-2">Visit Us</p>
+      <h2 class="font-serif text-4xl font-semibold mb-6">Begin Your Journey</h2>
+      <div class="grid sm:grid-cols-3 gap-6 mb-10 text-left">
+        <div><h4 class="font-semibold text-sm mb-1">Address</h4><p class="text-sage-400 text-sm">240 Harmony Lane<br>Portland, OR 97201</p></div>
+        <div><h4 class="font-semibold text-sm mb-1">Hours</h4><p class="text-sage-400 text-sm">Mon — Sat: 6AM — 9PM<br>Sunday: 8AM — 6PM</p></div>
+        <div><h4 class="font-semibold text-sm mb-1">Contact</h4><p class="text-sage-400 text-sm">(503) 555-0192<br>hello@lotuspath.co</p></div>
       </div>
-      <div class="grid lg:grid-cols-2 gap-12">
-        <div class="space-y-8 fade-in">
-          <div><h3 class="font-serif text-xl font-bold mb-2">Studio Address</h3><p class="text-gray-500">142 Greenleaf Lane, Suite 2B<br>Brooklyn, NY 11215</p></div>
-          <div><h3 class="font-serif text-xl font-bold mb-2">Studio Hours</h3><p class="text-gray-500">Mon — Fri: 6:00 AM — 9:00 PM<br>Sat — Sun: 8:00 AM — 2:00 PM</p></div>
-          <div><h3 class="font-serif text-xl font-bold mb-2">Contact</h3><p class="text-gray-500">(718) 555-0392<br>namaste@flowstate.studio</p></div>
-          <div class="bg-sage-100 rounded-2xl h-48 flex items-center justify-center text-sage-400 text-sm">Interactive Map</div>
-        </div>
-        <form class="space-y-5 fade-in">
-          <div class="grid sm:grid-cols-2 gap-5">
-            <input type="text" placeholder="Your Name" class="w-full px-4 py-3 rounded-xl border border-sage-200 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400/40 text-sm">
-            <input type="email" placeholder="Email Address" class="w-full px-4 py-3 rounded-xl border border-sage-200 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400/40 text-sm">
-          </div>
-          <select class="w-full px-4 py-3 rounded-xl border border-sage-200 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400/40 text-sm text-gray-400">
-            <option>I'm interested in...</option><option>Membership Info</option><option>Class Schedule</option><option>Private Sessions</option><option>Corporate Yoga</option><option>Other</option>
-          </select>
-          <textarea rows="4" placeholder="Your Message" class="w-full px-4 py-3 rounded-xl border border-sage-200 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400/40 text-sm resize-none"></textarea>
-          <button type="submit" class="w-full py-3 bg-sage-600 hover:bg-sage-700 text-white rounded-xl font-medium transition-colors">Send Message</button>
-        </form>
-      </div>
+      <a href="#" class="inline-block px-8 py-3 bg-sage-700 hover:bg-sage-800 text-white rounded-xl font-medium transition-colors">Book Your First Class Free</a>
     </div>
   </section>
 
   <!-- Footer -->
-  <footer class="bg-sage-900 text-white py-16 px-4">
-    <div class="max-w-7xl mx-auto">
-      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
-        <div>
-          <h3 class="font-serif text-2xl font-bold mb-4">Flow State</h3>
-          <p class="text-white/50 text-sm leading-relaxed">A sanctuary for mindful movement, inner peace, and community. Begin your journey to a more balanced life.</p>
-        </div>
-        <div>
-          <h4 class="font-semibold mb-4 text-sm tracking-wider">CLASSES</h4>
-          <div class="space-y-2 text-white/50 text-sm"><a href="#classes" class="block hover:text-white transition-colors">Vinyasa Flow</a><a href="#classes" class="block hover:text-white transition-colors">Hatha Yoga</a><a href="#classes" class="block hover:text-white transition-colors">Yin Yoga</a><a href="#classes" class="block hover:text-white transition-colors">Meditation</a></div>
-        </div>
-        <div>
-          <h4 class="font-semibold mb-4 text-sm tracking-wider">STUDIO</h4>
-          <div class="text-white/50 text-sm space-y-1"><p>Mon — Fri: 6AM — 9PM</p><p>Sat — Sun: 8AM — 2PM</p><p class="pt-2 text-sage-400">First class free for new students</p></div>
-        </div>
-        <div>
-          <h4 class="font-semibold mb-4 text-sm tracking-wider">NEWSLETTER</h4>
-          <p class="text-white/50 text-sm mb-3">Wellness tips, class updates, and special offers delivered weekly.</p>
-          <div class="flex"><input type="email" placeholder="Your email" class="flex-1 px-3 py-2 rounded-l-lg bg-white/10 border border-white/10 text-sm focus:outline-none"><button class="px-4 py-2 bg-sage-600 hover:bg-sage-500 rounded-r-lg text-sm font-medium transition-colors">Join</button></div>
-        </div>
-      </div>
-      <div class="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <p class="text-white/30 text-sm">&copy; 2026 Flow State Studio. All rights reserved.</p>
-        <div class="flex gap-4 text-white/40">
-          <a href="#" class="hover:text-white transition-colors text-sm">Instagram</a>
-          <a href="#" class="hover:text-white transition-colors text-sm">YouTube</a>
-          <a href="#" class="hover:text-white transition-colors text-sm">TikTok</a>
-        </div>
+  <footer class="bg-sage-900 text-white py-12 px-4">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+      <p class="text-white/30 text-sm">&copy; 2026 Lotus Path. All rights reserved.</p>
+      <div class="flex gap-4 text-white/40 text-sm">
+        <a href="#" class="hover:text-white transition-colors">Instagram</a>
+        <a href="#" class="hover:text-white transition-colors">YouTube</a>
+        <a href="#" class="hover:text-white transition-colors">Facebook</a>
       </div>
     </div>
   </footer>
 
   <!-- Edit with AI Button -->
-  <button class="fixed bottom-6 right-6 z-50 bg-sage-600 hover:bg-sage-700 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium">
+  <button class="fixed bottom-6 right-6 z-50 bg-sage-700 hover:bg-sage-800 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
     Edit with AI
   </button>
@@ -295,12 +236,8 @@
       entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
     }, { threshold: 0.1 });
     document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-    document.getElementById('mobile-toggle').addEventListener('click', () => {
-      document.getElementById('mobile-menu').classList.toggle('hidden');
-    });
-    document.querySelectorAll('#mobile-menu a').forEach(a => {
-      a.addEventListener('click', () => document.getElementById('mobile-menu').classList.add('hidden'));
-    });
+    document.getElementById('mobile-toggle').addEventListener('click', () => document.getElementById('mobile-menu').classList.toggle('hidden'));
+    document.querySelectorAll('#mobile-menu a').forEach(a => a.addEventListener('click', () => document.getElementById('mobile-menu').classList.add('hidden')));
   </script>
 </body>
 </html>

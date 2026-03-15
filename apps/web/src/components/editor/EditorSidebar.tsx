@@ -236,9 +236,9 @@ export const EditorSidebar = ({
               <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Pages</span>
             </div>
             <div className="space-y-0.5">
-              {pages.map((page) => (
+              {pages.map((page, idx) => (
                 <button
-                  key={page.id}
+                  key={`${page.id}-${idx}`}
                   className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm hover:bg-bg-tertiary transition-colors group"
                 >
                   <svg className="h-3.5 w-3.5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>

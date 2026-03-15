@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Analytix — AI-Powered Analytics Platform</title>
+  <title>Metrica — Data Orchestration Platform</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
       theme: {
         extend: {
           fontFamily: { sans: ['Inter', 'sans-serif'] },
-          colors: { dark: { 900: '#0B0F1A', 800: '#111827', 700: '#1E293B', 600: '#334155' }, accent: '#7C3AED' }
+          colors: { dark: { 900: '#0A0E1A', 800: '#0F1629', 700: '#1A2340', 600: '#2A3558' }, accent: '#0EA5E9' }
         }
       }
     }
@@ -21,8 +21,8 @@
     .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
     .fade-in.visible { opacity: 1; transform: translateY(0); }
     .gradient-orb { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.3; }
-    .glow-border { border: 1px solid rgba(124, 58, 237, 0.2); }
-    .glow-border:hover { border-color: rgba(124, 58, 237, 0.5); box-shadow: 0 0 30px rgba(124, 58, 237, 0.1); }
+    .glow-border { border: 1px solid rgba(14, 165, 233, 0.2); }
+    .glow-border:hover { border-color: rgba(14, 165, 233, 0.5); box-shadow: 0 0 30px rgba(14, 165, 233, 0.1); }
   </style>
 </head>
 <body class="bg-dark-900 text-white font-sans">
@@ -30,15 +30,15 @@
   <nav class="fixed top-0 w-full z-50 bg-dark-900/80 backdrop-blur-xl border-b border-white/5">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
       <div class="flex items-center gap-2">
-        <div class="w-8 h-8 bg-accent rounded-lg flex items-center justify-center font-bold text-sm">A</div>
-        <span class="font-bold text-lg">Analytix</span>
+        <div class="w-8 h-8 bg-accent rounded-lg flex items-center justify-center font-bold text-sm">M</div>
+        <span class="font-bold text-lg">Metrica</span>
       </div>
       <div class="hidden md:flex items-center gap-8">
         <a href="#features" class="text-sm text-white/60 hover:text-white transition-colors">Features</a>
         <a href="#pricing" class="text-sm text-white/60 hover:text-white transition-colors">Pricing</a>
         <a href="#" class="text-sm text-white/60 hover:text-white transition-colors">Docs</a>
         <a href="#" class="text-sm text-white/60 hover:text-white transition-colors">Sign In</a>
-        <a href="#cta" class="px-4 py-2 bg-accent hover:bg-purple-600 rounded-lg text-sm font-medium transition-colors">Get Started</a>
+        <a href="#cta" class="px-4 py-2 bg-accent hover:bg-sky-600 rounded-lg text-sm font-medium transition-colors">Get Started</a>
       </div>
       <button id="mobile-toggle" class="md:hidden flex flex-col gap-1.5">
         <span class="w-6 h-0.5 bg-white"></span><span class="w-6 h-0.5 bg-white"></span><span class="w-6 h-0.5 bg-white"></span>
@@ -55,17 +55,17 @@
   <!-- Hero -->
   <section class="relative pt-32 pb-20 lg:pt-44 lg:pb-32 px-4 overflow-hidden">
     <div class="gradient-orb w-96 h-96 bg-accent top-20 -left-48"></div>
-    <div class="gradient-orb w-80 h-80 bg-blue-500 top-40 right-0"></div>
+    <div class="gradient-orb w-80 h-80 bg-indigo-500 top-40 right-0"></div>
     <div class="max-w-5xl mx-auto text-center relative z-10">
-      <div class="inline-block px-4 py-1.5 bg-accent/10 border border-accent/20 rounded-full text-accent text-xs font-medium mb-6 fade-in">Now with GPT-4o Integration</div>
-      <h1 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight fade-in">Ship faster with<br><span class="bg-gradient-to-r from-accent to-blue-400 bg-clip-text text-transparent">AI-powered analytics</span></h1>
-      <p class="text-lg text-white/50 max-w-2xl mx-auto mb-10 fade-in">Turn your data into decisions. Analytix combines real-time dashboards, predictive AI models, and seamless team collaboration in one powerful platform.</p>
+      <div class="inline-block px-4 py-1.5 bg-accent/10 border border-accent/20 rounded-full text-accent text-xs font-medium mb-6 fade-in">Now with Real-time Pipeline Monitoring</div>
+      <h1 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight fade-in">Orchestrate your data<br><span class="bg-gradient-to-r from-accent to-indigo-400 bg-clip-text text-transparent">with confidence</span></h1>
+      <p class="text-lg text-white/50 max-w-2xl mx-auto mb-10 fade-in">Metrica unifies your data pipelines, monitors quality in real-time, and gives your team a single source of truth — no complex setup required.</p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center fade-in">
-        <a href="#cta" class="px-8 py-3.5 bg-accent hover:bg-purple-600 rounded-xl font-semibold transition-colors">Start Free Trial</a>
+        <a href="#cta" class="px-8 py-3.5 bg-accent hover:bg-sky-600 rounded-xl font-semibold transition-colors">Start Free Trial</a>
         <a href="#features" class="px-8 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-semibold transition-colors">Watch Demo</a>
       </div>
       <div class="mt-16 fade-in">
-        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=80" alt="Dashboard" class="w-full rounded-2xl border border-white/10 shadow-2xl shadow-accent/5">
+        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80" alt="Data dashboard" class="w-full rounded-2xl border border-white/10 shadow-2xl shadow-accent/5">
       </div>
     </div>
   </section>
@@ -73,9 +73,9 @@
   <!-- Logos -->
   <section class="py-16 border-y border-white/5 px-4">
     <div class="max-w-5xl mx-auto text-center fade-in">
-      <p class="text-white/30 text-sm mb-8 tracking-wider">TRUSTED BY 1,000+ COMPANIES WORLDWIDE</p>
+      <p class="text-white/30 text-sm mb-8 tracking-wider">POWERING DATA TEAMS AT 800+ COMPANIES</p>
       <div class="flex flex-wrap justify-center gap-8 sm:gap-16 text-white/20 font-bold text-xl">
-        <span>Stripe</span><span>Vercel</span><span>Linear</span><span>Notion</span><span>Figma</span><span>Supabase</span>
+        <span>Datadog</span><span>Snowflake</span><span>dbt</span><span>Airflow</span><span>Fivetran</span><span>Confluent</span>
       </div>
     </div>
   </section>
@@ -85,24 +85,24 @@
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
         <p class="text-accent text-sm font-medium mb-2">FEATURES</p>
-        <h2 class="text-4xl sm:text-5xl font-bold mb-4">Everything you need to grow</h2>
-        <p class="text-white/40 max-w-xl mx-auto">Powerful tools designed for modern teams. No complexity, just results.</p>
+        <h2 class="text-4xl sm:text-5xl font-bold mb-4">Built for modern data teams</h2>
+        <p class="text-white/40 max-w-xl mx-auto">Stop firefighting pipelines. Metrica gives you observability, lineage, and quality in one platform.</p>
       </div>
       <div class="grid md:grid-cols-3 gap-6">
         <div class="glow-border bg-dark-800 p-8 rounded-2xl transition-all fade-in">
           <div class="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center mb-5"><svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
-          <h3 class="text-xl font-bold mb-3">Real-time Analytics</h3>
-          <p class="text-white/40 text-sm leading-relaxed">Track every metric as it happens. Live dashboards update in milliseconds with zero lag, giving you instant visibility into what matters.</p>
+          <h3 class="text-xl font-bold mb-3">Pipeline Observability</h3>
+          <p class="text-white/40 text-sm leading-relaxed">End-to-end visibility across every pipeline. Detect failures, latency spikes, and schema drift before they impact downstream consumers.</p>
         </div>
         <div class="glow-border bg-dark-800 p-8 rounded-2xl transition-all fade-in">
           <div class="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center mb-5"><svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
-          <h3 class="text-xl font-bold mb-3">AI Insights</h3>
-          <p class="text-white/40 text-sm leading-relaxed">Our AI engine detects anomalies, predicts trends, and surfaces recommendations automatically. No query language required.</p>
+          <h3 class="text-xl font-bold mb-3">Automated Data Quality</h3>
+          <p class="text-white/40 text-sm leading-relaxed">ML-powered anomaly detection catches data issues automatically. Set expectations, get alerts, and fix issues before stakeholders notice.</p>
         </div>
         <div class="glow-border bg-dark-800 p-8 rounded-2xl transition-all fade-in">
           <div class="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center mb-5"><svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
-          <h3 class="text-xl font-bold mb-3">Team Collaboration</h3>
-          <p class="text-white/40 text-sm leading-relaxed">Share dashboards, annotate charts, set alerts, and collaborate in real time. Built for teams of 5 or 5,000.</p>
+          <h3 class="text-xl font-bold mb-3">Data Lineage</h3>
+          <p class="text-white/40 text-sm leading-relaxed">Trace any metric back to its source. Column-level lineage, impact analysis, and dependency mapping for your entire data estate.</p>
         </div>
       </div>
     </div>
@@ -113,23 +113,23 @@
     <div class="max-w-5xl mx-auto">
       <div class="text-center mb-16 fade-in">
         <p class="text-accent text-sm font-medium mb-2">HOW IT WORKS</p>
-        <h2 class="text-4xl sm:text-5xl font-bold">Up and running in minutes</h2>
+        <h2 class="text-4xl sm:text-5xl font-bold">Deploy in under 10 minutes</h2>
       </div>
       <div class="grid md:grid-cols-3 gap-8">
         <div class="text-center fade-in">
           <div class="w-14 h-14 mx-auto bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center font-bold text-accent text-xl mb-5">1</div>
-          <h3 class="text-lg font-bold mb-2">Connect your data</h3>
-          <p class="text-white/40 text-sm">One-click integrations with 50+ data sources. PostgreSQL, BigQuery, Snowflake, APIs, and more.</p>
+          <h3 class="text-lg font-bold mb-2">Connect your stack</h3>
+          <p class="text-white/40 text-sm">One-click integrations with Snowflake, BigQuery, Redshift, dbt, Airflow, Spark, Kafka, and 60+ more.</p>
         </div>
         <div class="text-center fade-in">
           <div class="w-14 h-14 mx-auto bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center font-bold text-accent text-xl mb-5">2</div>
-          <h3 class="text-lg font-bold mb-2">Ask questions in English</h3>
-          <p class="text-white/40 text-sm">Type what you want to know in plain language. Our AI translates your question into the perfect query.</p>
+          <h3 class="text-lg font-bold mb-2">Auto-discover lineage</h3>
+          <p class="text-white/40 text-sm">Metrica maps your entire data graph automatically. No manual tagging, no YAML configs — just connect and go.</p>
         </div>
         <div class="text-center fade-in">
           <div class="w-14 h-14 mx-auto bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center font-bold text-accent text-xl mb-5">3</div>
-          <h3 class="text-lg font-bold mb-2">Get instant insights</h3>
-          <p class="text-white/40 text-sm">Beautiful, interactive visualizations appear instantly. Share with your team or embed anywhere.</p>
+          <h3 class="text-lg font-bold mb-2">Monitor & alert</h3>
+          <p class="text-white/40 text-sm">Get Slack alerts for anomalies, freshness issues, and schema changes. Resolve incidents 10x faster.</p>
         </div>
       </div>
     </div>
@@ -140,42 +140,42 @@
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
         <p class="text-accent text-sm font-medium mb-2">PRICING</p>
-        <h2 class="text-4xl sm:text-5xl font-bold mb-4">Simple, transparent pricing</h2>
-        <p class="text-white/40">No hidden fees. Cancel anytime.</p>
+        <h2 class="text-4xl sm:text-5xl font-bold mb-4">Plans that scale with you</h2>
+        <p class="text-white/40">Start free. Upgrade when you're ready.</p>
       </div>
       <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
         <div class="glow-border bg-dark-800 p-8 rounded-2xl fade-in">
-          <h3 class="text-lg font-bold mb-1">Free</h3>
-          <p class="text-white/40 text-sm mb-5">For individuals and small projects</p>
+          <h3 class="text-lg font-bold mb-1">Starter</h3>
+          <p class="text-white/40 text-sm mb-5">For small data teams</p>
           <p class="text-4xl font-extrabold mb-6">$0<span class="text-lg text-white/30 font-normal">/mo</span></p>
           <ul class="space-y-3 text-sm text-white/60 mb-8">
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>3 dashboards</li>
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>1,000 events/day</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>5 data sources</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Basic lineage</li>
             <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Community support</li>
           </ul>
           <a href="#" class="block text-center py-3 border border-white/10 hover:border-accent/50 rounded-xl text-sm font-medium transition-colors">Get Started</a>
         </div>
         <div class="bg-gradient-to-b from-accent/20 to-dark-800 border border-accent/30 p-8 rounded-2xl relative fade-in">
           <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-accent rounded-full text-xs font-bold">POPULAR</div>
-          <h3 class="text-lg font-bold mb-1">Pro</h3>
-          <p class="text-white/40 text-sm mb-5">For growing teams</p>
-          <p class="text-4xl font-extrabold mb-6">$29<span class="text-lg text-white/30 font-normal">/mo</span></p>
+          <h3 class="text-lg font-bold mb-1">Team</h3>
+          <p class="text-white/40 text-sm mb-5">For growing data orgs</p>
+          <p class="text-4xl font-extrabold mb-6">$49<span class="text-lg text-white/30 font-normal">/mo</span></p>
           <ul class="space-y-3 text-sm text-white/60 mb-8">
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Unlimited dashboards</li>
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>100K events/day</li>
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>AI Insights + Predictions</li>
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Priority support</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Unlimited sources</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>ML anomaly detection</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Column-level lineage</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Slack & PagerDuty alerts</li>
           </ul>
-          <a href="#" class="block text-center py-3 bg-accent hover:bg-purple-600 rounded-xl text-sm font-bold transition-colors">Start Free Trial</a>
+          <a href="#" class="block text-center py-3 bg-accent hover:bg-sky-600 rounded-xl text-sm font-bold transition-colors">Start Free Trial</a>
         </div>
         <div class="glow-border bg-dark-800 p-8 rounded-2xl fade-in">
           <h3 class="text-lg font-bold mb-1">Enterprise</h3>
           <p class="text-white/40 text-sm mb-5">For large organizations</p>
           <p class="text-4xl font-extrabold mb-6">Custom</p>
           <ul class="space-y-3 text-sm text-white/60 mb-8">
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Everything in Pro</li>
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>SSO & SAML</li>
-            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Dedicated account manager</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Everything in Team</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>SSO & RBAC</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Dedicated solutions engineer</li>
             <li class="flex items-center gap-2"><svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>99.99% SLA</li>
           </ul>
           <a href="#" class="block text-center py-3 border border-white/10 hover:border-accent/50 rounded-xl text-sm font-medium transition-colors">Contact Sales</a>
@@ -189,20 +189,20 @@
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
         <p class="text-accent text-sm font-medium mb-2">TESTIMONIALS</p>
-        <h2 class="text-4xl sm:text-5xl font-bold">Loved by data teams</h2>
+        <h2 class="text-4xl sm:text-5xl font-bold">Trusted by data engineers</h2>
       </div>
       <div class="grid md:grid-cols-3 gap-6">
         <div class="bg-dark-900 border border-white/5 p-8 rounded-2xl fade-in">
-          <p class="text-white/60 mb-6 text-sm leading-relaxed">"Analytix replaced three different tools for us. The AI insights alone saved our data team 20 hours per week. It's like having a senior analyst on demand."</p>
-          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80" alt="Alex" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Alex Rivera</p><p class="text-white/30 text-xs">CTO, ScaleGrid</p></div></div>
+          <p class="text-white/60 mb-6 text-sm leading-relaxed">"Metrica caught a schema change in our Snowflake warehouse that would have broken 40 dashboards. We fixed it in minutes instead of discovering it days later from angry stakeholders."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80" alt="Jordan" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Jordan Kale</p><p class="text-white/30 text-xs">Lead Data Engineer, Trunkline</p></div></div>
         </div>
         <div class="bg-dark-900 border border-white/5 p-8 rounded-2xl fade-in">
-          <p class="text-white/60 mb-6 text-sm leading-relaxed">"The natural language query feature is a game-changer. Our marketing team can now pull their own reports without waiting on engineering. Incredible product."</p>
-          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&q=80" alt="Priya" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Priya Sharma</p><p class="text-white/30 text-xs">VP of Data, Flowbase</p></div></div>
+          <p class="text-white/60 mb-6 text-sm leading-relaxed">"We replaced three separate tools — monitoring, lineage, and catalog — with Metrica. Our data team is 2x more productive and our pipeline incidents dropped 70%."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&q=80" alt="Samira" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Samira Patel</p><p class="text-white/30 text-xs">VP of Data, NovaPay</p></div></div>
         </div>
         <div class="bg-dark-900 border border-white/5 p-8 rounded-2xl fade-in">
-          <p class="text-white/60 mb-6 text-sm leading-relaxed">"We migrated from Mixpanel in a weekend. Analytix is faster, cheaper, and the real-time dashboards actually work. No more waiting 24 hours for data."</p>
-          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=100&q=80" alt="Marcus" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Marcus Chen</p><p class="text-white/30 text-xs">Founder, DevStack</p></div></div>
+          <p class="text-white/60 mb-6 text-sm leading-relaxed">"The column-level lineage is incredible. When our CEO asks 'where does this number come from?', I can trace it back through every transformation in seconds."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=100&q=80" alt="Ben" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Ben Torres</p><p class="text-white/30 text-xs">Analytics Lead, Orbit Health</p></div></div>
         </div>
       </div>
     </div>
@@ -212,11 +212,11 @@
   <section id="cta" class="py-20 lg:py-28 px-4 relative overflow-hidden">
     <div class="gradient-orb w-96 h-96 bg-accent bottom-0 left-1/2 -translate-x-1/2"></div>
     <div class="max-w-2xl mx-auto text-center relative z-10 fade-in">
-      <h2 class="text-4xl sm:text-5xl font-bold mb-4">Ready to get started?</h2>
-      <p class="text-white/40 mb-8">Join 1,000+ companies already using Analytix to make better decisions, faster.</p>
+      <h2 class="text-4xl sm:text-5xl font-bold mb-4">Ready to trust your data?</h2>
+      <p class="text-white/40 mb-8">Join 800+ data teams using Metrica to ship reliable data products, faster.</p>
       <div class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
         <input type="email" placeholder="Enter your work email" class="flex-1 px-4 py-3 bg-dark-800 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-accent/50">
-        <button class="px-6 py-3 bg-accent hover:bg-purple-600 rounded-xl font-semibold text-sm transition-colors whitespace-nowrap">Start Free</button>
+        <button class="px-6 py-3 bg-accent hover:bg-sky-600 rounded-xl font-semibold text-sm transition-colors whitespace-nowrap">Start Free</button>
       </div>
       <p class="text-white/20 text-xs mt-4">Free 14-day trial. No credit card required.</p>
     </div>
@@ -227,8 +227,8 @@
     <div class="max-w-7xl mx-auto">
       <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
         <div class="lg:col-span-2">
-          <div class="flex items-center gap-2 mb-4"><div class="w-8 h-8 bg-accent rounded-lg flex items-center justify-center font-bold text-sm">A</div><span class="font-bold text-lg">Analytix</span></div>
-          <p class="text-white/30 text-sm leading-relaxed max-w-xs">AI-powered analytics that help teams make better decisions with real-time data and intelligent insights.</p>
+          <div class="flex items-center gap-2 mb-4"><div class="w-8 h-8 bg-accent rounded-lg flex items-center justify-center font-bold text-sm">M</div><span class="font-bold text-lg">Metrica</span></div>
+          <p class="text-white/30 text-sm leading-relaxed max-w-xs">Data orchestration and observability for modern teams. Know your data, trust your data.</p>
         </div>
         <div>
           <h4 class="font-semibold mb-4 text-sm">Product</h4>
@@ -244,7 +244,7 @@
         </div>
       </div>
       <div class="border-t border-white/5 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <p class="text-white/20 text-sm">&copy; 2026 Analytix. All rights reserved.</p>
+        <p class="text-white/20 text-sm">&copy; 2026 Metrica. All rights reserved.</p>
         <div class="flex gap-4 text-white/30 text-sm">
           <a href="#" class="hover:text-white transition-colors">Twitter</a>
           <a href="#" class="hover:text-white transition-colors">GitHub</a>
@@ -255,7 +255,7 @@
   </footer>
 
   <!-- Edit with AI Button -->
-  <button class="fixed bottom-6 right-6 z-50 bg-accent hover:bg-purple-600 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium">
+  <button class="fixed bottom-6 right-6 z-50 bg-accent hover:bg-sky-600 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
     Edit with AI
   </button>

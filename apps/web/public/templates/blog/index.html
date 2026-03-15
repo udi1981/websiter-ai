@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Greenfield — Ideas Worth Sharing</title>
+  <title>The Inkwell — Culture, Ideas & Creative Thinking</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { sans: ['Inter', 'sans-serif'], serif: ['Playfair Display', 'serif'] },
-          colors: { green: { 50: '#F0FDF4', 100: '#DCFCE7', 200: '#BBF7D0', 500: '#22C55E', 600: '#16A34A', 700: '#15803D', 800: '#166534', 900: '#14532D' } }
+          fontFamily: { sans: ['Inter', 'sans-serif'], serif: ['Lora', 'serif'] },
+          colors: { ink: { 50: '#F8F7F4', 100: '#EFEEE8', 200: '#DCD9CE', 400: '#8B8578', 600: '#5C5647', 800: '#2E2A22', 900: '#1A1814' } }
         }
       }
     }
@@ -20,184 +20,151 @@
   <style>
     .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
     .fade-in.visible { opacity: 1; transform: translateY(0); }
-    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   </style>
 </head>
-<body class="bg-white text-gray-900 font-sans">
+<body class="bg-ink-50 text-ink-900 font-sans">
   <!-- Navigation -->
-  <nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-      <a href="#" class="font-serif text-2xl font-bold text-green-800">Greenfield</a>
+  <nav class="fixed top-0 w-full z-50 bg-ink-50/90 backdrop-blur-md border-b border-ink-100">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+      <a href="#" class="font-serif text-2xl font-bold">The Inkwell</a>
       <div class="hidden md:flex items-center gap-8">
-        <a href="#" class="text-sm text-gray-500 hover:text-green-700 transition-colors font-medium">Home</a>
-        <a href="#posts" class="text-sm text-gray-500 hover:text-green-700 transition-colors font-medium">Articles</a>
-        <a href="#about" class="text-sm text-gray-500 hover:text-green-700 transition-colors font-medium">About</a>
-        <a href="#subscribe" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">Subscribe</a>
+        <a href="#featured" class="text-sm text-ink-400 hover:text-ink-800 transition-colors">Featured</a>
+        <a href="#latest" class="text-sm text-ink-400 hover:text-ink-800 transition-colors">Latest</a>
+        <a href="#topics" class="text-sm text-ink-400 hover:text-ink-800 transition-colors">Topics</a>
+        <a href="#about" class="text-sm text-ink-400 hover:text-ink-800 transition-colors">About</a>
+        <a href="#subscribe" class="px-4 py-2 bg-ink-800 hover:bg-ink-900 text-white rounded-lg text-sm font-medium transition-colors">Subscribe</a>
       </div>
       <button id="mobile-toggle" class="md:hidden flex flex-col gap-1.5">
-        <span class="w-5 h-0.5 bg-gray-900"></span><span class="w-5 h-0.5 bg-gray-900"></span><span class="w-5 h-0.5 bg-gray-900"></span>
+        <span class="w-6 h-0.5 bg-ink-800"></span><span class="w-6 h-0.5 bg-ink-800"></span><span class="w-6 h-0.5 bg-ink-800"></span>
       </button>
     </div>
-    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-3">
-      <a href="#" class="block text-sm">Home</a>
-      <a href="#posts" class="block text-sm">Articles</a>
-      <a href="#about" class="block text-sm">About</a>
-      <a href="#subscribe" class="block text-sm text-green-600 font-medium">Subscribe</a>
+    <div id="mobile-menu" class="hidden md:hidden bg-ink-50 border-t border-ink-100 px-4 py-4 space-y-3">
+      <a href="#featured" class="block text-sm text-ink-400">Featured</a>
+      <a href="#latest" class="block text-sm text-ink-400">Latest</a>
+      <a href="#topics" class="block text-sm text-ink-400">Topics</a>
+      <a href="#about" class="block text-sm text-ink-400">About</a>
     </div>
   </nav>
 
-  <!-- Featured Post (Hero) -->
-  <section class="pt-24 pb-16 lg:pt-28 lg:pb-20 px-4">
-    <div class="max-w-6xl mx-auto">
-      <a href="#" class="group grid lg:grid-cols-2 gap-8 items-center fade-in">
+  <!-- Hero / Featured Post -->
+  <section id="featured" class="pt-24 pb-16 lg:pt-32 lg:pb-24 px-4">
+    <div class="max-w-5xl mx-auto">
+      <div class="grid lg:grid-cols-2 gap-10 items-center fade-in">
         <div class="overflow-hidden rounded-2xl">
-          <img src="https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&q=80" alt="Featured post" class="w-full aspect-[16/10] object-cover group-hover:scale-105 transition-transform duration-700">
+          <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=80" alt="Featured article" class="w-full h-80 lg:h-[420px] object-cover hover:scale-105 transition-transform duration-700">
         </div>
         <div>
-          <div class="flex items-center gap-3 mb-4">
-            <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">FEATURED</span>
-            <span class="text-gray-400 text-sm">March 12, 2026</span>
+          <span class="text-xs font-semibold tracking-wider text-ink-400 uppercase">Featured Essay</span>
+          <h1 class="font-serif text-3xl sm:text-4xl font-bold mt-3 mb-4 leading-snug">The Silent Revolution: How AI Is Reshaping the Way We Think About Creativity</h1>
+          <p class="text-ink-400 leading-relaxed mb-6">A deep exploration of how artificial intelligence is not replacing human creativity, but fundamentally altering the relationship between intention and execution in every creative field.</p>
+          <div class="flex items-center gap-3 mb-6">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80" alt="Author" class="w-10 h-10 rounded-full object-cover">
+            <div><p class="text-sm font-semibold">Elliot Graves</p><p class="text-ink-400 text-xs">March 10, 2026 &middot; 12 min read</p></div>
           </div>
-          <h1 class="font-serif text-3xl sm:text-4xl font-bold mb-4 group-hover:text-green-700 transition-colors leading-tight">The Future of Remote Work: Why Hybrid Models Are Winning in 2026</h1>
-          <p class="text-gray-400 leading-relaxed mb-6">After years of debate, the data is finally clear. Companies that adopted flexible hybrid models are outperforming both fully remote and fully in-office competitors. Here's what the research reveals and what it means for your organization.</p>
-          <div class="flex items-center gap-3">
-            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80" alt="Author" class="w-10 h-10 rounded-full object-cover">
-            <div><p class="text-sm font-semibold">Emma Richardson</p><p class="text-gray-400 text-xs">12 min read</p></div>
-          </div>
+          <a href="#" class="inline-block px-6 py-2.5 bg-ink-800 hover:bg-ink-900 text-white rounded-lg text-sm font-medium transition-colors">Read Article</a>
         </div>
-      </a>
+      </div>
     </div>
   </section>
 
-  <!-- Posts Grid -->
-  <section id="posts" class="py-16 lg:py-20 px-4">
-    <div class="max-w-6xl mx-auto">
-      <div class="flex items-end justify-between mb-10 fade-in">
-        <h2 class="font-serif text-2xl sm:text-3xl font-bold">Latest Articles</h2>
-        <div class="hidden sm:flex gap-2">
-          <button class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-full">All</button>
-          <button class="px-3 py-1.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-full hover:bg-gray-200 transition-colors">Technology</button>
-          <button class="px-3 py-1.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-full hover:bg-gray-200 transition-colors">Design</button>
-          <button class="px-3 py-1.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-full hover:bg-gray-200 transition-colors">Business</button>
-          <button class="px-3 py-1.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-full hover:bg-gray-200 transition-colors">Lifestyle</button>
-        </div>
-      </div>
+  <!-- Latest Posts -->
+  <section id="latest" class="py-16 lg:py-24 px-4">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="font-serif text-3xl font-bold mb-10 fade-in">Latest Stories</h2>
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        <a href="#" class="group fade-in">
-          <div class="overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1432821596592-e2c18b78144f?w=600&q=80" alt="Post" class="w-full aspect-[16/10] object-cover group-hover:scale-105 transition-transform duration-500"></div>
-          <div class="flex items-center gap-2 mb-2"><span class="px-2 py-0.5 bg-blue-100 text-blue-600 text-[10px] font-bold rounded">TECHNOLOGY</span><span class="text-gray-300 text-xs">Mar 10, 2026</span></div>
-          <h3 class="font-serif text-xl font-bold mb-2 group-hover:text-green-700 transition-colors line-clamp-2">How AI is Reshaping the Creative Industry Without Replacing Creators</h3>
-          <p class="text-gray-400 text-sm line-clamp-3 mb-3">The latest wave of AI tools isn't replacing designers and writers — it's amplifying their output by 10x. Here's how the most successful creatives are adapting.</p>
-          <p class="text-gray-400 text-xs">8 min read</p>
-        </a>
-        <a href="#" class="group fade-in">
-          <div class="overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=600&q=80" alt="Post" class="w-full aspect-[16/10] object-cover group-hover:scale-105 transition-transform duration-500"></div>
-          <div class="flex items-center gap-2 mb-2"><span class="px-2 py-0.5 bg-purple-100 text-purple-600 text-[10px] font-bold rounded">DESIGN</span><span class="text-gray-300 text-xs">Mar 8, 2026</span></div>
-          <h3 class="font-serif text-xl font-bold mb-2 group-hover:text-green-700 transition-colors line-clamp-2">The Rise of Brutalist Web Design: Why Ugly is the New Beautiful</h3>
-          <p class="text-gray-400 text-sm line-clamp-3 mb-3">A growing movement of designers is rejecting polished interfaces in favor of raw, honest aesthetics. We explore why this anti-design trend is gaining traction.</p>
-          <p class="text-gray-400 text-xs">6 min read</p>
-        </a>
-        <a href="#" class="group fade-in">
-          <div class="overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80" alt="Post" class="w-full aspect-[16/10] object-cover group-hover:scale-105 transition-transform duration-500"></div>
-          <div class="flex items-center gap-2 mb-2"><span class="px-2 py-0.5 bg-orange-100 text-orange-600 text-[10px] font-bold rounded">BUSINESS</span><span class="text-gray-300 text-xs">Mar 5, 2026</span></div>
-          <h3 class="font-serif text-xl font-bold mb-2 group-hover:text-green-700 transition-colors line-clamp-2">Building a One-Person SaaS: How Solo Founders Are Hitting $1M ARR</h3>
-          <p class="text-gray-400 text-sm line-clamp-3 mb-3">The tools available today make it possible for a single person to build, market, and scale a software business. Meet five founders who proved it.</p>
-          <p class="text-gray-400 text-xs">10 min read</p>
-        </a>
-        <a href="#" class="group fade-in">
-          <div class="overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80" alt="Post" class="w-full aspect-[16/10] object-cover group-hover:scale-105 transition-transform duration-500"></div>
-          <div class="flex items-center gap-2 mb-2"><span class="px-2 py-0.5 bg-green-100 text-green-600 text-[10px] font-bold rounded">LIFESTYLE</span><span class="text-gray-300 text-xs">Mar 3, 2026</span></div>
-          <h3 class="font-serif text-xl font-bold mb-2 group-hover:text-green-700 transition-colors line-clamp-2">Digital Detox in the Age of AI: A Week Without Screens</h3>
-          <p class="text-gray-400 text-sm line-clamp-3 mb-3">I spent 7 days completely offline in a cabin in Vermont. What I learned about focus, creativity, and the real cost of constant connectivity.</p>
-          <p class="text-gray-400 text-xs">7 min read</p>
-        </a>
-        <a href="#" class="group fade-in">
-          <div class="overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80" alt="Post" class="w-full aspect-[16/10] object-cover group-hover:scale-105 transition-transform duration-500"></div>
-          <div class="flex items-center gap-2 mb-2"><span class="px-2 py-0.5 bg-blue-100 text-blue-600 text-[10px] font-bold rounded">TECHNOLOGY</span><span class="text-gray-300 text-xs">Feb 28, 2026</span></div>
-          <h3 class="font-serif text-xl font-bold mb-2 group-hover:text-green-700 transition-colors line-clamp-2">The Database Renaissance: Why PostgreSQL Won the Database Wars</h3>
-          <p class="text-gray-400 text-sm line-clamp-3 mb-3">From JSON support to vector search, PostgreSQL has evolved from a reliable workhorse to the Swiss Army knife of databases. Here's the full story.</p>
-          <p class="text-gray-400 text-xs">11 min read</p>
-        </a>
-        <a href="#" class="group fade-in">
-          <div class="overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80" alt="Post" class="w-full aspect-[16/10] object-cover group-hover:scale-105 transition-transform duration-500"></div>
-          <div class="flex items-center gap-2 mb-2"><span class="px-2 py-0.5 bg-orange-100 text-orange-600 text-[10px] font-bold rounded">BUSINESS</span><span class="text-gray-300 text-xs">Feb 25, 2026</span></div>
-          <h3 class="font-serif text-xl font-bold mb-2 group-hover:text-green-700 transition-colors line-clamp-2">From Zero to Product-Market Fit: The Lean Validation Framework</h3>
-          <p class="text-gray-400 text-sm line-clamp-3 mb-3">Stop building features nobody wants. This step-by-step framework helps you validate your startup idea in 30 days with less than $500.</p>
-          <p class="text-gray-400 text-xs">9 min read</p>
-        </a>
+        <article class="group fade-in">
+          <div class="overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&q=80" alt="Food culture" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <span class="text-xs font-semibold text-ink-400 tracking-wider uppercase">Culture</span>
+          <h3 class="font-serif text-lg font-bold mt-1 mb-2 group-hover:text-ink-600 transition-colors">Why the Best Restaurants Are Becoming Art Galleries</h3>
+          <p class="text-ink-400 text-sm line-clamp-2">The line between dining and exhibition is blurring, and chefs are leading the charge toward a new kind of immersive experience.</p>
+          <p class="text-ink-200 text-xs mt-3">Mar 8, 2026 &middot; 7 min</p>
+        </article>
+        <article class="group fade-in">
+          <div class="overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80" alt="Technology" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <span class="text-xs font-semibold text-ink-400 tracking-wider uppercase">Technology</span>
+          <h3 class="font-serif text-lg font-bold mt-1 mb-2 group-hover:text-ink-600 transition-colors">Digital Minimalism: A Guide to Intentional Screen Time</h3>
+          <p class="text-ink-400 text-sm line-clamp-2">How to reclaim your attention in an age of infinite scroll and constant notifications.</p>
+          <p class="text-ink-200 text-xs mt-3">Mar 5, 2026 &middot; 9 min</p>
+        </article>
+        <article class="group fade-in">
+          <div class="overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&q=80" alt="Nature" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <span class="text-xs font-semibold text-ink-400 tracking-wider uppercase">Environment</span>
+          <h3 class="font-serif text-lg font-bold mt-1 mb-2 group-hover:text-ink-600 transition-colors">The Rewilding Movement: Cities That Are Giving Land Back to Nature</h3>
+          <p class="text-ink-400 text-sm line-clamp-2">From Detroit to Barcelona, urban planners are embracing wildness as a design principle.</p>
+          <p class="text-ink-200 text-xs mt-3">Mar 2, 2026 &middot; 11 min</p>
+        </article>
+        <article class="group fade-in">
+          <div class="overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&q=80" alt="Work" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <span class="text-xs font-semibold text-ink-400 tracking-wider uppercase">Work</span>
+          <h3 class="font-serif text-lg font-bold mt-1 mb-2 group-hover:text-ink-600 transition-colors">The Four-Day Work Week, Two Years In: What We've Learned</h3>
+          <p class="text-ink-400 text-sm line-clamp-2">Companies that adopted the shortened week share the surprising results — and the unexpected challenges.</p>
+          <p class="text-ink-200 text-xs mt-3">Feb 28, 2026 &middot; 8 min</p>
+        </article>
+        <article class="group fade-in">
+          <div class="overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80" alt="Wellness" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <span class="text-xs font-semibold text-ink-400 tracking-wider uppercase">Wellness</span>
+          <h3 class="font-serif text-lg font-bold mt-1 mb-2 group-hover:text-ink-600 transition-colors">Cold Plunge Culture: Fad or Foundation?</h3>
+          <p class="text-ink-400 text-sm line-clamp-2">The science behind cold water immersion and why athletes and executives are making it a daily ritual.</p>
+          <p class="text-ink-200 text-xs mt-3">Feb 24, 2026 &middot; 6 min</p>
+        </article>
+        <article class="group fade-in">
+          <div class="overflow-hidden rounded-xl mb-4"><img src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&q=80" alt="Design" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <span class="text-xs font-semibold text-ink-400 tracking-wider uppercase">Design</span>
+          <h3 class="font-serif text-lg font-bold mt-1 mb-2 group-hover:text-ink-600 transition-colors">Why Brutalism Is Making a Comeback in Web Design</h3>
+          <p class="text-ink-400 text-sm line-clamp-2">Raw, unpolished, and unapologetically bold — the anti-aesthetic movement gaining momentum online.</p>
+          <p class="text-ink-200 text-xs mt-3">Feb 20, 2026 &middot; 5 min</p>
+        </article>
       </div>
-      <div class="text-center mt-12 fade-in">
-        <button class="px-8 py-3 border border-gray-200 hover:border-green-500 hover:text-green-700 rounded-xl font-medium text-sm transition-colors">Load More Articles</button>
+    </div>
+  </section>
+
+  <!-- About / Author -->
+  <section id="about" class="py-16 lg:py-24 bg-ink-800 text-white px-4">
+    <div class="max-w-5xl mx-auto grid lg:grid-cols-3 gap-12 items-center">
+      <div class="fade-in">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80" alt="Elliot Graves" class="w-full rounded-2xl">
+      </div>
+      <div class="lg:col-span-2 fade-in">
+        <p class="text-ink-200 text-sm tracking-wider uppercase mb-2">About the Author</p>
+        <h2 class="font-serif text-3xl font-bold mb-4">Elliot Graves</h2>
+        <p class="text-white/60 leading-relaxed mb-4">Writer, editor, and cultural observer based in Portland. Former editor at The Atlantic and contributing writer at Wired. The Inkwell is my space for long-form essays on technology, creativity, and the future of work.</p>
+        <p class="text-white/60 leading-relaxed mb-6">I believe the best writing starts with genuine curiosity. Every essay here is an attempt to understand something I don't yet understand — and to bring you along for the journey.</p>
+        <div class="flex gap-4">
+          <a href="#" class="text-white/40 hover:text-white text-sm transition-colors">Twitter</a>
+          <a href="#" class="text-white/40 hover:text-white text-sm transition-colors">LinkedIn</a>
+          <a href="#" class="text-white/40 hover:text-white text-sm transition-colors">Substack</a>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- Newsletter -->
-  <section id="subscribe" class="py-20 lg:py-28 bg-green-800 text-white px-4">
-    <div class="max-w-2xl mx-auto text-center fade-in">
-      <h2 class="font-serif text-3xl sm:text-4xl font-bold mb-4">Stay updated</h2>
-      <p class="text-white/60 mb-8">Get the best articles delivered to your inbox every week. No spam, just thoughtful ideas on technology, design, and business.</p>
-      <div class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-        <input type="email" placeholder="your@email.com" class="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-sm focus:outline-none focus:border-white/40 placeholder-white/40">
-        <button class="px-6 py-3 bg-white text-green-800 hover:bg-green-50 rounded-xl font-bold text-sm transition-colors">Subscribe</button>
+  <section id="subscribe" class="py-16 lg:py-24 px-4">
+    <div class="max-w-xl mx-auto text-center fade-in">
+      <h2 class="font-serif text-3xl font-bold mb-4">Stay Curious</h2>
+      <p class="text-ink-400 mb-8">Join 12,000+ readers who get a weekly essay on culture, technology, and ideas worth thinking about. No fluff, no clickbait.</p>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <input type="email" placeholder="your@email.com" class="flex-1 px-4 py-3 border border-ink-200 rounded-xl text-sm focus:outline-none focus:border-ink-400">
+        <button class="px-6 py-3 bg-ink-800 hover:bg-ink-900 text-white rounded-xl font-semibold text-sm transition-colors">Subscribe</button>
       </div>
-      <p class="text-white/30 text-xs mt-4">Join 12,000+ readers. Unsubscribe anytime.</p>
-    </div>
-  </section>
-
-  <!-- About Author -->
-  <section id="about" class="py-20 lg:py-28 px-4">
-    <div class="max-w-4xl mx-auto">
-      <div class="grid md:grid-cols-3 gap-12 items-center fade-in">
-        <div>
-          <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80" alt="Emma Richardson" class="w-full rounded-2xl">
-        </div>
-        <div class="md:col-span-2">
-          <p class="text-green-600 text-sm font-medium mb-2 tracking-wider">ABOUT THE AUTHOR</p>
-          <h2 class="font-serif text-3xl font-bold mb-4">Emma Richardson</h2>
-          <p class="text-gray-500 leading-relaxed mb-4">I'm a writer, technologist, and entrepreneur based in Brooklyn. I've spent the last decade at the intersection of technology and culture, writing for publications like Wired, The Verge, and Fast Company.</p>
-          <p class="text-gray-500 leading-relaxed mb-6">The Greenfield is my personal space for exploring ideas about how technology shapes the way we work, create, and live. I believe in writing that informs without overwhelming and inspires without hype.</p>
-          <div class="flex gap-4 text-gray-400 text-sm">
-            <a href="#" class="hover:text-green-600 transition-colors">Twitter</a>
-            <a href="#" class="hover:text-green-600 transition-colors">LinkedIn</a>
-            <a href="#" class="hover:text-green-600 transition-colors">Instagram</a>
-          </div>
-        </div>
-      </div>
+      <p class="text-ink-200 text-xs mt-4">Free forever. Unsubscribe anytime.</p>
     </div>
   </section>
 
   <!-- Footer -->
-  <footer class="border-t border-gray-100 py-12 px-4">
-    <div class="max-w-6xl mx-auto">
-      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
-        <div>
-          <h3 class="font-serif text-xl font-bold text-green-800 mb-4">Greenfield</h3>
-          <p class="text-gray-400 text-sm leading-relaxed">Ideas worth sharing. Thoughtful writing on technology, design, business, and the future of work.</p>
-        </div>
-        <div>
-          <h4 class="font-semibold mb-4 text-sm">Categories</h4>
-          <div class="space-y-2 text-gray-400 text-sm"><a href="#" class="block hover:text-green-700 transition-colors">Technology</a><a href="#" class="block hover:text-green-700 transition-colors">Design</a><a href="#" class="block hover:text-green-700 transition-colors">Business</a><a href="#" class="block hover:text-green-700 transition-colors">Lifestyle</a></div>
-        </div>
-        <div>
-          <h4 class="font-semibold mb-4 text-sm">Links</h4>
-          <div class="space-y-2 text-gray-400 text-sm"><a href="#" class="block hover:text-green-700 transition-colors">About</a><a href="#" class="block hover:text-green-700 transition-colors">Contact</a><a href="#" class="block hover:text-green-700 transition-colors">RSS Feed</a><a href="#" class="block hover:text-green-700 transition-colors">Privacy Policy</a></div>
-        </div>
-        <div>
-          <h4 class="font-semibold mb-4 text-sm">Follow</h4>
-          <div class="space-y-2 text-gray-400 text-sm"><a href="#" class="block hover:text-green-700 transition-colors">Twitter</a><a href="#" class="block hover:text-green-700 transition-colors">LinkedIn</a><a href="#" class="block hover:text-green-700 transition-colors">Instagram</a><a href="#" class="block hover:text-green-700 transition-colors">YouTube</a></div>
-        </div>
-      </div>
-      <div class="border-t border-gray-100 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <p class="text-gray-300 text-sm">&copy; 2026 The Greenfield. All rights reserved.</p>
-        <p class="text-gray-300 text-xs">Made with care in Brooklyn, NY</p>
+  <footer class="border-t border-ink-100 py-12 px-4">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+      <p class="text-ink-200 text-sm">&copy; 2026 The Inkwell. All rights reserved.</p>
+      <div class="flex gap-6 text-ink-400 text-sm">
+        <a href="#" class="hover:text-ink-800 transition-colors">RSS</a>
+        <a href="#" class="hover:text-ink-800 transition-colors">Twitter</a>
+        <a href="#" class="hover:text-ink-800 transition-colors">Privacy</a>
       </div>
     </div>
   </footer>
 
   <!-- Edit with AI Button -->
-  <button class="fixed bottom-6 right-6 z-50 bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium">
+  <button class="fixed bottom-6 right-6 z-50 bg-ink-800 hover:bg-ink-900 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
     Edit with AI
   </button>

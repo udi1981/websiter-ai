@@ -549,21 +549,392 @@ const processAiCommand = (message: string, html: string): AiResult => {
     }
   }
 
+  // Add gallery section
+  if (msg.includes('gallery') || msg.includes('גלריה') || msg.includes('portfolio')) {
+    const galleryHtml = `
+  <section class="py-20 px-6">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-3xl font-bold text-center mb-4">Our Gallery</h2>
+      <p class="text-gray-600 text-center mb-12 max-w-2xl mx-auto">A showcase of our finest work and achievements.</p>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        ${['photo-1497366216548-37526070297c', 'photo-1497366811353-6870744d04b2', 'photo-1542744094-3a31f272c490', 'photo-1460925895917-afdab827c52f', 'photo-1504384308090-c894fdcc538d', 'photo-1519389950473-47ba0277781c']
+          .map(id => `<div class="relative aspect-[4/3] rounded-xl overflow-hidden group"><img src="https://images.unsplash.com/${id}?w=400&q=80" alt="Gallery" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors"></div></div>`)
+          .join('\n        ')}
+      </div>
+    </div>
+  </section>`
+    return insertBeforeFooter(html, galleryHtml, 'Added a gallery section with 6 images.', ['Add more images', 'Change gallery layout', 'Add image captions'])
+  }
+
+  // Add team section
+  if (msg.includes('team') || msg.includes('צוות') || msg.includes('staff') || msg.includes('people')) {
+    const teamHtml = `
+  <section class="py-20 px-6 bg-gray-50">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-3xl font-bold text-center mb-4">Meet Our Team</h2>
+      <p class="text-gray-600 text-center mb-12 max-w-2xl mx-auto">The talented people behind our success.</p>
+      <div class="grid md:grid-cols-4 gap-8">
+        ${[
+          { name: 'Alex Rivera', role: 'CEO & Founder', color: 'indigo' },
+          { name: 'Maya Chen', role: 'Design Lead', color: 'purple' },
+          { name: 'James Wilson', role: 'Tech Lead', color: 'blue' },
+          { name: 'Sophie Martin', role: 'Marketing', color: 'green' },
+        ].map(p => `<div class="text-center"><div class="w-24 h-24 rounded-full bg-${p.color}-100 flex items-center justify-center mx-auto mb-4"><span class="text-2xl font-bold text-${p.color}-600">${p.name[0]}</span></div><h3 class="font-bold">${p.name}</h3><p class="text-sm text-gray-500">${p.role}</p></div>`).join('\n        ')}
+      </div>
+    </div>
+  </section>`
+    return insertBeforeFooter(html, teamHtml, 'Added a team section with 4 members.', ['Edit team members', 'Add photos', 'Change layout'])
+  }
+
+  // Add stats/numbers section
+  if (msg.includes('stats') || msg.includes('numbers') || msg.includes('counter') || msg.includes('מספרים') || msg.includes('סטטיסטיקות')) {
+    const statsHtml = `
+  <section class="py-16 px-6 bg-indigo-600 text-white">
+    <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      <div><div class="text-4xl font-bold mb-2">500+</div><div class="text-indigo-200 text-sm">Happy Clients</div></div>
+      <div><div class="text-4xl font-bold mb-2">1,200</div><div class="text-indigo-200 text-sm">Projects Done</div></div>
+      <div><div class="text-4xl font-bold mb-2">15+</div><div class="text-indigo-200 text-sm">Years Experience</div></div>
+      <div><div class="text-4xl font-bold mb-2">99%</div><div class="text-indigo-200 text-sm">Satisfaction</div></div>
+    </div>
+  </section>`
+    return insertBeforeFooter(html, statsHtml, 'Added a stats section with 4 key metrics.', ['Edit numbers', 'Change stats colors', 'Add more metrics'])
+  }
+
+  // Add about section
+  if (msg.includes('about') || msg.includes('אודות') || msg.includes('who we are')) {
+    const aboutHtml = `
+  <section id="about" class="py-20 px-6">
+    <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+      <div>
+        <h2 class="text-3xl font-bold mb-6">About Us</h2>
+        <p class="text-gray-600 mb-4">We are a passionate team dedicated to delivering exceptional results. With years of experience and a commitment to innovation, we help businesses thrive in the digital age.</p>
+        <p class="text-gray-600 mb-6">Our mission is to make powerful technology accessible to everyone, empowering businesses of all sizes to succeed online.</p>
+        <div class="flex gap-4">
+          <div class="text-center"><div class="text-2xl font-bold text-indigo-600">10+</div><div class="text-xs text-gray-500">Years</div></div>
+          <div class="text-center"><div class="text-2xl font-bold text-indigo-600">500+</div><div class="text-xs text-gray-500">Clients</div></div>
+          <div class="text-center"><div class="text-2xl font-bold text-indigo-600">50+</div><div class="text-xs text-gray-500">Team</div></div>
+        </div>
+      </div>
+      <div class="rounded-2xl overflow-hidden shadow-xl"><img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&q=80" alt="About us" class="w-full h-full object-cover"></div>
+    </div>
+  </section>`
+    return insertBeforeFooter(html, aboutHtml, 'Added an About Us section with text and image.', ['Edit about content', 'Change about image', 'Add team section'])
+  }
+
+  // Add CTA (call to action) section
+  if (msg.includes('cta') || msg.includes('call to action') || msg.includes('קריאה לפעולה')) {
+    const ctaHtml = `
+  <section class="py-20 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-center">
+    <div class="max-w-3xl mx-auto">
+      <h2 class="text-4xl font-bold mb-4">Ready to Get Started?</h2>
+      <p class="text-lg text-indigo-100 mb-8">Join thousands of satisfied customers and take your business to the next level.</p>
+      <div class="flex gap-4 justify-center">
+        <button class="bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-indigo-50 transition">Get Started Free</button>
+        <button class="border border-white/30 px-8 py-3 rounded-lg font-semibold hover:bg-white/10 transition">Learn More</button>
+      </div>
+    </div>
+  </section>`
+    return insertBeforeFooter(html, ctaHtml, 'Added a call-to-action section with gradient background.', ['Edit CTA text', 'Change CTA colors', 'Add another CTA'])
+  }
+
+  // ---------------------------------------------------------------------------
+  // Motion commands
+  // ---------------------------------------------------------------------------
+
+  // More animations / יותר אנימציות
+  if (msg.match(/(?:more|increase|upgrade|add)\s*(?:animation|motion|movement)/i) || msg.includes('יותר אנימציות') || msg.includes('יותר תנועה')) {
+    const motionLevels: string[] = ['none', 'subtle', 'premium', 'dynamic', 'cinematic', 'storytelling']
+    // Detect current level from HTML comment
+    const currentMatch = html.match(/data-motion-preset="(\w+)"/)
+    const current = currentMatch?.[1] ?? 'subtle'
+    const idx = motionLevels.indexOf(current)
+    const next = motionLevels[Math.min(idx + 1, motionLevels.length - 1)]
+    if (next !== current) {
+      let updated = html.replace(/data-motion-preset="\w+"/, `data-motion-preset="${next}"`)
+      // Also update CSS custom properties for distance
+      const distances: Record<string, number> = { none: 0, subtle: 20, premium: 30, dynamic: 40, cinematic: 50, storytelling: 60 }
+      const durations: Record<string, number> = { none: 0, subtle: 600, premium: 800, dynamic: 600, cinematic: 1000, storytelling: 1200 }
+      updated = updated.replace(/--motion-distance:\s*\d+px/g, `--motion-distance: ${distances[next]}px`)
+      updated = updated.replace(/--motion-duration:\s*\d+ms/g, `--motion-duration: ${durations[next]}ms`)
+      return {
+        html: updated,
+        response: `Upgraded motion from "${current}" to "${next}". Animations are now more pronounced.`,
+        suggestions: ['Reduce animations', 'Set motion to cinematic', 'Remove all animations'],
+      }
+    }
+    return { html, response: 'Motion is already at maximum level (storytelling).', suggestions: ['Reduce animations', 'Remove all animations'] }
+  }
+
+  // Reduce / less animations / פחות אנימציות
+  if (msg.match(/(?:less|reduce|decrease|downgrade|fewer)\s*(?:animation|motion|movement)/i) || msg.includes('פחות אנימציות') || msg.includes('פחות תנועה')) {
+    const motionLevels: string[] = ['none', 'subtle', 'premium', 'dynamic', 'cinematic', 'storytelling']
+    const currentMatch = html.match(/data-motion-preset="(\w+)"/)
+    const current = currentMatch?.[1] ?? 'subtle'
+    const idx = motionLevels.indexOf(current)
+    const prev = motionLevels[Math.max(idx - 1, 0)]
+    if (prev !== current) {
+      let updated = html.replace(/data-motion-preset="\w+"/, `data-motion-preset="${prev}"`)
+      const distances: Record<string, number> = { none: 0, subtle: 20, premium: 30, dynamic: 40, cinematic: 50, storytelling: 60 }
+      const durations: Record<string, number> = { none: 0, subtle: 600, premium: 800, dynamic: 600, cinematic: 1000, storytelling: 1200 }
+      updated = updated.replace(/--motion-distance:\s*\d+px/g, `--motion-distance: ${distances[prev]}px`)
+      updated = updated.replace(/--motion-duration:\s*\d+ms/g, `--motion-duration: ${durations[prev]}ms`)
+      return {
+        html: updated,
+        response: `Reduced motion from "${current}" to "${prev}". Animations are now calmer.`,
+        suggestions: ['More animations', 'Remove all animations', 'Set motion to premium'],
+      }
+    }
+    return { html, response: 'Motion is already at minimum level (none).', suggestions: ['Add animations', 'Set motion to subtle'] }
+  }
+
+  // Set motion to specific preset
+  const motionSetMatch = msg.match(/(?:set|change|switch)\s+(?:the\s+)?(?:motion|animation)\s+(?:to\s+)?(\w+)/i) ||
+    msg.match(/(?:make\s+it|go)\s+(subtle|premium|dynamic|cinematic|storytelling)/i) ||
+    msg.match(/סגנון\s+(?:אנימציה|תנועה)\s+(\S+)/i)
+  if (motionSetMatch) {
+    const target = motionSetMatch[1].toLowerCase()
+    const validPresets = ['none', 'subtle', 'premium', 'dynamic', 'cinematic', 'storytelling']
+    if (validPresets.includes(target)) {
+      let updated = html.replace(/data-motion-preset="\w+"/, `data-motion-preset="${target}"`)
+      const distances: Record<string, number> = { none: 0, subtle: 20, premium: 30, dynamic: 40, cinematic: 50, storytelling: 60 }
+      const durations: Record<string, number> = { none: 0, subtle: 600, premium: 800, dynamic: 600, cinematic: 1000, storytelling: 1200 }
+      updated = updated.replace(/--motion-distance:\s*\d+px/g, `--motion-distance: ${distances[target]}px`)
+      updated = updated.replace(/--motion-duration:\s*\d+ms/g, `--motion-duration: ${durations[target]}ms`)
+      return {
+        html: updated,
+        response: `Set motion preset to "${target}".`,
+        suggestions: ['More animations', 'Less animations', 'Remove all animations'],
+      }
+    }
+  }
+
+  // Remove all animations / הסר אנימציות
+  if ((msg.includes('remove') || msg.includes('disable') || msg.includes('הסר') || msg.includes('בטל')) &&
+      (msg.includes('animation') || msg.includes('motion') || msg.includes('אנימציות') || msg.includes('תנועה'))) {
+    let updated = html.replace(/data-motion-preset="\w+"/, 'data-motion-preset="none"')
+    updated = updated.replace(/--motion-distance:\s*\d+px/g, '--motion-distance: 0px')
+    updated = updated.replace(/--motion-duration:\s*\d+ms/g, '--motion-duration: 0ms')
+    // Remove parallax
+    updated = updated.replace(/data-parallax-speed="[^"]*"/g, '')
+    return {
+      html: updated,
+      response: 'Removed all animations. The site is now static.',
+      suggestions: ['Add subtle animations', 'Set motion to premium', 'Set motion to cinematic'],
+    }
+  }
+
+  // Add parallax / הוסף פרלקס
+  if (msg.includes('parallax') || msg.includes('פרלקס')) {
+    let updated = html
+    // Add parallax to hero background images
+    updated = updated.replace(
+      /(<(?:section|div)[^>]*class="[^"]*hero[^"]*"[^>]*)>/i,
+      '$1 data-parallax-speed="0.05">'
+    )
+    return {
+      html: updated,
+      response: 'Added parallax scrolling effect to the hero section.',
+      suggestions: ['Remove parallax', 'More animations', 'Set motion to cinematic'],
+    }
+  }
+
+  // Animate stats / counters
+  if (msg.match(/animate\s+(?:the\s+)?(?:stats|numbers|counters)/i) || msg.includes('הנפש מספרים') || msg.includes('אנימציית מספרים')) {
+    let updated = html
+    // Find stat numbers and wrap with counter animation
+    updated = updated.replace(
+      /(<(?:p|span|div)[^>]*class="[^"]*(?:text-4xl|text-5xl|font-bold)[^"]*"[^>]*>)\s*(\d[\d,]*)\s*(<\/(?:p|span|div)>)/gi,
+      (match, open, num, close) => {
+        const cleanNum = num.replace(/,/g, '')
+        return `${open.replace('>', ` data-count-target="${cleanNum}">`)}0${close}`
+      }
+    )
+    if (updated !== html) {
+      return {
+        html: updated,
+        response: 'Added counting animation to stat numbers. They will animate when scrolled into view.',
+        suggestions: ['More animations', 'Add parallax', 'Change animation speed'],
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Media commands
+  // ---------------------------------------------------------------------------
+
+  // Change hero image / שנה תמונת הירו
+  if (msg.match(/(?:change|update|replace|new)\s+(?:the\s+)?hero\s+(?:image|photo|picture|background)/i) ||
+      msg.includes('שנה תמונת הירו') || msg.includes('שנה תמונה ראשית')) {
+    let updated = html
+    // Replace hero background image with a different one
+    const heroPhotoIds = [
+      '1497366216548-37526070297c', '1497366811353-6870744d04b2', '1504384308090-c894fdcc538d',
+      '1519389950473-47ba0277781c', '1460925895917-afdab827c52f', '1522071820081-009f0129c71c',
+    ]
+    const currentImgMatch = html.match(/hero[\s\S]*?unsplash\.com\/photo-(\d+-[a-f0-9]+)/i)
+    const currentId = currentImgMatch?.[1]
+    const newId = heroPhotoIds.find(id => id !== currentId) ?? heroPhotoIds[0]
+    // Replace hero section background or img
+    updated = updated.replace(
+      /(unsplash\.com\/photo-)\d+-[a-f0-9]+/i,
+      `$1${newId}`
+    )
+    if (updated !== html) {
+      return {
+        html: updated,
+        response: 'Changed the hero image to a new photo.',
+        suggestions: ['Change hero image again', 'Make images warmer', 'Change image style'],
+      }
+    }
+  }
+
+  // Make images more professional / warmer / lifestyle
+  const imageStyleMatch = msg.match(/(?:make|set|change)\s+(?:the\s+)?(?:images?|photos?)\s+(?:more\s+)?(\w+)/i) ||
+    msg.match(/סגנון\s+תמונות\s+(\S+)/i)
+  if (imageStyleMatch) {
+    const style = imageStyleMatch[1].toLowerCase()
+    const styleResponses: Record<string, string> = {
+      professional: 'Images now have a more professional, corporate feel.',
+      warm: 'Images now have warmer, more inviting tones.',
+      lifestyle: 'Images now have a casual, lifestyle photography feel.',
+      minimal: 'Images now have a clean, minimal aesthetic.',
+      energetic: 'Images now have a vibrant, energetic feel.',
+    }
+    if (styleResponses[style]) {
+      // Adjust image brightness/contrast via CSS filter
+      let updated = html
+      const filterMap: Record<string, string> = {
+        professional: 'brightness(1.05) contrast(1.1) saturate(0.9)',
+        warm: 'brightness(1.05) saturate(1.2) sepia(0.15)',
+        lifestyle: 'brightness(1.1) contrast(0.95) saturate(1.1)',
+        minimal: 'brightness(1.1) contrast(0.9) saturate(0.7)',
+        energetic: 'brightness(1.1) contrast(1.15) saturate(1.3)',
+      }
+      const filter = filterMap[style]
+      if (filter) {
+        // Add or update image filter style
+        if (updated.includes('img-style-filter')) {
+          updated = updated.replace(/\.img-style-filter\s*\{[^}]*\}/, `.img-style-filter { filter: ${filter}; }`)
+        } else {
+          updated = updated.replace('</style>', `  .img-style-filter { filter: ${filter}; }\n</style>`)
+          updated = updated.replace(/<img(?![^>]*img-style-filter)/g, '<img class="img-style-filter" ')
+        }
+      }
+      return {
+        html: updated,
+        response: styleResponses[style],
+        suggestions: ['Change hero image', 'Regenerate all images', 'Change image style'],
+      }
+    }
+  }
+
+  // Regenerate all images / שנה את כל התמונות
+  if (msg.match(/(?:regenerate|refresh|replace|change)\s+(?:all\s+)?(?:the\s+)?images/i) ||
+      msg.includes('שנה את כל התמונות') || msg.includes('רענן תמונות')) {
+    let updated = html
+    // Shift all Unsplash photo IDs by replacing with different curated photos
+    const replacements: [RegExp, string][] = [
+      [/photo-1497366216548-37526070297c/g, 'photo-1504384308090-c894fdcc538d'],
+      [/photo-1497366811353-6870744d04b2/g, 'photo-1519389950473-47ba0277781c'],
+      [/photo-1542744094-3a31f272c490/g, 'photo-1522071820081-009f0129c71c'],
+      [/photo-1460925895917-afdab827c52f/g, 'photo-1553877522-43269d4ea984'],
+      [/photo-1504384308090-c894fdcc538d/g, 'photo-1497366216548-37526070297c'],
+    ]
+    for (const [pattern, replacement] of replacements) {
+      updated = updated.replace(pattern, replacement)
+    }
+    if (updated !== html) {
+      return {
+        html: updated,
+        response: 'Regenerated all images with new curated photos.',
+        suggestions: ['Change hero image', 'Make images warmer', 'Change image style to lifestyle'],
+      }
+    }
+    return {
+      html,
+      response: 'No Unsplash images found to regenerate. Try adding images first.',
+      suggestions: ['Add gallery', 'Add about section with image', 'Add team section'],
+    }
+  }
+
+  // Make it modern / professional / minimal
+  if (msg.includes('modern') || msg.includes('professional') || msg.includes('מודרני') || msg.includes('מקצועי')) {
+    let updated = html
+    // Add modern design tweaks
+    updated = updated.replace(/rounded-lg/g, 'rounded-2xl')
+    updated = updated.replace(/rounded-md/g, 'rounded-xl')
+    updated = updated.replace(/shadow-sm/g, 'shadow-lg')
+    updated = updated.replace(/shadow-md/g, 'shadow-xl')
+    // Add subtle transitions (motion-reveal system)
+    if (!updated.includes('.motion-reveal')) {
+      updated = updated.replace('</style>', `  .motion-reveal { opacity: 0; transform: translateY(20px); transition: all 0.6s ease; }\n  .motion-reveal.visible { opacity: 1; transform: translateY(0); }\n</style>`)
+    }
+    if (updated !== html) {
+      return {
+        html: updated,
+        response: 'Applied modern design improvements: larger border radius, enhanced shadows, and smooth animations.',
+        suggestions: ['Add animations', 'Change color scheme', 'Switch to dark mode'],
+      }
+    }
+  }
+
+  // Make it minimal / clean
+  if (msg.includes('minimal') || msg.includes('clean') || msg.includes('simple') || msg.includes('מינימליסטי')) {
+    let updated = html
+    updated = updated.replace(/shadow-xl/g, 'shadow-sm')
+    updated = updated.replace(/shadow-lg/g, 'shadow-sm')
+    updated = updated.replace(/shadow-2xl/g, 'shadow-sm')
+    updated = updated.replace(/rounded-2xl/g, 'rounded-lg')
+    updated = updated.replace(/rounded-3xl/g, 'rounded-lg')
+    updated = updated.replace(/bg-gradient-to-r\s+from-\w+-\d+\s+to-\w+-\d+/g, 'bg-gray-900')
+    if (updated !== html) {
+      return {
+        html: updated,
+        response: 'Applied minimal/clean design: reduced shadows, smaller corners, simplified gradients.',
+        suggestions: ['Change colors', 'Add subtle animations', 'Update typography'],
+      }
+    }
+  }
+
+  // Hebrew commands - general text changes
+  if (msg.includes('שנה') || msg.includes('עדכן') || msg.includes('הוסף') || msg.includes('הסר') || msg.includes('מחק')) {
+    const hebrewActions: Record<string, string> = {
+      'שנה': 'change', 'עדכן': 'update', 'הוסף': 'add', 'הסר': 'remove', 'מחק': 'delete',
+    }
+    const action = Object.entries(hebrewActions).find(([k]) => msg.includes(k))?.[1] ?? 'change'
+    return {
+      html,
+      response: `I understand you want to ${action} something. Try in English or be more specific, for example:\n- "Change the title to [new title]"\n- "Add testimonials"\n- "Change color to blue"\n- "הוסף גלריה" (Add gallery)`,
+      suggestions: ['הוסף המלצות', 'שנה צבע', 'הוסף צוות', 'מצב כהה'],
+    }
+  }
+
   // Add section (generic)
   if (msg.includes('add') && msg.includes('section')) {
     return {
       html,
-      response: "What kind of section would you like to add? I can add testimonials, FAQ, pricing, contact form, newsletter, gallery, team, or a custom section.",
-      suggestions: ['Add testimonials', 'Add FAQ section', 'Add pricing section', 'Add contact form'],
+      response: "What kind of section would you like to add? I can add testimonials, FAQ, pricing, contact, newsletter, gallery, team, stats, about, or CTA.",
+      suggestions: ['Add testimonials', 'Add FAQ', 'Add pricing', 'Add gallery', 'Add team', 'Add stats'],
     }
   }
 
-  // Fallback — try a simple text search and replace within HTML tags
+  // Fallback
   return {
     html,
-    response: `I understand you want to "${message}". Try being more specific, for example:\n- "Change the title to [new title]"\n- "Change the color to blue"\n- "Add a testimonials section"\n- "Remove the contact form"\n- "Change 'old text' to 'new text'"`,
-    suggestions: ['Change the heading', 'Update colors', 'Add a section', 'Remove a section'],
+    response: `I understand you want to "${message}". Try being more specific, for example:\n- "Change the title to [new title]"\n- "Change the color to blue"\n- "Add a testimonials section"\n- "Add gallery" / "Add team" / "Add stats"\n- "Make it modern" / "Switch to dark mode"\n- "Remove the contact form"\n- "Change 'old text' to 'new text'"`,
+    suggestions: ['Change the heading', 'Update colors', 'Add a section', 'Make it modern'],
   }
+}
+
+/** Helper to insert HTML before footer or before </body> */
+const insertBeforeFooter = (html: string, sectionHtml: string, response: string, suggestions: string[]): AiResult => {
+  let updated = html
+  if (updated.includes('</footer>')) {
+    updated = updated.replace(/<footer/i, `${sectionHtml}\n  <footer`)
+  } else if (updated.includes('</body>')) {
+    updated = updated.replace('</body>', `${sectionHtml}\n</body>`)
+  }
+  return { html: updated, response, suggestions }
 }
 
 // ==========================================

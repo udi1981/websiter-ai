@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lens & Light Studio — Visual Storyteller</title>
+  <title>Ember Studio — Light. Mood. Memory.</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
       theme: {
         extend: {
           fontFamily: { heading: ['Space Grotesk', 'sans-serif'], body: ['Inter', 'sans-serif'] },
-          colors: { ink: '#000000', smoke: { 100: '#F5F5F5', 200: '#E5E5E5', 400: '#999999', 600: '#555555', 800: '#1A1A1A', 900: '#0D0D0D' } }
+          colors: { mocha: '#1A1210', cream: { 100: '#FAF6F1', 200: '#F0E8DE', 400: '#B5A48F', 600: '#7A6B58', 800: '#3D3129', 900: '#241D17' } }
         }
       }
     }
@@ -20,25 +20,25 @@
   <style>
     .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
     .fade-in.visible { opacity: 1; transform: translateY(0); }
-    .hero-overlay { background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6)); }
+    .hero-overlay { background: linear-gradient(to bottom, rgba(26,18,16,0.15), rgba(26,18,16,0.6)); }
   </style>
 </head>
-<body class="bg-ink text-white font-body font-light">
+<body class="bg-mocha text-white font-body font-light">
   <!-- Navigation -->
   <nav class="fixed top-0 w-full z-50 bg-transparent backdrop-blur-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-      <a href="#" class="font-heading text-xl font-bold tracking-tight">Lens & Light</a>
+      <a href="#" class="font-heading text-xl font-bold tracking-tight">Ember Studio</a>
       <div class="hidden md:flex items-center gap-8">
         <a href="#portfolio" class="text-sm text-white/70 hover:text-white transition-colors">Portfolio</a>
         <a href="#about" class="text-sm text-white/70 hover:text-white transition-colors">About</a>
         <a href="#services" class="text-sm text-white/70 hover:text-white transition-colors">Services</a>
-        <a href="#contact" class="px-5 py-2 border border-white/30 hover:bg-white hover:text-black rounded text-sm font-medium transition-all">Book a Session</a>
+        <a href="#contact" class="px-5 py-2 border border-white/30 hover:bg-white hover:text-mocha rounded text-sm font-medium transition-all">Book a Session</a>
       </div>
       <button id="mobile-toggle" class="md:hidden flex flex-col gap-1.5">
         <span class="w-6 h-0.5 bg-white"></span><span class="w-6 h-0.5 bg-white"></span><span class="w-6 h-0.5 bg-white"></span>
       </button>
     </div>
-    <div id="mobile-menu" class="hidden md:hidden bg-ink/95 backdrop-blur-md px-4 py-4 space-y-3">
+    <div id="mobile-menu" class="hidden md:hidden bg-mocha/95 backdrop-blur-md px-4 py-4 space-y-3">
       <a href="#portfolio" class="block text-sm text-white/70">Portfolio</a>
       <a href="#about" class="block text-sm text-white/70">About</a>
       <a href="#services" class="block text-sm text-white/70">Services</a>
@@ -48,12 +48,12 @@
 
   <!-- Hero -->
   <section class="relative h-screen flex items-center justify-center">
-    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&q=80" alt="Stunning mountain landscape" class="absolute inset-0 w-full h-full object-cover">
+    <img src="https://images.unsplash.com/photo-1493863641943-9b68992a8d07?w=1600&q=80" alt="Warm golden light portrait" class="absolute inset-0 w-full h-full object-cover">
     <div class="hero-overlay absolute inset-0"></div>
     <div class="relative z-10 text-center px-4 fade-in">
-      <p class="text-sm tracking-[0.4em] text-white/60 mb-6">PHOTOGRAPHY &middot; FILM &middot; CREATIVE DIRECTION</p>
-      <h1 class="font-heading text-5xl md:text-7xl lg:text-8xl font-bold mb-4 leading-none">Lens & Light</h1>
-      <p class="text-xl md:text-2xl text-white/70 font-light">Visual Storyteller</p>
+      <p class="text-sm tracking-[0.4em] text-white/60 mb-6">FINE ART &middot; WEDDING &middot; EDITORIAL</p>
+      <h1 class="font-heading text-5xl md:text-7xl lg:text-8xl font-bold mb-4 leading-none">Ember Studio</h1>
+      <p class="text-xl md:text-2xl text-white/70 font-light">Light. Mood. Memory.</p>
       <div class="mt-12"><a href="#portfolio" class="inline-flex items-center gap-2 text-sm tracking-widest text-white/60 hover:text-white transition-colors">SCROLL TO EXPLORE <svg class="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg></a></div>
     </div>
   </section>
@@ -62,45 +62,45 @@
   <section id="portfolio" class="py-24 px-4">
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
-        <p class="text-sm tracking-[0.3em] text-smoke-400 mb-2">SELECTED WORK</p>
+        <p class="text-sm tracking-[0.3em] text-cream-400 mb-2">SELECTED WORK</p>
         <h2 class="font-heading text-4xl md:text-5xl font-bold">Portfolio</h2>
       </div>
       <div class="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
         <div class="break-inside-avoid group fade-in">
-          <div class="relative overflow-hidden rounded-lg"><img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80" alt="Portrait photography" class="w-full object-cover group-hover:scale-105 transition-transform duration-700"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end"><div class="p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300"><p class="font-heading font-bold">Ethereal Portraits</p><p class="text-sm text-white/70">Editorial &middot; 2025</p></div></div></div>
+          <div class="relative overflow-hidden rounded-lg"><img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=600&q=80" alt="Wedding" class="w-full object-cover group-hover:scale-105 transition-transform duration-700"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end"><div class="p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300"><p class="font-heading font-bold">The Whitfield Wedding</p><p class="text-sm text-white/70">Wedding &middot; 2025</p></div></div></div>
         </div>
         <div class="break-inside-avoid group fade-in">
-          <div class="relative overflow-hidden rounded-lg"><img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80" alt="Landscape photography" class="w-full object-cover group-hover:scale-105 transition-transform duration-700"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end"><div class="p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300"><p class="font-heading font-bold">Golden Horizons</p><p class="text-sm text-white/70">Landscape &middot; 2025</p></div></div></div>
+          <div class="relative overflow-hidden rounded-lg"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&q=80" alt="Portrait" class="w-full object-cover group-hover:scale-105 transition-transform duration-700"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end"><div class="p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300"><p class="font-heading font-bold">Soft Light Series</p><p class="text-sm text-white/70">Portrait &middot; 2025</p></div></div></div>
         </div>
         <div class="break-inside-avoid group fade-in">
-          <div class="relative overflow-hidden rounded-lg"><img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=600&q=80" alt="Wedding photography" class="w-full object-cover group-hover:scale-105 transition-transform duration-700"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end"><div class="p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300"><p class="font-heading font-bold">Forever & Always</p><p class="text-sm text-white/70">Wedding &middot; 2024</p></div></div></div>
+          <div class="relative overflow-hidden rounded-lg"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=600&q=80" alt="Landscape" class="w-full object-cover group-hover:scale-105 transition-transform duration-700"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end"><div class="p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300"><p class="font-heading font-bold">Patagonia Dawn</p><p class="text-sm text-white/70">Landscape &middot; 2024</p></div></div></div>
         </div>
         <div class="break-inside-avoid group fade-in">
-          <div class="relative overflow-hidden rounded-lg"><img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=600&q=80" alt="Architecture photography" class="w-full object-cover group-hover:scale-105 transition-transform duration-700"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end"><div class="p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300"><p class="font-heading font-bold">Urban Geometry</p><p class="text-sm text-white/70">Architecture &middot; 2025</p></div></div></div>
+          <div class="relative overflow-hidden rounded-lg"><img src="https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=600&q=80" alt="Event" class="w-full object-cover group-hover:scale-105 transition-transform duration-700"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end"><div class="p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300"><p class="font-heading font-bold">MOCA Gala</p><p class="text-sm text-white/70">Event &middot; 2025</p></div></div></div>
         </div>
         <div class="break-inside-avoid group fade-in">
-          <div class="relative overflow-hidden rounded-lg"><img src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=600&q=80" alt="Nature photography" class="w-full object-cover group-hover:scale-105 transition-transform duration-700"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end"><div class="p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300"><p class="font-heading font-bold">Untamed Wilderness</p><p class="text-sm text-white/70">Nature &middot; 2024</p></div></div></div>
+          <div class="relative overflow-hidden rounded-lg"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80" alt="Nature" class="w-full object-cover group-hover:scale-105 transition-transform duration-700"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end"><div class="p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300"><p class="font-heading font-bold">Above the Clouds</p><p class="text-sm text-white/70">Fine Art &middot; 2024</p></div></div></div>
         </div>
         <div class="break-inside-avoid group fade-in">
-          <div class="relative overflow-hidden rounded-lg"><img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&q=80" alt="Street photography" class="w-full object-cover group-hover:scale-105 transition-transform duration-700"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end"><div class="p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300"><p class="font-heading font-bold">City Stories</p><p class="text-sm text-white/70">Street &middot; 2025</p></div></div></div>
+          <div class="relative overflow-hidden rounded-lg"><img src="https://images.unsplash.com/photo-1460723237483-7a6dc9d0b212?w=600&q=80" alt="Commercial" class="w-full object-cover group-hover:scale-105 transition-transform duration-700"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end"><div class="p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300"><p class="font-heading font-bold">Terroir Collection</p><p class="text-sm text-white/70">Commercial &middot; 2025</p></div></div></div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- About -->
-  <section id="about" class="py-24 px-4 bg-smoke-900">
+  <section id="about" class="py-24 px-4 bg-cream-900">
     <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-      <div class="fade-in"><img src="https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=600&q=80" alt="Photographer at work" class="rounded-xl w-full h-[500px] object-cover"></div>
+      <div class="fade-in"><img src="https://images.unsplash.com/photo-1552168324-d612d77725e3?w=600&q=80" alt="Photographer with camera" class="rounded-xl w-full h-[500px] object-cover"></div>
       <div class="fade-in">
-        <p class="text-sm tracking-[0.3em] text-smoke-400 mb-2">ABOUT</p>
-        <h2 class="font-heading text-4xl md:text-5xl font-bold mb-6">The Eye Behind<br>the Lens</h2>
-        <p class="text-smoke-400 leading-relaxed mb-4">I'm a visual storyteller with over 12 years of experience capturing moments that matter. From intimate portraits to sweeping landscapes, my work is driven by light, emotion, and the beauty of the unscripted.</p>
-        <p class="text-smoke-400 leading-relaxed mb-8">Based in New York, working worldwide. My images have been featured in Vogue, National Geographic, The New York Times, and exhibited in galleries across three continents.</p>
+        <p class="text-sm tracking-[0.3em] text-cream-400 mb-2">ABOUT</p>
+        <h2 class="font-heading text-4xl md:text-5xl font-bold mb-6">The Story Behind<br>Every Frame</h2>
+        <p class="text-cream-400 leading-relaxed mb-4">I'm Lena Vasquez — a photographer obsessed with warmth, texture, and the moments between moments. For over 10 years I've been capturing weddings, portraits, and fine art projects that feel as good as they look.</p>
+        <p class="text-cream-400 leading-relaxed mb-8">Based in Los Angeles, shooting worldwide. My work has been published in Martha Stewart Weddings, Kinfolk, Cereal Magazine, and exhibited at the Annenberg Space for Photography.</p>
         <div class="grid grid-cols-3 gap-8">
-          <div><p class="font-heading text-3xl font-bold">12+</p><p class="text-smoke-400 text-sm">Years Experience</p></div>
-          <div><p class="font-heading text-3xl font-bold">800+</p><p class="text-smoke-400 text-sm">Projects Done</p></div>
-          <div><p class="font-heading text-3xl font-bold">15</p><p class="text-smoke-400 text-sm">Awards Won</p></div>
+          <div><p class="font-heading text-3xl font-bold">10+</p><p class="text-cream-400 text-sm">Years Experience</p></div>
+          <div><p class="font-heading text-3xl font-bold">600+</p><p class="text-cream-400 text-sm">Sessions Shot</p></div>
+          <div><p class="font-heading text-3xl font-bold">8</p><p class="text-cream-400 text-sm">Publications</p></div>
         </div>
       </div>
     </div>
@@ -110,33 +110,33 @@
   <section id="services" class="py-24 px-4">
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
-        <p class="text-sm tracking-[0.3em] text-smoke-400 mb-2">WHAT I DO</p>
+        <p class="text-sm tracking-[0.3em] text-cream-400 mb-2">WHAT I DO</p>
         <h2 class="font-heading text-4xl md:text-5xl font-bold">Services</h2>
       </div>
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="border border-white/10 rounded-xl p-8 hover:border-white/30 transition-colors group fade-in">
           <div class="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center mb-5 group-hover:bg-white/10 transition-colors"><svg class="w-6 h-6 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>
-          <h3 class="font-heading text-lg font-bold mb-2">Wedding</h3>
-          <p class="text-smoke-400 text-sm leading-relaxed">Timeless, authentic wedding photography. From intimate elopements to grand celebrations — every love story told with elegance.</p>
-          <p class="text-sm text-white/50 mt-4">From $3,500</p>
+          <h3 class="font-heading text-lg font-bold mb-2">Weddings</h3>
+          <p class="text-cream-400 text-sm leading-relaxed">Cinematic, emotion-driven wedding photography. From elopements in the desert to black-tie celebrations — every love story deserves warmth.</p>
+          <p class="text-sm text-white/50 mt-4">From $4,200</p>
         </div>
         <div class="border border-white/10 rounded-xl p-8 hover:border-white/30 transition-colors group fade-in">
           <div class="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center mb-5 group-hover:bg-white/10 transition-colors"><svg class="w-6 h-6 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
-          <h3 class="font-heading text-lg font-bold mb-2">Portrait</h3>
-          <p class="text-smoke-400 text-sm leading-relaxed">Personal branding, editorial, and fine art portraits. Natural light and studio sessions that reveal your true essence.</p>
-          <p class="text-sm text-white/50 mt-4">From $800</p>
+          <h3 class="font-heading text-lg font-bold mb-2">Portraits</h3>
+          <p class="text-cream-400 text-sm leading-relaxed">Editorial, personal branding, and fine art portraits. Natural golden-hour light and studio sessions that capture who you really are.</p>
+          <p class="text-sm text-white/50 mt-4">From $950</p>
         </div>
         <div class="border border-white/10 rounded-xl p-8 hover:border-white/30 transition-colors group fade-in">
           <div class="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center mb-5 group-hover:bg-white/10 transition-colors"><svg class="w-6 h-6 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div>
           <h3 class="font-heading text-lg font-bold mb-2">Commercial</h3>
-          <p class="text-smoke-400 text-sm leading-relaxed">Product, brand, and advertising photography. Crafted visuals that elevate your brand and drive results.</p>
-          <p class="text-sm text-white/50 mt-4">From $2,000</p>
+          <p class="text-cream-400 text-sm leading-relaxed">Product, food, and lifestyle photography for brands that value authenticity. Warm, textured visuals that stop the scroll.</p>
+          <p class="text-sm text-white/50 mt-4">From $2,500</p>
         </div>
         <div class="border border-white/10 rounded-xl p-8 hover:border-white/30 transition-colors group fade-in">
           <div class="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center mb-5 group-hover:bg-white/10 transition-colors"><svg class="w-6 h-6 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></div>
           <h3 class="font-heading text-lg font-bold mb-2">Events</h3>
-          <p class="text-smoke-400 text-sm leading-relaxed">Corporate events, galas, conferences, and private functions. Candid moments captured with a documentary eye.</p>
-          <p class="text-sm text-white/50 mt-4">From $1,500</p>
+          <p class="text-cream-400 text-sm leading-relaxed">Galas, launches, intimate gatherings, and corporate moments. Documentary-style coverage that tells the full story.</p>
+          <p class="text-sm text-white/50 mt-4">From $1,800</p>
         </div>
       </div>
     </div>
@@ -145,36 +145,36 @@
   <!-- Brands Strip -->
   <section class="py-16 px-4 border-y border-white/5">
     <div class="max-w-5xl mx-auto fade-in">
-      <p class="text-center text-sm tracking-[0.3em] text-smoke-400 mb-10">FEATURED IN & TRUSTED BY</p>
-      <div class="flex flex-wrap items-center justify-center gap-12 text-smoke-400/50">
-        <span class="font-heading text-2xl font-bold tracking-wider">VOGUE</span>
-        <span class="font-heading text-2xl font-bold tracking-wider">NAT GEO</span>
-        <span class="font-heading text-2xl font-bold tracking-wider">NYT</span>
-        <span class="font-heading text-2xl font-bold tracking-wider">ELLE</span>
-        <span class="font-heading text-2xl font-bold tracking-wider">FORBES</span>
+      <p class="text-center text-sm tracking-[0.3em] text-cream-400 mb-10">FEATURED IN & TRUSTED BY</p>
+      <div class="flex flex-wrap items-center justify-center gap-12 text-cream-400/50">
+        <span class="font-heading text-2xl font-bold tracking-wider">KINFOLK</span>
+        <span class="font-heading text-2xl font-bold tracking-wider">CEREAL</span>
+        <span class="font-heading text-2xl font-bold tracking-wider">MARTHA STEWART</span>
+        <span class="font-heading text-2xl font-bold tracking-wider">BRIDES</span>
+        <span class="font-heading text-2xl font-bold tracking-wider">RESY</span>
       </div>
     </div>
   </section>
 
   <!-- Testimonials -->
-  <section class="py-24 px-4 bg-smoke-900">
+  <section class="py-24 px-4 bg-cream-900">
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16 fade-in">
-        <p class="text-sm tracking-[0.3em] text-smoke-400 mb-2">KIND WORDS</p>
+        <p class="text-sm tracking-[0.3em] text-cream-400 mb-2">KIND WORDS</p>
         <h2 class="font-heading text-4xl md:text-5xl font-bold">Client Love</h2>
       </div>
       <div class="grid md:grid-cols-3 gap-8">
         <div class="border border-white/5 p-8 rounded-xl fade-in">
-          <p class="text-smoke-400 text-sm leading-relaxed mb-6 italic">"Working with Lens & Light was an absolute dream. Every photo from our wedding makes me emotional all over again. Pure magic captured in every frame."</p>
-          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&q=80" alt="Client" class="w-10 h-10 rounded-full object-cover"><div><p class="font-heading font-semibold text-sm">Amara Collins</p><p class="text-xs text-smoke-400">Wedding Client</p></div></div>
+          <p class="text-cream-400 text-sm leading-relaxed mb-6 italic">"Lena captured our wedding in Big Sur with such warmth and grace. Every time we look at the photos, we're right back in that moment. She has a gift for making light feel like music."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80" alt="Client" class="w-10 h-10 rounded-full object-cover"><div><p class="font-heading font-semibold text-sm">Mia Castillo</p><p class="text-xs text-cream-400">Wedding Client</p></div></div>
         </div>
         <div class="border border-white/5 p-8 rounded-xl fade-in">
-          <p class="text-smoke-400 text-sm leading-relaxed mb-6 italic">"Our product campaign went viral thanks to these stunning visuals. The attention to detail, lighting, and composition is on another level. A true artist."</p>
-          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&q=80" alt="Client" class="w-10 h-10 rounded-full object-cover"><div><p class="font-heading font-semibold text-sm">Daniel Park</p><p class="text-xs text-smoke-400">Creative Director, Bloom</p></div></div>
+          <p class="text-cream-400 text-sm leading-relaxed mb-6 italic">"Our skincare brand needed imagery that felt real, not staged. Lena nailed it — the texture, the warmth, the mood. Sales jumped 30% after we launched the new campaign."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1556157382-97eda2d62296?w=100&q=80" alt="Client" class="w-10 h-10 rounded-full object-cover"><div><p class="font-heading font-semibold text-sm">Jordan Ellis</p><p class="text-xs text-cream-400">Founder, Golde Beauty</p></div></div>
         </div>
         <div class="border border-white/5 p-8 rounded-xl fade-in">
-          <p class="text-smoke-400 text-sm leading-relaxed mb-6 italic">"I've worked with many photographers, but no one captures personality like this. My personal branding shoot was effortless, fun, and the results were incredible."</p>
-          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80" alt="Client" class="w-10 h-10 rounded-full object-cover"><div><p class="font-heading font-semibold text-sm">Sofia Reyes</p><p class="text-xs text-smoke-400">Founder, Luma Skin</p></div></div>
+          <p class="text-cream-400 text-sm leading-relaxed mb-6 italic">"My personal branding session with Ember Studio was the most fun I've had in front of a camera. Lena made me feel completely at ease, and the photos are stunning — warm, genuine, and uniquely me."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&q=80" alt="Client" class="w-10 h-10 rounded-full object-cover"><div><p class="font-heading font-semibold text-sm">Nadia Osei</p><p class="text-xs text-cream-400">Author & Speaker</p></div></div>
         </div>
       </div>
     </div>
@@ -184,21 +184,21 @@
   <section id="contact" class="py-24 px-4">
     <div class="max-w-3xl mx-auto text-center">
       <div class="fade-in">
-        <p class="text-sm tracking-[0.3em] text-smoke-400 mb-2">LET'S CREATE</p>
+        <p class="text-sm tracking-[0.3em] text-cream-400 mb-2">LET'S CREATE</p>
         <h2 class="font-heading text-4xl md:text-5xl font-bold mb-4">Get in Touch</h2>
-        <p class="text-smoke-400 leading-relaxed mb-12">Have a project in mind? I'd love to hear about it. Let's create something beautiful together.</p>
+        <p class="text-cream-400 leading-relaxed mb-12">Have a vision you'd like to bring to life? I'd love to hear about it. Let's make something beautiful together.</p>
       </div>
       <form class="space-y-4 fade-in max-w-lg mx-auto">
-        <div class="grid grid-cols-2 gap-4"><input type="text" placeholder="Your Name" class="bg-transparent border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-smoke-400 focus:outline-none focus:border-white/40"><input type="email" placeholder="Email" class="bg-transparent border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-smoke-400 focus:outline-none focus:border-white/40"></div>
-        <select class="w-full bg-ink border border-white/10 rounded-lg px-4 py-3 text-sm text-smoke-400 focus:outline-none focus:border-white/40"><option>Type of Shoot</option><option>Wedding</option><option>Portrait</option><option>Commercial</option><option>Event</option><option>Other</option></select>
-        <textarea rows="4" placeholder="Tell me about your vision..." class="w-full bg-transparent border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-smoke-400 focus:outline-none focus:border-white/40 resize-none"></textarea>
-        <button class="w-full bg-white hover:bg-smoke-200 text-black py-3 rounded-lg font-heading font-bold text-sm transition-colors">SEND MESSAGE</button>
+        <div class="grid grid-cols-2 gap-4"><input type="text" placeholder="Your Name" class="bg-transparent border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-cream-400 focus:outline-none focus:border-white/40"><input type="email" placeholder="Email" class="bg-transparent border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-cream-400 focus:outline-none focus:border-white/40"></div>
+        <select class="w-full bg-mocha border border-white/10 rounded-lg px-4 py-3 text-sm text-cream-400 focus:outline-none focus:border-white/40"><option>Type of Shoot</option><option>Wedding</option><option>Portrait</option><option>Commercial</option><option>Event</option><option>Fine Art</option></select>
+        <textarea rows="4" placeholder="Tell me about your vision..." class="w-full bg-transparent border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-cream-400 focus:outline-none focus:border-white/40 resize-none"></textarea>
+        <button class="w-full bg-white hover:bg-cream-200 text-mocha py-3 rounded-lg font-heading font-bold text-sm transition-colors">SEND MESSAGE</button>
       </form>
-      <div class="mt-12 flex flex-wrap justify-center gap-8 text-sm text-smoke-400 fade-in">
-        <a href="#" class="hover:text-white transition-colors">hello@lensandlight.studio</a>
+      <div class="mt-12 flex flex-wrap justify-center gap-8 text-sm text-cream-400 fade-in">
+        <a href="#" class="hover:text-white transition-colors">hello@emberstudio.co</a>
         <a href="#" class="hover:text-white transition-colors">Instagram</a>
         <a href="#" class="hover:text-white transition-colors">Behance</a>
-        <a href="#" class="hover:text-white transition-colors">LinkedIn</a>
+        <a href="#" class="hover:text-white transition-colors">Pinterest</a>
       </div>
     </div>
   </section>
@@ -206,14 +206,14 @@
   <!-- Footer -->
   <footer class="border-t border-white/5 py-10 px-4">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-      <a href="#" class="font-heading text-lg font-bold">Lens & Light</a>
-      <p class="text-xs text-smoke-400">&copy; 2026 Lens & Light Studio. All rights reserved.</p>
-      <div class="flex gap-6 text-sm text-smoke-400"><a href="#" class="hover:text-white transition-colors">Privacy</a><a href="#" class="hover:text-white transition-colors">Terms</a></div>
+      <a href="#" class="font-heading text-lg font-bold">Ember Studio</a>
+      <p class="text-xs text-cream-400">&copy; 2026 Ember Studio. All rights reserved.</p>
+      <div class="flex gap-6 text-sm text-cream-400"><a href="#" class="hover:text-white transition-colors">Privacy</a><a href="#" class="hover:text-white transition-colors">Terms</a></div>
     </div>
   </footer>
 
   <!-- Edit with AI Button -->
-  <button class="fixed bottom-6 right-6 z-50 bg-white hover:bg-smoke-200 text-black px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium font-heading">
+  <button class="fixed bottom-6 right-6 z-50 bg-white hover:bg-cream-200 text-mocha px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium font-heading">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
     Edit with AI
   </button>
