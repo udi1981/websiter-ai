@@ -1,0 +1,8 @@
+{
+  "extends": "@ubuilder/tsconfig/node.json",
+  "compilerOptions": {
+    "resolveJsonModule": true
+  },
+  "include": ["src", "messages"],
+  "exclude": ["node_modules", "dist"]
+}

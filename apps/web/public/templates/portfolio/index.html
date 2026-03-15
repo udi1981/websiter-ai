@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" style="scroll-behavior: smooth;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alex Rivera — Creative Designer & Developer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { accent: '#6366F1' } } } }
+  </script>
+  <style>
+    .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    .cursor-blink::after { content: '|'; animation: blink 1s infinite; color: #6366F1; }
+    @keyframes typing { from { width: 0; } to { width: 100%; } }
+    .typing-text { overflow: hidden; white-space: nowrap; border-right: 3px solid #6366F1; animation: typing 3s steps(30) 0.5s forwards, blink-caret 0.75s step-end infinite; width: 0; }
+    @keyframes blink-caret { from, to { border-color: transparent; } 50% { border-color: #6366F1; } }
+  </style>
+</head>
+<body class="bg-white text-gray-900 font-sans">
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+      <a href="#" class="font-extrabold text-lg">Alex<span class="text-accent">.</span></a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#work" class="text-sm text-gray-500 hover:text-black transition-colors">Work</a>
+        <a href="#about" class="text-sm text-gray-500 hover:text-black transition-colors">About</a>
+        <a href="#experience" class="text-sm text-gray-500 hover:text-black transition-colors">Experience</a>
+        <a href="#contact" class="px-4 py-2 bg-gray-900 hover:bg-black text-white rounded-lg text-sm font-medium transition-colors">Contact</a>
+      </div>
+      <button id="mobile-toggle" class="md:hidden flex flex-col gap-1.5">
+        <span class="w-5 h-0.5 bg-gray-900"></span><span class="w-5 h-0.5 bg-gray-900"></span><span class="w-5 h-0.5 bg-gray-900"></span>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-3">
+      <a href="#work" class="block text-sm">Work</a>
+      <a href="#about" class="block text-sm">About</a>
+      <a href="#experience" class="block text-sm">Experience</a>
+      <a href="#contact" class="block text-sm font-medium text-accent">Contact</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="pt-32 pb-20 lg:pt-44 lg:pb-32 px-4">
+    <div class="max-w-6xl mx-auto">
+      <div class="max-w-3xl fade-in">
+        <p class="text-accent font-medium text-sm mb-4 tracking-wider">DESIGNER & DEVELOPER</p>
+        <h1 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight mb-6">
+          Creative<br>
+          <span class="typing-text inline-block">Designer & Developer</span>
+        </h1>
+        <p class="text-gray-400 text-lg max-w-xl mb-10 leading-relaxed">I craft digital experiences that are beautiful, functional, and human-centered. Currently available for freelance projects and full-time roles.</p>
+        <div class="flex flex-wrap gap-4">
+          <a href="#work" class="px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-medium text-sm transition-colors">View My Work</a>
+          <a href="#contact" class="px-6 py-3 border border-gray-200 hover:border-gray-400 rounded-xl font-medium text-sm transition-colors">Get in Touch</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Work -->
+  <section id="work" class="py-20 lg:py-28 bg-gray-50 px-4">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-12 fade-in">
+        <p class="text-accent font-medium text-sm mb-2 tracking-wider">SELECTED WORK</p>
+        <h2 class="text-3xl sm:text-4xl font-bold">Recent Projects</h2>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <a href="#" class="group relative overflow-hidden rounded-2xl aspect-[4/3] fade-in">
+          <img src="https://images.unsplash.com/photo-1542744094-3a31f272c490?w=600&q=80" alt="Project 1" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+          <div class="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors duration-300 flex items-end p-6">
+            <div class="translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+              <p class="text-accent text-xs font-medium mb-1">BRAND IDENTITY</p>
+              <h3 class="text-white text-lg font-bold">Bloom Organics</h3>
+            </div>
+          </div>
+        </a>
+        <a href="#" class="group relative overflow-hidden rounded-2xl aspect-[4/3] fade-in">
+          <img src="https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&q=80" alt="Project 2" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+          <div class="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors duration-300 flex items-end p-6">
+            <div class="translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+              <p class="text-accent text-xs font-medium mb-1">WEB DESIGN</p>
+              <h3 class="text-white text-lg font-bold">Nexus Dashboard</h3>
+            </div>
+          </div>
+        </a>
+        <a href="#" class="group relative overflow-hidden rounded-2xl aspect-[4/3] fade-in">
+          <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&q=80" alt="Project 3" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+          <div class="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors duration-300 flex items-end p-6">
+            <div class="translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+              <p class="text-accent text-xs font-medium mb-1">MOBILE APP</p>
+              <h3 class="text-white text-lg font-bold">FitTrack Pro</h3>
+            </div>
+          </div>
+        </a>
+        <a href="#" class="group relative overflow-hidden rounded-2xl aspect-[4/3] fade-in">
+          <img src="https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=600&q=80" alt="Project 4" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+          <div class="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors duration-300 flex items-end p-6">
+            <div class="translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+              <p class="text-accent text-xs font-medium mb-1">UI DESIGN</p>
+              <h3 class="text-white text-lg font-bold">FinanceFlow</h3>
+            </div>
+          </div>
+        </a>
+        <a href="#" class="group relative overflow-hidden rounded-2xl aspect-[4/3] fade-in">
+          <img src="https://images.unsplash.com/photo-1545235617-9465d2a55698?w=600&q=80" alt="Project 5" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+          <div class="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors duration-300 flex items-end p-6">
+            <div class="translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+              <p class="text-accent text-xs font-medium mb-1">E-COMMERCE</p>
+              <h3 class="text-white text-lg font-bold">Craft & Carry</h3>
+            </div>
+          </div>
+        </a>
+        <a href="#" class="group relative overflow-hidden rounded-2xl aspect-[4/3] fade-in">
+          <img src="https://images.unsplash.com/photo-1551650975-87deedd944c3?w=600&q=80" alt="Project 6" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+          <div class="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors duration-300 flex items-end p-6">
+            <div class="translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+              <p class="text-accent text-xs font-medium mb-1">SAAS PLATFORM</p>
+              <h3 class="text-white text-lg font-bold">CloudSync</h3>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section id="about" class="py-20 lg:py-28 px-4">
+    <div class="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+      <div class="fade-in">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80" alt="Alex Rivera" class="w-full max-w-md rounded-2xl">
+      </div>
+      <div class="fade-in">
+        <p class="text-accent font-medium text-sm mb-2 tracking-wider">ABOUT ME</p>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-6">Turning ideas into digital reality</h2>
+        <p class="text-gray-500 leading-relaxed mb-4">I'm Alex Rivera, a multidisciplinary designer and front-end developer based in San Francisco. With 7+ years of experience, I specialize in creating user interfaces that are both visually compelling and highly functional.</p>
+        <p class="text-gray-500 leading-relaxed mb-8">I've worked with startups and Fortune 500 companies alike, helping them translate complex requirements into elegant digital solutions. I believe great design is invisible — it just works.</p>
+        <div class="flex flex-wrap gap-2">
+          <span class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-medium">Figma</span>
+          <span class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-medium">React</span>
+          <span class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-medium">TypeScript</span>
+          <span class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-medium">Next.js</span>
+          <span class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-medium">Tailwind CSS</span>
+          <span class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-medium">Framer Motion</span>
+          <span class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-medium">Adobe CC</span>
+          <span class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-medium">Webflow</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Experience -->
+  <section id="experience" class="py-20 lg:py-28 bg-gray-50 px-4">
+    <div class="max-w-3xl mx-auto">
+      <div class="mb-12 fade-in">
+        <p class="text-accent font-medium text-sm mb-2 tracking-wider">EXPERIENCE</p>
+        <h2 class="text-3xl sm:text-4xl font-bold">Where I've worked</h2>
+      </div>
+      <div class="space-y-0">
+        <div class="relative pl-8 pb-12 border-l-2 border-gray-200 fade-in">
+          <div class="absolute left-0 top-0 w-4 h-4 bg-accent rounded-full -translate-x-[9px]"></div>
+          <p class="text-accent text-xs font-medium mb-1">2023 — Present</p>
+          <h3 class="text-lg font-bold mb-1">Senior Product Designer</h3>
+          <p class="text-gray-400 text-sm mb-2">Linear — San Francisco</p>
+          <p class="text-gray-500 text-sm leading-relaxed">Leading the design system and core product experience. Shipped 3 major features that improved user retention by 25%.</p>
+        </div>
+        <div class="relative pl-8 pb-12 border-l-2 border-gray-200 fade-in">
+          <div class="absolute left-0 top-0 w-4 h-4 bg-gray-300 rounded-full -translate-x-[9px]"></div>
+          <p class="text-gray-400 text-xs font-medium mb-1">2021 — 2023</p>
+          <h3 class="text-lg font-bold mb-1">UI/UX Designer & Developer</h3>
+          <p class="text-gray-400 text-sm mb-2">Vercel — Remote</p>
+          <p class="text-gray-500 text-sm leading-relaxed">Designed and built interactive documentation, dashboard components, and marketing pages used by millions of developers.</p>
+        </div>
+        <div class="relative pl-8 pb-12 border-l-2 border-gray-200 fade-in">
+          <div class="absolute left-0 top-0 w-4 h-4 bg-gray-300 rounded-full -translate-x-[9px]"></div>
+          <p class="text-gray-400 text-xs font-medium mb-1">2019 — 2021</p>
+          <h3 class="text-lg font-bold mb-1">Product Designer</h3>
+          <p class="text-gray-400 text-sm mb-2">Stripe — San Francisco</p>
+          <p class="text-gray-500 text-sm leading-relaxed">Worked on the Stripe Dashboard redesign, improving task completion rates by 40%. Contributed to the design system.</p>
+        </div>
+        <div class="relative pl-8 fade-in">
+          <div class="absolute left-0 top-0 w-4 h-4 bg-gray-300 rounded-full -translate-x-[9px]"></div>
+          <p class="text-gray-400 text-xs font-medium mb-1">2017 — 2019</p>
+          <h3 class="text-lg font-bold mb-1">Junior Designer</h3>
+          <p class="text-gray-400 text-sm mb-2">Freelance — Various Clients</p>
+          <p class="text-gray-500 text-sm leading-relaxed">Worked with 20+ clients on branding, web design, and mobile app interfaces. Built a strong foundation in design thinking.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact" class="py-20 lg:py-28 px-4">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center mb-12 fade-in">
+        <p class="text-accent font-medium text-sm mb-2 tracking-wider">CONTACT</p>
+        <h2 class="text-3xl sm:text-5xl font-bold mb-4">Let's work together</h2>
+        <p class="text-gray-400">Have a project in mind? I'd love to hear about it. Send me a message and I'll get back to you within 24 hours.</p>
+      </div>
+      <form class="space-y-5 fade-in">
+        <div class="grid sm:grid-cols-2 gap-5">
+          <input type="text" placeholder="Your Name" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent text-sm">
+          <input type="email" placeholder="Your Email" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent text-sm">
+        </div>
+        <input type="text" placeholder="Project Type (e.g., Website Redesign)" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent text-sm">
+        <textarea rows="5" placeholder="Tell me about your project..." class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent text-sm resize-none"></textarea>
+        <button type="submit" class="w-full py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-medium transition-colors">Send Message</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-100 py-12 px-4">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+      <p class="text-gray-300 text-sm">&copy; 2026 Alex Rivera. All rights reserved.</p>
+      <div class="flex gap-6 text-gray-400 text-sm">
+        <a href="#" class="hover:text-black transition-colors">GitHub</a>
+        <a href="#" class="hover:text-black transition-colors">Dribbble</a>
+        <a href="#" class="hover:text-black transition-colors">LinkedIn</a>
+        <a href="#" class="hover:text-black transition-colors">Twitter</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Edit with AI Button -->
+  <button class="fixed bottom-6 right-6 z-50 bg-accent hover:bg-indigo-600 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    Edit with AI
+  </button>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    document.getElementById('mobile-toggle').addEventListener('click', () => document.getElementById('mobile-menu').classList.toggle('hidden'));
+    document.querySelectorAll('#mobile-menu a').forEach(a => a.addEventListener('click', () => document.getElementById('mobile-menu').classList.add('hidden')));
+  </script>
+</body>
+</html>

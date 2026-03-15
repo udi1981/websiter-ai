@@ -1,0 +1,5 @@
+{
+  "extends": "@ubuilder/tsconfig/nextjs.json",
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}

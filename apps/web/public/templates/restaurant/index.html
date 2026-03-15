@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" style="scroll-behavior: smooth;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Maison — Crafted with Passion</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'], serif: ['Playfair Display', 'serif'] },
+          colors: { cream: '#FAF7F2', brown: { 50: '#FDF8F0', 100: '#F5E6D3', 200: '#E8CBA7', 400: '#C49A6C', 600: '#8B6914', 700: '#6B4F10', 800: '#4A3728', 900: '#2D1F14' } }
+        }
+      }
+    }
+  </script>
+  <style>
+    .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+    .hero-overlay { background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.6)); }
+  </style>
+</head>
+<body class="bg-cream text-brown-900 font-sans">
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-50 bg-cream/90 backdrop-blur-md border-b border-brown-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+      <a href="#" class="font-serif text-2xl font-bold text-brown-800">La Maison</a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#home" class="text-sm font-medium tracking-widest hover:text-brown-600 transition-colors">HOME</a>
+        <a href="#menu" class="text-sm font-medium tracking-widest hover:text-brown-600 transition-colors">MENU</a>
+        <a href="#story" class="text-sm font-medium tracking-widest hover:text-brown-600 transition-colors">STORY</a>
+        <a href="#contact" class="text-sm font-medium tracking-widest hover:text-brown-600 transition-colors">CONTACT</a>
+      </div>
+      <button id="mobile-toggle" class="md:hidden flex flex-col gap-1.5">
+        <span class="w-6 h-0.5 bg-brown-800 transition-transform"></span>
+        <span class="w-6 h-0.5 bg-brown-800 transition-opacity"></span>
+        <span class="w-6 h-0.5 bg-brown-800 transition-transform"></span>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden bg-cream border-t border-brown-100 px-4 py-4 space-y-3">
+      <a href="#home" class="block text-sm font-medium tracking-widest">HOME</a>
+      <a href="#menu" class="block text-sm font-medium tracking-widest">MENU</a>
+      <a href="#story" class="block text-sm font-medium tracking-widest">STORY</a>
+      <a href="#contact" class="block text-sm font-medium tracking-widest">CONTACT</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section id="home" class="relative h-screen flex items-center justify-center">
+    <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&q=80" alt="Restaurant interior" class="absolute inset-0 w-full h-full object-cover">
+    <div class="hero-overlay absolute inset-0"></div>
+    <div class="relative z-10 text-center text-white px-4">
+      <p class="text-sm tracking-[0.3em] uppercase mb-4 fade-in">Est. 2018 — Fine Dining</p>
+      <h1 class="font-serif text-5xl sm:text-7xl font-bold mb-6 leading-tight fade-in">Crafted with Passion,<br>Served with Love</h1>
+      <p class="text-lg text-white/80 max-w-xl mx-auto mb-8 fade-in">Experience the art of gastronomy where every dish tells a story and every visit becomes a cherished memory.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center fade-in">
+        <a href="#menu" class="px-8 py-3 bg-brown-400 hover:bg-brown-600 text-white rounded-full font-medium transition-colors">EXPLORE MENU</a>
+        <a href="#contact" class="px-8 py-3 border-2 border-white hover:bg-white hover:text-brown-900 text-white rounded-full font-medium transition-colors">ORDER NOW</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Menu -->
+  <section id="menu" class="py-20 lg:py-28 px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-brown-400 tracking-[0.2em] uppercase text-sm mb-2">What We Offer</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-bold">Our Menu</h2>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
+          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&q=80" alt="Espresso" class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <div class="p-6"><div class="flex justify-between items-start mb-2"><h3 class="font-serif text-xl font-semibold">Classic Espresso</h3><span class="text-brown-400 font-bold text-lg">$3.50</span></div><p class="text-brown-800/60 text-sm">Rich, bold single-origin espresso pulled to perfection with a golden crema finish.</p></div>
+        </div>
+        <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
+          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80" alt="Cappuccino" class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <div class="p-6"><div class="flex justify-between items-start mb-2"><h3 class="font-serif text-xl font-semibold">Silky Cappuccino</h3><span class="text-brown-400 font-bold text-lg">$4.50</span></div><p class="text-brown-800/60 text-sm">Velvety steamed milk layered over our signature espresso with artful latte art.</p></div>
+        </div>
+        <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
+          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=600&q=80" alt="Pancakes" class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <div class="p-6"><div class="flex justify-between items-start mb-2"><h3 class="font-serif text-xl font-semibold">Ricotta Pancakes</h3><span class="text-brown-400 font-bold text-lg">$12.00</span></div><p class="text-brown-800/60 text-sm">Fluffy ricotta pancakes topped with fresh berries, maple syrup, and whipped cream.</p></div>
+        </div>
+        <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
+          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80" alt="Salad" class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <div class="p-6"><div class="flex justify-between items-start mb-2"><h3 class="font-serif text-xl font-semibold">Garden Bowl</h3><span class="text-brown-400 font-bold text-lg">$14.00</span></div><p class="text-brown-800/60 text-sm">Seasonal greens, roasted vegetables, quinoa, and house-made citrus vinaigrette.</p></div>
+        </div>
+        <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
+          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80" alt="Steak" class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <div class="p-6"><div class="flex justify-between items-start mb-2"><h3 class="font-serif text-xl font-semibold">Wagyu Ribeye</h3><span class="text-brown-400 font-bold text-lg">$38.00</span></div><p class="text-brown-800/60 text-sm">Prime wagyu ribeye, charcoal-grilled with truffle butter and seasonal sides.</p></div>
+        </div>
+        <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow fade-in">
+          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1551024506-0bccd828d307?w=600&q=80" alt="Dessert" class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <div class="p-6"><div class="flex justify-between items-start mb-2"><h3 class="font-serif text-xl font-semibold">Tiramisu</h3><span class="text-brown-400 font-bold text-lg">$10.00</span></div><p class="text-brown-800/60 text-sm">Classic Italian tiramisu with mascarpone cream, espresso-soaked ladyfingers, and cocoa.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Story -->
+  <section id="story" class="py-20 lg:py-28 bg-brown-900 text-white">
+    <div class="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
+      <div class="overflow-hidden rounded-2xl fade-in">
+        <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80" alt="Our kitchen" class="w-full h-[500px] object-cover hover:scale-105 transition-transform duration-700">
+      </div>
+      <div class="fade-in">
+        <p class="text-brown-200 tracking-[0.2em] uppercase text-sm mb-2">Our Story</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-bold mb-6">A Tradition of Excellence</h2>
+        <p class="text-white/70 leading-relaxed mb-4">La Maison was born from a simple belief: that food has the power to bring people together. Founded in 2018 by Chef Isabella Moreau, our restaurant blends French culinary tradition with locally sourced ingredients.</p>
+        <p class="text-white/70 leading-relaxed mb-6">Every morning, we visit the local farmers' market. Every evening, we create something extraordinary. Our kitchen is a place of passion, precision, and love for the craft.</p>
+        <div class="flex gap-8">
+          <div><p class="font-serif text-3xl font-bold text-brown-400">8+</p><p class="text-white/50 text-sm">Years Open</p></div>
+          <div><p class="font-serif text-3xl font-bold text-brown-400">50K+</p><p class="text-white/50 text-sm">Happy Guests</p></div>
+          <div><p class="font-serif text-3xl font-bold text-brown-400">4.9</p><p class="text-white/50 text-sm">Star Rating</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="py-20 lg:py-28 px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-brown-400 tracking-[0.2em] uppercase text-sm mb-2">What People Say</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-bold">Guest Reviews</h2>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-white p-8 rounded-2xl shadow-sm fade-in">
+          <div class="flex gap-1 mb-4 text-brown-400">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="text-brown-800/70 mb-6 italic">"An unforgettable dining experience. The Wagyu ribeye was cooked to absolute perfection, and the atmosphere was warm and inviting."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80" alt="Sarah" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Sarah Mitchell</p><p class="text-brown-800/50 text-xs">Food Blogger</p></div></div>
+        </div>
+        <div class="bg-white p-8 rounded-2xl shadow-sm fade-in">
+          <div class="flex gap-1 mb-4 text-brown-400">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="text-brown-800/70 mb-6 italic">"We celebrated our anniversary here and it was magical. The staff went above and beyond to make our evening special. The tiramisu is a must!"</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80" alt="James" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">James & Emily Parker</p><p class="text-brown-800/50 text-xs">Regular Guests</p></div></div>
+        </div>
+        <div class="bg-white p-8 rounded-2xl shadow-sm fade-in">
+          <div class="flex gap-1 mb-4 text-brown-400">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="text-brown-800/70 mb-6 italic">"Best brunch in the city, hands down. The ricotta pancakes are heavenly and the coffee is expertly crafted. I come here every weekend now."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80" alt="Maria" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Maria Chen</p><p class="text-brown-800/50 text-xs">Local Resident</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact" class="py-20 lg:py-28 bg-brown-50 px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-brown-400 tracking-[0.2em] uppercase text-sm mb-2">Get In Touch</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-bold">Visit Us</h2>
+      </div>
+      <div class="grid lg:grid-cols-2 gap-12">
+        <div class="space-y-8 fade-in">
+          <div><h3 class="font-serif text-xl font-semibold mb-2">Address</h3><p class="text-brown-800/60">42 Rue de la Cuisine, Downtown District<br>New York, NY 10012</p></div>
+          <div><h3 class="font-serif text-xl font-semibold mb-2">Hours</h3><p class="text-brown-800/60">Mon — Fri: 7:00 AM — 10:00 PM<br>Sat — Sun: 8:00 AM — 11:00 PM</p></div>
+          <div><h3 class="font-serif text-xl font-semibold mb-2">Phone</h3><p class="text-brown-800/60">(212) 555-0187</p></div>
+          <div class="bg-brown-200/30 rounded-2xl h-48 flex items-center justify-center text-brown-800/40 text-sm">Interactive Map</div>
+        </div>
+        <form class="space-y-5 fade-in">
+          <div class="grid sm:grid-cols-2 gap-5">
+            <input type="text" placeholder="Your Name" class="w-full px-4 py-3 rounded-xl border border-brown-100 bg-white focus:outline-none focus:ring-2 focus:ring-brown-400/40 text-sm">
+            <input type="email" placeholder="Your Email" class="w-full px-4 py-3 rounded-xl border border-brown-100 bg-white focus:outline-none focus:ring-2 focus:ring-brown-400/40 text-sm">
+          </div>
+          <input type="text" placeholder="Subject" class="w-full px-4 py-3 rounded-xl border border-brown-100 bg-white focus:outline-none focus:ring-2 focus:ring-brown-400/40 text-sm">
+          <textarea rows="5" placeholder="Your Message" class="w-full px-4 py-3 rounded-xl border border-brown-100 bg-white focus:outline-none focus:ring-2 focus:ring-brown-400/40 text-sm resize-none"></textarea>
+          <button type="submit" class="w-full py-3 bg-brown-800 hover:bg-brown-900 text-white rounded-xl font-medium transition-colors">Send Message</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-brown-900 text-white py-16 px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+        <div>
+          <h3 class="font-serif text-2xl font-bold mb-4">La Maison</h3>
+          <p class="text-white/50 text-sm leading-relaxed">Crafted with passion, served with love. An unforgettable dining experience in the heart of the city.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4 text-sm tracking-wider">QUICK LINKS</h4>
+          <div class="space-y-2 text-white/50 text-sm"><a href="#menu" class="block hover:text-white transition-colors">Menu</a><a href="#story" class="block hover:text-white transition-colors">Our Story</a><a href="#contact" class="block hover:text-white transition-colors">Contact</a><a href="#" class="block hover:text-white transition-colors">Reservations</a></div>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4 text-sm tracking-wider">HOURS</h4>
+          <div class="text-white/50 text-sm space-y-1"><p>Mon — Fri: 7AM — 10PM</p><p>Sat — Sun: 8AM — 11PM</p><p class="pt-2 text-brown-400">Reservations recommended</p></div>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4 text-sm tracking-wider">NEWSLETTER</h4>
+          <p class="text-white/50 text-sm mb-3">Get updates on seasonal menus and special events.</p>
+          <div class="flex"><input type="email" placeholder="Your email" class="flex-1 px-3 py-2 rounded-l-lg bg-white/10 border border-white/10 text-sm focus:outline-none"><button class="px-4 py-2 bg-brown-400 hover:bg-brown-600 rounded-r-lg text-sm font-medium transition-colors">Join</button></div>
+        </div>
+      </div>
+      <div class="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <p class="text-white/30 text-sm">&copy; 2026 La Maison. All rights reserved.</p>
+        <div class="flex gap-4 text-white/40">
+          <a href="#" class="hover:text-white transition-colors text-sm">Instagram</a>
+          <a href="#" class="hover:text-white transition-colors text-sm">Facebook</a>
+          <a href="#" class="hover:text-white transition-colors text-sm">Twitter</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Edit with AI Button -->
+  <button class="fixed bottom-6 right-6 z-50 bg-brown-800 hover:bg-brown-900 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    Edit with AI
+  </button>
+
+  <script>
+    // Fade-in on scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // Mobile menu toggle
+    document.getElementById('mobile-toggle').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+
+    // Close mobile menu on link click
+    document.querySelectorAll('#mobile-menu a').forEach(a => {
+      a.addEventListener('click', () => document.getElementById('mobile-menu').classList.add('hidden'));
+    });
+  </script>
+</body>
+</html>

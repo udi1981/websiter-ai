@@ -1,0 +1,61 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "publish": "Publish",
+    "settings": "Settings"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "continueWithGoogle": "Continue with Google",
+    "sendMagicLink": "Send Magic Link",
+    "welcomeBack": "Welcome to UBuilder",
+    "signInDescription": "Sign in to your account"
+  },
+  "dashboard": {
+    "title": "My Sites",
+    "description": "Create and manage your websites",
+    "newSite": "+ New Site",
+    "createFirst": "Create your first site",
+    "draft": "Draft",
+    "published": "Published",
+    "archived": "Archived"
+  },
+  "editor": {
+    "publish": "Publish",
+    "preview": "Preview",
+    "desktop": "Desktop",
+    "mobile": "Mobile",
+    "undo": "Undo",
+    "redo": "Redo",
+    "chat": "Chat",
+    "code": "Code",
+    "selectToEdit": "Select to Edit",
+    "chatPlaceholder": "Tell me what to change...",
+    "regenerate": "Regenerate",
+    "editPrompt": "Edit Prompt",
+    "upload": "Upload",
+    "rewrite": "Rewrite",
+    "redesign": "Redesign"
+  },
+  "newSite": {
+    "title": "Create a New Site",
+    "description": "Describe your vision and let AI build it for you",
+    "fromScratch": "From Scratch",
+    "fromUrl": "From URL",
+    "fromImage": "From Image",
+    "promptPlaceholder": "I want to make a website for...",
+    "generateSite": "Generate Site",
+    "orStartFromTemplate": "Or Start from a Template",
+    "selectIndustry": "Select your industry"
+  }
+}

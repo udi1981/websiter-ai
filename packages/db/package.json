@@ -1,0 +1,23 @@
+{
+  "name": "@ubuilder/db",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "lint": "echo 'lint db'"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.40.0",
+    "@neondatabase/serverless": "^1.0.0"
+  },
+  "devDependencies": {
+    "@ubuilder/tsconfig": "workspace:*",
+    "drizzle-kit": "^0.30.4",
+    "typescript": "^5.8.2"
+  }
+}

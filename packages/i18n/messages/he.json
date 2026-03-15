@@ -1,0 +1,61 @@
+{
+  "common": {
+    "loading": "טוען...",
+    "save": "שמור",
+    "cancel": "ביטול",
+    "delete": "מחק",
+    "edit": "ערוך",
+    "create": "צור",
+    "publish": "פרסם",
+    "settings": "הגדרות"
+  },
+  "auth": {
+    "signIn": "התחברות",
+    "signUp": "הרשמה",
+    "signOut": "התנתקות",
+    "email": "אימייל",
+    "password": "סיסמה",
+    "forgotPassword": "שכחת סיסמה?",
+    "continueWithGoogle": "המשך עם Google",
+    "sendMagicLink": "שלח קישור קסם",
+    "welcomeBack": "ברוכים הבאים ל-UBuilder",
+    "signInDescription": "התחבר לחשבון שלך"
+  },
+  "dashboard": {
+    "title": "האתרים שלי",
+    "description": "צור ונהל את האתרים שלך",
+    "newSite": "+ אתר חדש",
+    "createFirst": "צור את האתר הראשון שלך",
+    "draft": "טיוטה",
+    "published": "מפורסם",
+    "archived": "בארכיון"
+  },
+  "editor": {
+    "publish": "פרסם",
+    "preview": "תצוגה מקדימה",
+    "desktop": "מחשב",
+    "mobile": "נייד",
+    "undo": "בטל",
+    "redo": "חזור",
+    "chat": "צ׳אט",
+    "code": "קוד",
+    "selectToEdit": "בחר לעריכה",
+    "chatPlaceholder": "ספר לי מה לשנות...",
+    "regenerate": "צור מחדש",
+    "editPrompt": "ערוך הנחיה",
+    "upload": "העלה",
+    "rewrite": "כתוב מחדש",
+    "redesign": "עצב מחדש"
+  },
+  "newSite": {
+    "title": "צור אתר חדש",
+    "description": "תאר את החזון שלך ותן ל-AI לבנות עבורך",
+    "fromScratch": "מאפס",
+    "fromUrl": "מקישור",
+    "fromImage": "מתמונה",
+    "promptPlaceholder": "אני רוצה ליצור אתר עבור...",
+    "generateSite": "צור אתר",
+    "orStartFromTemplate": "או התחל מתבנית",
+    "selectIndustry": "בחר את התחום שלך"
+  }
+}

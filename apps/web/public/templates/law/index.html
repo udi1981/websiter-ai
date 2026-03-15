@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en" style="scroll-behavior: smooth;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sterling & Associates — Justice. Integrity. Results.</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'], serif: ['Cormorant Garamond', 'serif'] },
+          colors: { navy: { 50: '#F1F5F9', 100: '#E2E8F0', 200: '#CBD5E1', 400: '#94A3B8', 600: '#475569', 700: '#1E293B', 800: '#0F172A', 900: '#020617' }, gold: { 300: '#D4A843', 400: '#C49A36', 500: '#B8860B', 600: '#96690A', 700: '#745008' } }
+        }
+      }
+    }
+  </script>
+  <style>
+    .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+    .hero-overlay { background: linear-gradient(to bottom, rgba(15,23,42,0.6), rgba(15,23,42,0.85)); }
+  </style>
+</head>
+<body class="bg-white text-gray-800 font-sans">
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-50 bg-navy-800/95 backdrop-blur-md border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+      <a href="#" class="font-serif text-2xl font-bold text-white">Sterling <span class="text-gold-300">&</span> Associates</a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#home" class="text-sm font-medium text-white/80 hover:text-gold-300 transition-colors">Home</a>
+        <a href="#practice" class="text-sm font-medium text-white/80 hover:text-gold-300 transition-colors">Practice Areas</a>
+        <a href="#about" class="text-sm font-medium text-white/80 hover:text-gold-300 transition-colors">About</a>
+        <a href="#team" class="text-sm font-medium text-white/80 hover:text-gold-300 transition-colors">Team</a>
+        <a href="#contact" class="text-sm font-medium text-white/80 hover:text-gold-300 transition-colors">Contact</a>
+        <a href="#contact" class="px-5 py-2 bg-gold-500 hover:bg-gold-600 text-white rounded text-sm font-medium transition-colors">Free Consultation</a>
+      </div>
+      <button id="mobile-toggle" class="md:hidden flex flex-col gap-1.5">
+        <span class="w-6 h-0.5 bg-white transition-transform"></span>
+        <span class="w-6 h-0.5 bg-white transition-opacity"></span>
+        <span class="w-6 h-0.5 bg-white transition-transform"></span>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden bg-navy-800 border-t border-white/10 px-4 py-4 space-y-3">
+      <a href="#home" class="block text-sm font-medium text-white/80">Home</a>
+      <a href="#practice" class="block text-sm font-medium text-white/80">Practice Areas</a>
+      <a href="#about" class="block text-sm font-medium text-white/80">About</a>
+      <a href="#team" class="block text-sm font-medium text-white/80">Team</a>
+      <a href="#contact" class="block text-sm font-medium text-white/80">Contact</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section id="home" class="relative h-screen flex items-center justify-center">
+    <img src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1600&q=80" alt="Law library" class="absolute inset-0 w-full h-full object-cover">
+    <div class="hero-overlay absolute inset-0"></div>
+    <div class="relative z-10 text-center text-white px-4">
+      <div class="flex items-center justify-center gap-4 mb-6 fade-in">
+        <span class="w-12 h-px bg-gold-400"></span>
+        <p class="text-gold-300 text-sm tracking-[0.3em] uppercase">Established 2001</p>
+        <span class="w-12 h-px bg-gold-400"></span>
+      </div>
+      <h1 class="font-serif text-5xl sm:text-7xl font-bold mb-6 leading-tight fade-in">Justice. Integrity.<br>Results.</h1>
+      <p class="text-lg text-white/70 max-w-2xl mx-auto mb-8 fade-in">A full-service law firm dedicated to protecting your rights and achieving the best possible outcomes. Trusted counsel for individuals and businesses alike.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center fade-in">
+        <a href="#contact" class="px-8 py-3 bg-gold-500 hover:bg-gold-600 text-white rounded font-medium transition-colors">Schedule Consultation</a>
+        <a href="#practice" class="px-8 py-3 border-2 border-white/50 hover:bg-white hover:text-navy-800 text-white rounded font-medium transition-colors">Our Practice Areas</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Practice Areas -->
+  <section id="practice" class="py-20 lg:py-28 px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-gold-500 tracking-[0.2em] uppercase text-sm mb-2">Expertise</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-bold text-navy-800">Practice Areas</h2>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="group bg-navy-50 rounded-xl p-8 hover:bg-navy-800 hover:shadow-xl transition-all duration-300 fade-in">
+          <div class="w-14 h-14 bg-gold-500/10 rounded-lg flex items-center justify-center mb-5 group-hover:bg-gold-500/20 transition-colors"><svg class="w-7 h-7 text-gold-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div>
+          <h3 class="font-serif text-xl font-bold mb-2 group-hover:text-white transition-colors">Corporate Law</h3>
+          <p class="text-gray-500 text-sm leading-relaxed group-hover:text-white/60 transition-colors">Mergers, acquisitions, corporate governance, and compliance. We guide businesses through complex transactions.</p>
+        </div>
+        <div class="group bg-navy-50 rounded-xl p-8 hover:bg-navy-800 hover:shadow-xl transition-all duration-300 fade-in">
+          <div class="w-14 h-14 bg-gold-500/10 rounded-lg flex items-center justify-center mb-5 group-hover:bg-gold-500/20 transition-colors"><svg class="w-7 h-7 text-gold-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg></div>
+          <h3 class="font-serif text-xl font-bold mb-2 group-hover:text-white transition-colors">Litigation</h3>
+          <p class="text-gray-500 text-sm leading-relaxed group-hover:text-white/60 transition-colors">Aggressive courtroom advocacy for civil and commercial disputes. We fight to protect your interests at every stage.</p>
+        </div>
+        <div class="group bg-navy-50 rounded-xl p-8 hover:bg-navy-800 hover:shadow-xl transition-all duration-300 fade-in">
+          <div class="w-14 h-14 bg-gold-500/10 rounded-lg flex items-center justify-center mb-5 group-hover:bg-gold-500/20 transition-colors"><svg class="w-7 h-7 text-gold-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></div>
+          <h3 class="font-serif text-xl font-bold mb-2 group-hover:text-white transition-colors">Real Estate</h3>
+          <p class="text-gray-500 text-sm leading-relaxed group-hover:text-white/60 transition-colors">Commercial and residential transactions, zoning, land use disputes, and development agreements.</p>
+        </div>
+        <div class="group bg-navy-50 rounded-xl p-8 hover:bg-navy-800 hover:shadow-xl transition-all duration-300 fade-in">
+          <div class="w-14 h-14 bg-gold-500/10 rounded-lg flex items-center justify-center mb-5 group-hover:bg-gold-500/20 transition-colors"><svg class="w-7 h-7 text-gold-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>
+          <h3 class="font-serif text-xl font-bold mb-2 group-hover:text-white transition-colors">Family Law</h3>
+          <p class="text-gray-500 text-sm leading-relaxed group-hover:text-white/60 transition-colors">Compassionate guidance through divorce, custody, adoption, and estate planning with sensitivity and discretion.</p>
+        </div>
+        <div class="group bg-navy-50 rounded-xl p-8 hover:bg-navy-800 hover:shadow-xl transition-all duration-300 fade-in">
+          <div class="w-14 h-14 bg-gold-500/10 rounded-lg flex items-center justify-center mb-5 group-hover:bg-gold-500/20 transition-colors"><svg class="w-7 h-7 text-gold-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div>
+          <h3 class="font-serif text-xl font-bold mb-2 group-hover:text-white transition-colors">Employment Law</h3>
+          <p class="text-gray-500 text-sm leading-relaxed group-hover:text-white/60 transition-colors">Wrongful termination, discrimination, workplace harassment, and employment contract disputes for employees and employers.</p>
+        </div>
+        <div class="group bg-navy-50 rounded-xl p-8 hover:bg-navy-800 hover:shadow-xl transition-all duration-300 fade-in">
+          <div class="w-14 h-14 bg-gold-500/10 rounded-lg flex items-center justify-center mb-5 group-hover:bg-gold-500/20 transition-colors"><svg class="w-7 h-7 text-gold-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg></div>
+          <h3 class="font-serif text-xl font-bold mb-2 group-hover:text-white transition-colors">Intellectual Property</h3>
+          <p class="text-gray-500 text-sm leading-relaxed group-hover:text-white/60 transition-colors">Patents, trademarks, copyrights, and trade secrets. Protecting your innovations and creative works.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About the Firm -->
+  <section id="about" class="py-20 lg:py-28 bg-navy-800 text-white">
+    <div class="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
+      <div class="overflow-hidden rounded-xl fade-in">
+        <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80" alt="Law office" class="w-full h-[500px] object-cover hover:scale-105 transition-transform duration-700">
+      </div>
+      <div class="fade-in">
+        <p class="text-gold-300 tracking-[0.2em] uppercase text-sm mb-2">About Our Firm</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-bold mb-6">A Legacy of<br>Legal Excellence</h2>
+        <p class="text-white/60 leading-relaxed mb-4">Founded in 2001 by Richard Sterling, our firm has grown from a two-person practice to one of the most respected mid-size firms in the state. We combine the personalized attention of a boutique firm with the resources of a major practice.</p>
+        <p class="text-white/60 leading-relaxed mb-8">Our attorneys are recognized leaders in their fields, with backgrounds from top law schools and Fortune 500 legal departments. We measure our success not by the size of our firm, but by the results we achieve for our clients.</p>
+        <div class="flex gap-8">
+          <div><p class="font-serif text-3xl font-bold text-gold-300">25+</p><p class="text-white/40 text-sm">Years of Practice</p></div>
+          <div><p class="font-serif text-3xl font-bold text-gold-300">500+</p><p class="text-white/40 text-sm">Cases Won</p></div>
+          <div><p class="font-serif text-3xl font-bold text-gold-300">98%</p><p class="text-white/40 text-sm">Success Rate</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Team -->
+  <section id="team" class="py-20 lg:py-28 px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-gold-500 tracking-[0.2em] uppercase text-sm mb-2">Our Attorneys</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-bold text-navy-800">Meet the Team</h2>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="group bg-navy-50 rounded-xl overflow-hidden hover:shadow-xl transition-shadow fade-in">
+          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&q=80" alt="Richard Sterling" class="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <div class="p-6"><h3 class="font-serif text-xl font-bold mb-1">Richard Sterling</h3><p class="text-gold-500 text-sm font-semibold mb-2">Founding Partner</p><p class="text-gray-500 text-sm">Harvard Law, 25+ years. Specializes in corporate law and high-stakes litigation. Named Super Lawyer 10 consecutive years.</p></div>
+        </div>
+        <div class="group bg-navy-50 rounded-xl overflow-hidden hover:shadow-xl transition-shadow fade-in">
+          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80" alt="Catherine Moore" class="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <div class="p-6"><h3 class="font-serif text-xl font-bold mb-1">Catherine Moore</h3><p class="text-gold-500 text-sm font-semibold mb-2">Senior Partner</p><p class="text-gray-500 text-sm">Yale Law, 18 years. Family law and employment specialist. Known for her compassionate yet assertive approach in the courtroom.</p></div>
+        </div>
+        <div class="group bg-navy-50 rounded-xl overflow-hidden hover:shadow-xl transition-shadow fade-in">
+          <div class="overflow-hidden"><img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&q=80" alt="Marcus Chen" class="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500"></div>
+          <div class="p-6"><h3 class="font-serif text-xl font-bold mb-1">Marcus Chen</h3><p class="text-gold-500 text-sm font-semibold mb-2">Partner</p><p class="text-gray-500 text-sm">Stanford Law, 12 years. IP and real estate expert. Former in-house counsel at a Fortune 100 technology company.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Case Results -->
+  <section class="py-20 lg:py-28 bg-navy-50 px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-gold-500 tracking-[0.2em] uppercase text-sm mb-2">Proven Track Record</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-bold text-navy-800">Notable Case Results</h2>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white rounded-xl p-6 text-center hover:shadow-lg transition-shadow fade-in">
+          <p class="font-serif text-3xl font-bold text-gold-500 mb-2">$12.5M</p>
+          <p class="text-sm font-semibold text-navy-800 mb-1">Settlement</p>
+          <p class="text-gray-400 text-xs">Corporate merger dispute involving breach of fiduciary duty</p>
+        </div>
+        <div class="bg-white rounded-xl p-6 text-center hover:shadow-lg transition-shadow fade-in">
+          <p class="font-serif text-3xl font-bold text-gold-500 mb-2">$8.2M</p>
+          <p class="text-sm font-semibold text-navy-800 mb-1">Jury Verdict</p>
+          <p class="text-gray-400 text-xs">Employment discrimination class action on behalf of 200+ workers</p>
+        </div>
+        <div class="bg-white rounded-xl p-6 text-center hover:shadow-lg transition-shadow fade-in">
+          <p class="font-serif text-3xl font-bold text-gold-500 mb-2">$5.7M</p>
+          <p class="text-sm font-semibold text-navy-800 mb-1">Arbitration Award</p>
+          <p class="text-gray-400 text-xs">Intellectual property theft case for a technology startup</p>
+        </div>
+        <div class="bg-white rounded-xl p-6 text-center hover:shadow-lg transition-shadow fade-in">
+          <p class="font-serif text-3xl font-bold text-gold-500 mb-2">$3.1M</p>
+          <p class="text-sm font-semibold text-navy-800 mb-1">Settlement</p>
+          <p class="text-gray-400 text-xs">Real estate development dispute resolved through mediation</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="py-20 lg:py-28 px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-gold-500 tracking-[0.2em] uppercase text-sm mb-2">Client Testimonials</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-bold text-navy-800">What Our Clients Say</h2>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-navy-50 p-8 rounded-xl fade-in">
+          <div class="flex gap-1 mb-4 text-gold-500">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="text-gray-600 mb-6 italic">"Sterling & Associates handled our company's acquisition with precision and foresight. Richard Sterling personally oversaw every detail. The outcome exceeded our expectations."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80" alt="Michael" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Michael Harrington</p><p class="text-gray-400 text-xs">CEO, Harrington Tech</p></div></div>
+        </div>
+        <div class="bg-navy-50 p-8 rounded-xl fade-in">
+          <div class="flex gap-1 mb-4 text-gold-500">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="text-gray-600 mb-6 italic">"Going through a divorce was the hardest experience of my life. Catherine Moore was not only a brilliant attorney but a truly compassionate advocate. She fought for my children and me."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80" alt="Linda" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Linda Vasquez</p><p class="text-gray-400 text-xs">Family Law Client</p></div></div>
+        </div>
+        <div class="bg-navy-50 p-8 rounded-xl fade-in">
+          <div class="flex gap-1 mb-4 text-gold-500">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="text-gray-600 mb-6 italic">"When a competitor stole our proprietary technology, Marcus Chen assembled a case that resulted in full restitution. Their IP expertise is truly world-class."</p>
+          <div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80" alt="Andrew" class="w-10 h-10 rounded-full object-cover"><div><p class="font-semibold text-sm">Andrew Kim</p><p class="text-gray-400 text-xs">Founder, NovaTech Labs</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact" class="py-20 lg:py-28 bg-navy-800 text-white px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-gold-300 tracking-[0.2em] uppercase text-sm mb-2">Contact Us</p>
+        <h2 class="font-serif text-4xl sm:text-5xl font-bold">Schedule a Consultation</h2>
+        <p class="text-white/50 mt-4 max-w-xl mx-auto">Your first consultation is complimentary. Tell us about your situation and we will determine how we can help.</p>
+      </div>
+      <div class="grid lg:grid-cols-2 gap-12">
+        <div class="space-y-8 fade-in">
+          <div><h3 class="font-serif text-xl font-bold mb-2">Office Address</h3><p class="text-white/50">One Liberty Plaza, 45th Floor<br>New York, NY 10006</p></div>
+          <div><h3 class="font-serif text-xl font-bold mb-2">Office Hours</h3><p class="text-white/50">Mon — Fri: 8:30 AM — 6:30 PM<br>Saturday: By appointment<br>Sunday: Closed</p></div>
+          <div><h3 class="font-serif text-xl font-bold mb-2">Phone & Email</h3><p class="text-white/50">(212) 555-0147<br>inquiries@sterlinglaw.com</p></div>
+          <div class="bg-white/5 rounded-xl h-48 flex items-center justify-center text-white/20 text-sm border border-white/10">Interactive Map</div>
+        </div>
+        <form class="space-y-5 fade-in">
+          <div class="grid sm:grid-cols-2 gap-5">
+            <input type="text" placeholder="Full Name" class="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-gold-500/40 text-sm">
+            <input type="email" placeholder="Email Address" class="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-gold-500/40 text-sm">
+          </div>
+          <div class="grid sm:grid-cols-2 gap-5">
+            <input type="tel" placeholder="Phone Number" class="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-gold-500/40 text-sm">
+            <select class="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white/30 focus:outline-none focus:ring-2 focus:ring-gold-500/40 text-sm">
+              <option>Select Practice Area</option><option>Corporate Law</option><option>Litigation</option><option>Real Estate</option><option>Family Law</option><option>Employment</option><option>Intellectual Property</option>
+            </select>
+          </div>
+          <textarea rows="4" placeholder="Brief description of your legal matter" class="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-gold-500/40 text-sm resize-none"></textarea>
+          <button type="submit" class="w-full py-3 bg-gold-500 hover:bg-gold-600 text-white rounded-lg font-medium transition-colors">Request Free Consultation</button>
+          <p class="text-white/30 text-xs text-center">All consultations are confidential and protected by attorney-client privilege.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-navy-900 text-white py-16 px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+        <div>
+          <h3 class="font-serif text-2xl font-bold mb-4">Sterling <span class="text-gold-300">&</span> Associates</h3>
+          <p class="text-white/40 text-sm leading-relaxed">Dedicated to providing exceptional legal representation with integrity, professionalism, and a relentless commitment to our clients' success.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4 text-sm tracking-wider text-gold-300">PRACTICE AREAS</h4>
+          <div class="space-y-2 text-white/40 text-sm"><a href="#practice" class="block hover:text-white transition-colors">Corporate Law</a><a href="#practice" class="block hover:text-white transition-colors">Litigation</a><a href="#practice" class="block hover:text-white transition-colors">Real Estate</a><a href="#practice" class="block hover:text-white transition-colors">Family Law</a></div>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4 text-sm tracking-wider text-gold-300">THE FIRM</h4>
+          <div class="space-y-2 text-white/40 text-sm"><a href="#about" class="block hover:text-white transition-colors">About Us</a><a href="#team" class="block hover:text-white transition-colors">Our Team</a><a href="#contact" class="block hover:text-white transition-colors">Contact</a><a href="#" class="block hover:text-white transition-colors">Careers</a></div>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4 text-sm tracking-wider text-gold-300">CONTACT</h4>
+          <div class="text-white/40 text-sm space-y-1"><p>(212) 555-0147</p><p>inquiries@sterlinglaw.com</p><p>One Liberty Plaza, 45th Floor</p><p>New York, NY 10006</p></div>
+        </div>
+      </div>
+      <div class="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <p class="text-white/20 text-sm">&copy; 2026 Sterling & Associates. All rights reserved.</p>
+        <div class="flex gap-4 text-white/30">
+          <a href="#" class="hover:text-white transition-colors text-sm">LinkedIn</a>
+          <a href="#" class="hover:text-white transition-colors text-sm">Twitter</a>
+          <a href="#" class="hover:text-white transition-colors text-sm">Avvo</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Edit with AI Button -->
+  <button class="fixed bottom-6 right-6 z-50 bg-gold-500 hover:bg-gold-600 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    Edit with AI
+  </button>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    document.getElementById('mobile-toggle').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+    document.querySelectorAll('#mobile-menu a').forEach(a => {
+      a.addEventListener('click', () => document.getElementById('mobile-menu').classList.add('hidden'));
+    });
+  </script>
+</body>
+</html>
