@@ -181,8 +181,10 @@ Original content: ${JSON.stringify(originalContent || {})}`
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache, no-transform',
         'Connection': 'keep-alive',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Accel-Buffering': 'no',
       },
     })
   } catch (error) {

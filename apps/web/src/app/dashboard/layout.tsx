@@ -89,7 +89,14 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     }
 
     const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
-    const savedSites = JSON.parse(localStorage.getItem('ubuilder_sites') || '[]')
+    const savedSites = (() => {
+      try {
+        const stored = localStorage.getItem('ubuilder_sites')
+        return stored ? JSON.parse(stored) : []
+      } catch {
+        return []
+      }
+    })()
     savedSites.push({
       id: siteId,
       name,
@@ -264,11 +271,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-bg/80 backdrop-blur-xl px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-bg/80 backdrop-blur-xl px-3 sm:px-6">
           {/* Hamburger (mobile) */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="rounded-lg p-2 text-text-muted hover:text-text hover:bg-bg-tertiary transition-colors lg:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-bg-tertiary transition-colors lg:hidden"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -318,7 +325,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 px-6 py-8 lg:px-8">
+        <main className="flex-1 px-3 py-6 sm:px-6 sm:py-8 lg:px-8">
           <div className="mx-auto max-w-6xl">
             {children}
           </div>

@@ -202,22 +202,22 @@ export const UnifiedInput = ({
   const isProcessing = processingPhase !== 'idle' && processingPhase !== 'done'
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-8">
+    <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pt-6 sm:space-y-8 sm:px-0 sm:pt-0">
       {/* Header */}
       <div className="text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-light">
-          <svg className="h-7 w-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-light sm:mb-4 sm:h-14 sm:w-14">
+          <svg className="h-6 w-6 text-primary sm:h-7 sm:w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-text">Create Your Website</h1>
-        <p className="mt-2 text-sm text-text-muted">
+        <h1 className="text-xl font-bold text-text sm:text-2xl">Create Your Website</h1>
+        <p className="mt-1.5 text-sm text-text-muted sm:mt-2">
           ספר לנו על העסק שלך ונבנה אתר מדהים / Tell us about your business
         </p>
       </div>
 
       {/* Main Input Card */}
-      <div className="rounded-2xl border border-border bg-bg-secondary p-6 space-y-5">
+      <div className="rounded-2xl border border-border bg-bg-secondary p-4 space-y-5 sm:p-6">
         {/* Description */}
         <div>
           <label className="mb-2 block text-sm font-medium text-text">

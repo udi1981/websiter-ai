@@ -113,29 +113,29 @@ export const DiscoveryChat = ({
   const userMessageCount = messages.filter(m => m.role === 'user').length
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col" style={{ height: 'calc(100vh - 120px)' }}>
+    <div className="mx-auto flex w-full max-w-2xl flex-col" style={{ height: 'calc(100dvh - 120px)' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+      <div className="flex items-center gap-3 border-b border-border px-3 py-3 sm:px-4">
         <button
           onClick={onBack}
           disabled={isBuilding}
-          className="rounded-lg p-1.5 text-text-muted hover:text-text hover:bg-bg-tertiary transition-colors disabled:opacity-40"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-bg-tertiary transition-colors disabled:opacity-40"
         >
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
         </button>
-        <div className="flex-1">
-          <h2 className="text-sm font-semibold text-text">Team 100 Discovery</h2>
-          <p className="text-xs text-text-muted">הבנת העסק שלך / Understanding your business</p>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-semibold text-text truncate">Team 100 Discovery</h2>
+          <p className="text-xs text-text-muted truncate">הבנת העסק שלך / Understanding your business</p>
         </div>
-        <div className="w-32">
+        <div className="w-24 sm:w-32 shrink-0">
           <DiscoveryProgress current={progress.current} total={progress.total} />
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-4 sm:px-4">
         {messages.map((msg) => {
           if (msg.role === 'system') {
             return (
@@ -283,7 +283,7 @@ export const DiscoveryChat = ({
 
       {/* Input Area */}
       {!readyToGenerate && !isBuilding && (
-        <div className="border-t border-border px-4 py-3 space-y-2">
+        <div className="border-t border-border px-3 py-3 space-y-2 sm:px-4 pb-[env(safe-area-inset-bottom,12px)]">
           {/* File upload indicator */}
           {isUploadingFile && (
             <div className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-2 animate-pulse">
@@ -307,10 +307,10 @@ export const DiscoveryChat = ({
               }}
               placeholder="הקלד תשובה... / Type your answer..."
               disabled={isAiThinking}
-              className="w-full resize-none rounded-xl border border-border bg-bg-secondary px-4 py-3 pe-20 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+              className="w-full resize-none rounded-xl border border-border bg-bg-secondary px-4 py-3 pe-24 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
               rows={2}
             />
-            <div className="absolute bottom-3 end-3 flex items-center gap-1">
+            <div className="absolute bottom-2.5 end-2.5 flex items-center gap-1">
               {/* Attachment button */}
               {onFileUpload && (
                 <>
@@ -324,10 +324,10 @@ export const DiscoveryChat = ({
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isAiThinking || isUploadingFile}
-                    className="rounded-lg p-1.5 text-text-muted hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
                     title="העלה קובץ / Upload file"
                   >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
                     </svg>
                   </button>
@@ -337,21 +337,21 @@ export const DiscoveryChat = ({
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || isAiThinking}
-                className="rounded-lg bg-primary p-1.5 text-white disabled:opacity-40 hover:bg-primary-hover transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white disabled:opacity-40 hover:bg-primary-hover transition-colors"
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                 </svg>
               </button>
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-[10px] text-text-muted">Shift+Enter לשורה חדשה / for new line</p>
+            <p className="text-[10px] text-text-muted hidden sm:block">Shift+Enter לשורה חדשה / for new line</p>
             {/* Skip to Build button */}
             {userMessageCount >= 2 && !isAiThinking && (
               <button
                 onClick={onBuild}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-text-muted hover:text-primary hover:bg-primary/5 transition-colors"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-text-muted hover:text-primary hover:bg-primary/5 transition-colors ms-auto"
               >
                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 010 1.954l-7.108 4.061A1.125 1.125 0 013 16.811V8.69zM12.75 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 010 1.954l-7.108 4.061a1.125 1.125 0 01-1.683-.977V8.69z" />

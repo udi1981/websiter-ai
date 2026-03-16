@@ -52,16 +52,22 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const stored = localStorage.getItem('ubuilder_user')
-    if (!stored) {
+    try {
+      const stored = localStorage.getItem('ubuilder_user')
+      if (!stored) {
+        router.push('/login')
+        return
+      }
+      setUser(JSON.parse(stored))
+
+      const savedSites = localStorage.getItem('ubuilder_sites')
+      if (savedSites) {
+        setSites(JSON.parse(savedSites))
+      }
+    } catch {
+      // Corrupted localStorage, reset
       router.push('/login')
       return
-    }
-    setUser(JSON.parse(stored))
-
-    const savedSites = localStorage.getItem('ubuilder_sites')
-    if (savedSites) {
-      setSites(JSON.parse(savedSites))
     }
     setLoading(false)
   }, [router])
@@ -86,7 +92,14 @@ const DashboardPage = () => {
       // fallback empty
     }
 
-    const savedSites = JSON.parse(localStorage.getItem('ubuilder_sites') || '[]')
+    const savedSites = (() => {
+      try {
+        const stored = localStorage.getItem('ubuilder_sites')
+        return stored ? JSON.parse(stored) : []
+      } catch {
+        return []
+      }
+    })()
     savedSites.push({
       id: siteId,
       name,
@@ -128,27 +141,27 @@ const DashboardPage = () => {
   return (
     <div>
       {/* Welcome Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text">
+          <h1 className="text-xl font-bold text-text sm:text-2xl">
             Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}
           </h1>
-          <p className="mt-1 text-text-muted">Create and manage your websites</p>
+          <p className="mt-1 text-sm text-text-muted">Create and manage your websites</p>
         </div>
         <Link
           href="/dashboard/new"
-          className="rounded-full bg-gradient-to-r from-primary to-primary-hover px-6 py-2.5 text-sm font-semibold text-white hover:shadow-lg hover:shadow-primary/30 transition-all"
+          className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary-hover px-6 py-2.5 text-sm font-semibold text-white hover:shadow-lg hover:shadow-primary/30 transition-all w-full sm:w-auto"
         >
           + New Site
         </Link>
       </div>
 
       {/* Stats Cards */}
-      <div className="mb-8 grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid gap-3 grid-cols-2 lg:grid-cols-4 sm:mb-8 sm:gap-4">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="rounded-2xl border border-border bg-bg-secondary p-5 transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
+            className="rounded-2xl border border-border bg-bg-secondary p-3 sm:p-5 transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-medium text-text-muted uppercase tracking-wider">{stat.label}</span>

@@ -612,6 +612,8 @@ ${plan.preserveFromScan ? `## PRESERVED FROM ORIGINAL SITE\n${(plan.preserveFrom
   }, [state.messages, state.discoveryContext, state.scanResult, callDiscovery])
 
   const handleBuild = useCallback(async () => {
+    // Prevent double-click race condition
+    if (state.isGenerating) return
     dispatch({ type: 'START_BUILD' })
 
     try {
@@ -784,7 +786,14 @@ Make it look like a $10,000 agency-built website. 800+ lines minimum.`
       dispatch({ type: 'BUILD_PROGRESS', status: 'Saving your site...', progress: 100 })
       const siteId = `site_${Date.now()}`
       const slug = siteName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
-      const savedSites = JSON.parse(localStorage.getItem('ubuilder_sites') || '[]')
+      const savedSites = (() => {
+        try {
+          const stored = localStorage.getItem('ubuilder_sites')
+          return stored ? JSON.parse(stored) : []
+        } catch {
+          return []
+        }
+      })()
       savedSites.push({
         id: siteId,
         name: siteName,
@@ -819,7 +828,7 @@ Make it look like a $10,000 agency-built website. 800+ lines minimum.`
   // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-bg px-4 py-8 md:py-12">
+    <div className="min-h-[100dvh] bg-bg px-0 py-0 sm:px-4 sm:py-8 md:py-12">
       {state.step === 'input' && (
         <UnifiedInput
           description={state.description}

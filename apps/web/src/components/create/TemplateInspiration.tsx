@@ -72,7 +72,7 @@ export const TemplateInspiration = ({ selectedId, onSelect }: TemplateInspiratio
       </div>
 
       {/* Category Filter Chips */}
-      <div className="mb-8 flex gap-2 overflow-x-auto pb-2 scrollbar-hide justify-center">
+      <div className="mb-6 sm:mb-8 flex gap-2 overflow-x-auto pb-2 scrollbar-hide sm:justify-center px-1">
         {categories.map((cat) => {
           const isActive = activeFilter === cat.id
           const count = cat.id === 'all'
@@ -98,7 +98,7 @@ export const TemplateInspiration = ({ selectedId, onSelect }: TemplateInspiratio
       </div>
 
       {/* Template Grid — identical to landing page */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
         {filtered.map((template) => {
           const isSelected = selectedId === template.id
 
@@ -191,7 +191,7 @@ export const TemplateInspiration = ({ selectedId, onSelect }: TemplateInspiratio
               </div>
 
               {/* Card Footer — matches landing page */}
-              <div className="p-5 flex items-center justify-between">
+              <div className="p-4 sm:p-5 flex items-center justify-between">
                 <div>
                   <h3 className="font-bold text-text">{template.name}</h3>
                   <p className="text-xs text-text-muted mt-0.5">{template.pages} pages</p>
