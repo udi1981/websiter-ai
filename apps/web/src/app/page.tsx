@@ -20,26 +20,79 @@ const HomePage = () => {
     {
       label: 'Homepage',
       icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-      image: 'https://images.unsplash.com/photo-1604881991720-f91add269bed?w=1200&q=80',
+      image: 'https://images.unsplash.com/photo-1583007109931-cdf68cdc4f4d?w=1200&q=80',
       url: 'babystyle.co/store',
       overlay: (
-        <div className="absolute inset-0 flex flex-col">
-          <div className="h-10 bg-white/95 backdrop-blur flex items-center px-4 justify-between border-b border-gray-100">
-            <span className="text-xs font-bold text-gray-800">BabyStyle</span>
-            <div className="hidden md:flex items-center gap-3 text-[9px] font-medium text-gray-500">
-              <span>Home</span><span>Shop</span><span>Collections</span><span>Sale</span>
-              <span className="rounded-full bg-pink-500 px-2.5 py-0.5 text-white">Cart (3)</span>
+        <div className="absolute inset-0 flex flex-col bg-white">
+          {/* Top nav */}
+          <div className="h-8 bg-white flex items-center px-3 justify-between border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-4 rounded bg-pink-500 flex items-center justify-center"><span className="text-[6px] font-bold text-white">BS</span></div>
+              <span className="text-[10px] font-bold text-gray-800">BabyStyle</span>
+            </div>
+            <div className="hidden md:flex items-center gap-2.5 text-[8px] font-medium text-gray-500">
+              <span className="text-pink-500 font-semibold">Home</span><span>Shop</span><span>Collections</span><span>Sale</span><span>Blog</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <svg className="h-3 w-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <div className="relative">
+                <svg className="h-3 w-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" /></svg>
+                <div className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-pink-500 flex items-center justify-center"><span className="text-[5px] text-white font-bold">3</span></div>
+              </div>
             </div>
           </div>
-          <div className="flex-1 relative">
-            <div className="absolute bottom-6 left-6 max-w-sm">
-              <div className="text-[10px] font-medium text-pink-400 mb-1">NEW COLLECTION 2026</div>
-              <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">Cozy Pajamas for Little Ones</h3>
-              <p className="text-[11px] text-white/80 mb-3">Soft organic cotton. Sizes 0-8. Free shipping on orders over $50.</p>
-              <div className="flex gap-2">
-                <span className="rounded-full bg-pink-500 px-3 py-1.5 text-[10px] font-semibold text-white">Shop Now</span>
-                <span className="rounded-full bg-white/20 backdrop-blur px-3 py-1.5 text-[10px] font-semibold text-white">View Catalog</span>
+          {/* Hero banner */}
+          <div className="relative h-24 bg-gradient-to-r from-pink-100 to-purple-100 flex items-center px-4">
+            <div className="max-w-[55%]">
+              <div className="text-[7px] font-semibold text-pink-500 uppercase tracking-wider mb-0.5">New Collection 2026</div>
+              <div className="text-[11px] font-bold text-gray-800 leading-tight mb-1">Cozy Pajamas for Little Ones</div>
+              <div className="text-[7px] text-gray-500 mb-1.5">Organic cotton. Sizes 0-8. Free shipping $50+</div>
+              <div className="flex gap-1">
+                <span className="rounded-full bg-pink-500 px-2 py-0.5 text-[7px] font-semibold text-white">Shop Now</span>
+                <span className="rounded-full border border-pink-300 px-2 py-0.5 text-[7px] font-semibold text-pink-500">View Catalog</span>
               </div>
+            </div>
+            <div className="absolute right-3 bottom-1 flex gap-1.5">
+              {['bg-pink-200', 'bg-purple-200', 'bg-rose-200'].map((c, i) => (
+                <div key={i} className={`h-16 w-12 rounded-lg ${c} flex items-center justify-center shadow-sm`}>
+                  <span className="text-[16px]">{['👶', '🧸', '🎀'][i]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Product grid */}
+          <div className="flex-1 bg-gray-50 px-3 py-2 overflow-hidden">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[8px] font-bold text-gray-800">Featured Products</span>
+              <span className="text-[7px] text-pink-500 font-medium">View All →</span>
+            </div>
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { name: 'Butterfly Set', price: '$24.99', rating: 4.8, sold: '2.1k', color: 'bg-pink-100' },
+                { name: 'Unicorn PJs', price: '$29.99', rating: 4.9, sold: '3.4k', color: 'bg-purple-100' },
+                { name: 'Star Onesie', price: '$19.99', rating: 4.7, sold: '1.8k', color: 'bg-blue-100' },
+                { name: 'Dino Dreams', price: '$22.99', rating: 4.6, sold: '1.2k', color: 'bg-green-100' },
+              ].map((p) => (
+                <div key={p.name} className="rounded-lg bg-white border border-gray-100 p-1.5 shadow-sm">
+                  <div className={`h-12 rounded ${p.color} mb-1 flex items-center justify-center`}>
+                    <span className="text-[12px]">👗</span>
+                  </div>
+                  <div className="text-[7px] font-semibold text-gray-800 truncate">{p.name}</div>
+                  <div className="flex items-center justify-between mt-0.5">
+                    <span className="text-[8px] font-bold text-pink-500">{p.price}</span>
+                    <span className="text-[6px] text-amber-500">★ {p.rating}</span>
+                  </div>
+                  <div className="text-[6px] text-gray-400">{p.sold} sold</div>
+                </div>
+              ))}
+            </div>
+            {/* Trust bar */}
+            <div className="flex items-center justify-center gap-3 mt-2 py-1 border-t border-gray-100">
+              {['Free Shipping $50+', '30-Day Returns', 'Secure Checkout', 'Organic Cotton'].map((t) => (
+                <span key={t} className="text-[6px] text-gray-400 font-medium flex items-center gap-0.5">
+                  <span className="text-green-500">✓</span> {t}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -48,39 +101,84 @@ const HomePage = () => {
     {
       label: 'CRM',
       icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
-      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80',
+      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=80',
       url: 'babystyle.co/crm',
       overlay: (
-        <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm p-4 flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-white">Lead Management</span>
-            <span className="text-[9px] bg-success/20 text-success px-2 py-0.5 rounded-full">142 active leads</span>
+        <div className="absolute inset-0 bg-gray-900/90 backdrop-blur-sm flex flex-col text-white overflow-hidden">
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold">CRM Pipeline</span>
+              <span className="text-[8px] bg-success/20 text-success px-1.5 py-0.5 rounded-full">142 leads</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[7px] bg-white/10 px-1.5 py-0.5 rounded text-gray-300">This Month</span>
+              <span className="text-[7px] bg-primary/20 px-1.5 py-0.5 rounded text-primary">+ Add Lead</span>
+            </div>
           </div>
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            {[{ n: 'New Leads', v: '38', c: 'text-blue-400' }, { n: 'Contacted', v: '52', c: 'text-yellow-400' }, { n: 'Converted', v: '28', c: 'text-green-400' }, { n: 'Revenue', v: '$12.4K', c: 'text-purple-400' }].map(s => (
-              <div key={s.n} className="bg-white/5 rounded-lg p-2 text-center">
-                <div className={`text-sm font-bold ${s.c}`}>{s.v}</div>
-                <div className="text-[8px] text-gray-400">{s.n}</div>
-              </div>
-            ))}
-          </div>
-          <div className="flex-1 bg-white/5 rounded-lg p-2 overflow-hidden">
-            <div className="text-[9px] font-semibold text-gray-300 mb-2">Recent Leads</div>
-            {[
-              { name: 'Sarah M.', email: 'sarah@gmail.com', status: 'Hot', statusColor: 'bg-red-500', product: 'Pajama Set x2' },
-              { name: 'David K.', email: 'david.k@mail.com', status: 'Warm', statusColor: 'bg-yellow-500', product: 'Winter Bundle' },
-              { name: 'Maya L.', email: 'maya@outlook.com', status: 'New', statusColor: 'bg-blue-500', product: 'Onesie Pack' },
-              { name: 'Dan R.', email: 'dan.r@company.io', status: 'Hot', statusColor: 'bg-red-500', product: 'Gift Set Premium' },
-            ].map((lead, i) => (
-              <div key={i} className="flex items-center gap-2 py-1.5 border-b border-white/5 last:border-0">
-                <div className="h-5 w-5 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-[7px] font-bold text-white">{lead.name[0]}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[9px] font-medium text-white truncate">{lead.name}</div>
-                  <div className="text-[7px] text-gray-400 truncate">{lead.product}</div>
+          {/* Stats row */}
+          <div className="grid grid-cols-4 gap-1.5 px-3 py-2">
+            {[{ n: 'New', v: '38', c: 'text-blue-400', bg: 'bg-blue-400' }, { n: 'Contacted', v: '52', c: 'text-yellow-400', bg: 'bg-yellow-400' }, { n: 'Qualified', v: '28', c: 'text-green-400', bg: 'bg-green-400' }, { n: 'Won', v: '$12.4K', c: 'text-purple-400', bg: 'bg-purple-400' }].map(s => (
+              <div key={s.n} className="bg-white/5 rounded-lg p-1.5">
+                <div className="flex items-center gap-1 mb-0.5">
+                  <div className={`h-1.5 w-1.5 rounded-full ${s.bg}`} />
+                  <span className="text-[7px] text-gray-400">{s.n}</span>
                 </div>
-                <span className={`${lead.statusColor} text-[7px] text-white px-1.5 py-0.5 rounded-full font-medium`}>{lead.status}</span>
+                <div className={`text-[11px] font-bold ${s.c}`}>{s.v}</div>
               </div>
             ))}
+          </div>
+          {/* Pipeline kanban */}
+          <div className="flex-1 px-3 pb-2 overflow-hidden flex gap-1.5">
+            {[
+              { title: 'New', color: 'border-blue-500', leads: [
+                { name: 'Sarah M.', email: 'sarah@gm...', val: '$240', time: '2m ago' },
+                { name: 'Yael K.', email: 'yael@out...', val: '$180', time: '15m ago' },
+              ]},
+              { title: 'Contacted', color: 'border-yellow-500', leads: [
+                { name: 'David R.', email: 'david@co...', val: '$520', time: '1h ago' },
+                { name: 'Noa B.', email: 'noa@mail...', val: '$95', time: '3h ago' },
+                { name: 'Amit S.', email: 'amit@wor...', val: '$310', time: '5h ago' },
+              ]},
+              { title: 'Qualified', color: 'border-green-500', leads: [
+                { name: 'Maya L.', email: 'maya@biz...', val: '$890', time: '1d ago' },
+                { name: 'Tom H.', email: 'tom@star...', val: '$445', time: '2d ago' },
+              ]},
+              { title: 'Won', color: 'border-purple-500', leads: [
+                { name: 'Dana P.', email: 'dana@sh...', val: '$1,200', time: 'Today' },
+              ]},
+            ].map((col) => (
+              <div key={col.title} className={`flex-1 bg-white/5 rounded-lg border-t-2 ${col.color} p-1.5 overflow-hidden flex flex-col`}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[7px] font-semibold text-gray-300">{col.title}</span>
+                  <span className="text-[6px] text-gray-500 bg-white/5 rounded px-1">{col.leads.length}</span>
+                </div>
+                <div className="space-y-1 flex-1 overflow-hidden">
+                  {col.leads.map((l, i) => (
+                    <div key={i} className="bg-white/5 rounded p-1.5 border border-white/5">
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <div className="h-3.5 w-3.5 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-[5px] font-bold">{l.name[0]}</div>
+                        <span className="text-[7px] font-medium truncate">{l.name}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[6px] text-gray-500 truncate">{l.email}</span>
+                        <span className="text-[7px] font-bold text-green-400">{l.val}</span>
+                      </div>
+                      <div className="text-[5px] text-gray-600 mt-0.5">{l.time}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Activity feed bar */}
+          <div className="px-3 py-1.5 border-t border-white/10 flex items-center gap-2">
+            <span className="text-[7px] text-gray-500">Latest:</span>
+            <span className="text-[7px] text-gray-300">Sarah M. opened email campaign</span>
+            <span className="text-[6px] text-gray-600">•</span>
+            <span className="text-[7px] text-gray-300">Dana P. completed purchase</span>
+            <span className="text-[6px] text-gray-600">•</span>
+            <span className="text-[7px] text-green-400">+$1,200</span>
           </div>
         </div>
       ),
@@ -88,12 +186,21 @@ const HomePage = () => {
     {
       label: 'AI Agent',
       icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-      image: 'https://images.unsplash.com/photo-1604881991720-f91add269bed?w=1200&q=80',
+      image: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=1200&q=80',
       url: 'babystyle.co/chat',
       overlay: (
         <div className="absolute inset-0 bg-gray-900/85 backdrop-blur-sm flex">
           <div className="flex-1 p-3 flex flex-col">
-            <div className="text-[10px] text-gray-400 mb-2">Customer browsing: Pajamas &gt; Size 6</div>
+            {/* Top stats bar */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[10px] text-gray-400">Customer browsing: Pajamas &gt; Size 6</div>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1 text-[7px] bg-green-500/15 text-green-400 px-1.5 py-0.5 rounded-full font-medium">
+                  <span className="h-1 w-1 rounded-full bg-green-400 animate-pulse" /> Satisfaction: 98%
+                </span>
+                <span className="text-[7px] bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded-full font-medium">Avg: 2.3s</span>
+              </div>
+            </div>
             <div className="flex-1 space-y-2 overflow-hidden">
               <div className="flex gap-2">
                 <div className="h-6 w-6 rounded-full bg-pink-500/20 flex items-center justify-center shrink-0"><span className="text-[8px] text-pink-400">C</span></div>
@@ -122,8 +229,22 @@ const HomePage = () => {
               <div className="flex gap-2 justify-end">
                 <div className="bg-primary/20 rounded-xl rounded-tr-sm px-3 py-2 text-[10px] text-primary max-w-[75%]">Added to cart! Would you like to continue shopping or checkout? I can also suggest matching accessories.</div>
               </div>
+              {/* Typing indicator */}
+              <div className="flex gap-2 justify-end">
+                <div className="bg-primary/10 rounded-xl rounded-tr-sm px-3 py-2 flex items-center gap-1">
+                  <div className="h-1 w-1 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="h-1 w-1 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="h-1 w-1 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
             </div>
-            <div className="mt-2 flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 border border-white/10">
+            {/* Quick replies */}
+            <div className="flex gap-1 mb-1.5 mt-1.5">
+              {['Track Order', 'Size Guide', 'Return Policy'].map(q => (
+                <span key={q} className="text-[7px] bg-white/5 border border-white/10 text-gray-400 px-2 py-0.5 rounded-full">{q}</span>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 border border-white/10">
               <span className="text-[10px] text-gray-400 flex-1">Type a message...</span>
               <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center"><svg className="h-3 w-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg></div>
             </div>
@@ -134,40 +255,90 @@ const HomePage = () => {
     {
       label: 'AI SEO',
       icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6',
-      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80',
+      image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&q=80',
       url: 'babystyle.co/seo',
       overlay: (
-        <div className="absolute inset-0 bg-gray-900/85 backdrop-blur-sm p-4 flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-white">AI Search Optimization</span>
-            <span className="text-[9px] bg-success/20 text-success px-2 py-0.5 rounded-full">Score: 94/100</span>
+        <div className="absolute inset-0 bg-gray-900/90 backdrop-blur-sm flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+            <span className="text-[10px] font-bold text-white">AI Search Optimization</span>
+            <span className="text-[8px] bg-success/20 text-success px-1.5 py-0.5 rounded-full font-medium">GSO Score: 94/100</span>
           </div>
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            {[{ engine: 'Google AI', score: 96, color: 'text-blue-400' }, { engine: 'ChatGPT', score: 92, color: 'text-green-400' }, { engine: 'Perplexity', score: 94, color: 'text-purple-400' }].map(e => (
-              <div key={e.engine} className="bg-white/5 rounded-lg p-2 text-center">
-                <div className={`text-lg font-bold ${e.color}`}>{e.score}</div>
-                <div className="text-[8px] text-gray-400">{e.engine}</div>
-                <div className="mt-1 h-1 rounded-full bg-white/10 overflow-hidden"><div className={`h-full rounded-full bg-gradient-to-r from-primary to-secondary`} style={{width: `${e.score}%`}} /></div>
-              </div>
-            ))}
-          </div>
-          <div className="flex-1 bg-white/5 rounded-lg p-3 space-y-2 overflow-hidden">
-            <div className="text-[9px] font-semibold text-gray-300 mb-1">AI Optimization Checklist</div>
-            {[
-              { task: 'Schema.org structured data', done: true },
-              { task: 'AI-friendly content structure', done: true },
-              { task: 'FAQ markup for AI snippets', done: true },
-              { task: 'Entity-based keyword mapping', done: true },
-              { task: 'Conversational content format', done: false },
-              { task: 'Multi-language hreflang tags', done: false },
-            ].map((t, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <div className={`h-3.5 w-3.5 rounded-full flex items-center justify-center ${t.done ? 'bg-success/20' : 'bg-white/10'}`}>
-                  {t.done ? <svg className="h-2 w-2 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> : <div className="h-1.5 w-1.5 rounded-full bg-gray-500" />}
+          {/* Engine scores with radial indicators */}
+          <div className="grid grid-cols-3 gap-1.5 px-3 py-2">
+            {[{ engine: 'Google AI', score: 96, color: 'text-blue-400', ring: 'border-blue-400' }, { engine: 'ChatGPT', score: 92, color: 'text-green-400', ring: 'border-green-400' }, { engine: 'Perplexity', score: 94, color: 'text-purple-400', ring: 'border-purple-400' }].map(e => (
+              <div key={e.engine} className="bg-white/5 rounded-lg p-2 flex items-center gap-2">
+                <div className={`h-8 w-8 rounded-full border-2 ${e.ring} flex items-center justify-center shrink-0`}>
+                  <span className={`text-[9px] font-bold ${e.color}`}>{e.score}</span>
                 </div>
-                <span className={`text-[9px] ${t.done ? 'text-gray-300' : 'text-gray-500'}`}>{t.task}</span>
+                <div>
+                  <div className="text-[8px] text-gray-300 font-medium">{e.engine}</div>
+                  <div className="text-[6px] text-success">+{Math.floor(Math.random() * 5 + 3)}% vs last month</div>
+                </div>
               </div>
             ))}
+          </div>
+          {/* Two column layout */}
+          <div className="flex-1 flex gap-1.5 px-3 pb-2 overflow-hidden">
+            {/* Keyword rankings */}
+            <div className="flex-1 bg-white/5 rounded-lg p-2 overflow-hidden">
+              <div className="text-[8px] font-semibold text-gray-300 mb-1.5">Keyword Rankings</div>
+              <div className="space-y-1">
+                {[
+                  { kw: 'baby pajamas organic', pos: 2, prev: 5, vol: '12K' },
+                  { kw: 'kids sleepwear cotton', pos: 1, prev: 1, vol: '8.5K' },
+                  { kw: 'toddler onesie set', pos: 3, prev: 7, vol: '6.2K' },
+                  { kw: 'baby gift sets', pos: 4, prev: 8, vol: '15K' },
+                  { kw: 'organic kids clothes', pos: 6, prev: 12, vol: '22K' },
+                ].map((k, i) => (
+                  <div key={i} className="flex items-center gap-1 text-[7px]">
+                    <span className="w-3 text-center font-bold text-white">#{k.pos}</span>
+                    <span className="text-green-400 text-[6px]">{k.prev > k.pos ? `↑${k.prev - k.pos}` : '—'}</span>
+                    <span className="flex-1 text-gray-300 truncate">{k.kw}</span>
+                    <span className="text-gray-500">{k.vol}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Right column */}
+            <div className="flex-1 flex flex-col gap-1.5 overflow-hidden">
+              {/* Competitor comparison */}
+              <div className="bg-white/5 rounded-lg p-2 flex-1">
+                <div className="text-[8px] font-semibold text-gray-300 mb-1.5">vs Competitors</div>
+                {[
+                  { name: 'BabyStyle (You)', score: 94, color: 'from-primary to-secondary' },
+                  { name: 'KiddoWear.com', score: 71, color: 'from-gray-500 to-gray-600' },
+                  { name: 'TinyTrends.co', score: 65, color: 'from-gray-500 to-gray-600' },
+                ].map((c, i) => (
+                  <div key={i} className="mb-1">
+                    <div className="flex items-center justify-between text-[6px] mb-0.5">
+                      <span className={i === 0 ? 'text-primary font-semibold' : 'text-gray-400'}>{c.name}</span>
+                      <span className={i === 0 ? 'text-primary font-bold' : 'text-gray-500'}>{c.score}</span>
+                    </div>
+                    <div className="h-1 rounded-full bg-white/10 overflow-hidden">
+                      <div className={`h-full rounded-full bg-gradient-to-r ${c.color}`} style={{ width: `${c.score}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Checklist */}
+              <div className="bg-white/5 rounded-lg p-2 flex-1 overflow-hidden">
+                <div className="text-[8px] font-semibold text-gray-300 mb-1">Optimization</div>
+                {[
+                  { task: 'Schema.org data', done: true },
+                  { task: 'AI content structure', done: true },
+                  { task: 'FAQ markup', done: true },
+                  { task: 'Entity keywords', done: true },
+                  { task: 'Hreflang tags', done: false },
+                ].map((t, i) => (
+                  <div key={i} className="flex items-center gap-1 mb-0.5">
+                    <div className={`h-2.5 w-2.5 rounded-full flex items-center justify-center ${t.done ? 'bg-success/20' : 'bg-white/10'}`}>
+                      {t.done ? <svg className="h-1.5 w-1.5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> : <div className="h-1 w-1 rounded-full bg-gray-500" />}
+                    </div>
+                    <span className={`text-[7px] ${t.done ? 'text-gray-300' : 'text-gray-500'}`}>{t.task}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       ),
@@ -175,32 +346,110 @@ const HomePage = () => {
     {
       label: 'Analytics',
       icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80',
+      image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&q=80',
       url: 'babystyle.co/analytics',
       overlay: (
-        <div className="absolute inset-0 bg-gray-900/85 backdrop-blur-sm p-4 flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-white">AI Analytics Dashboard</span>
-            <span className="text-[9px] bg-primary/20 text-primary px-2 py-0.5 rounded-full">AI-Powered</span>
+        <div className="absolute inset-0 bg-gray-900/90 backdrop-blur-sm flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-white">AI Analytics</span>
+              <span className="flex items-center gap-1 text-[7px] text-green-400"><span className="h-1 w-1 rounded-full bg-green-400 animate-pulse" /> 847 online</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[7px] bg-white/10 px-1.5 py-0.5 rounded text-gray-300">7d</span>
+              <span className="text-[7px] bg-primary/20 px-1.5 py-0.5 rounded text-primary">30d</span>
+              <span className="text-[7px] bg-white/10 px-1.5 py-0.5 rounded text-gray-300">90d</span>
+            </div>
           </div>
-          <div className="grid grid-cols-4 gap-2 mb-3">
+          {/* Stats row */}
+          <div className="grid grid-cols-4 gap-1.5 px-3 py-2">
             {[{ n: 'Visitors', v: '24.8K', d: '+18%', c: 'text-blue-400' }, { n: 'Conversions', v: '1,247', d: '+24%', c: 'text-green-400' }, { n: 'Revenue', v: '$48.2K', d: '+31%', c: 'text-purple-400' }, { n: 'Avg. Order', v: '$38.6', d: '+7%', c: 'text-pink-400' }].map(s => (
-              <div key={s.n} className="bg-white/5 rounded-lg p-2 text-center">
-                <div className={`text-sm font-bold ${s.c}`}>{s.v}</div>
-                <div className="text-[7px] text-gray-400">{s.n}</div>
-                <div className="text-[7px] text-success font-medium">{s.d}</div>
+              <div key={s.n} className="bg-white/5 rounded-lg p-1.5">
+                <div className={`text-[10px] font-bold ${s.c}`}>{s.v}</div>
+                <div className="text-[6px] text-gray-400">{s.n}</div>
+                <div className="text-[6px] text-success font-medium">{s.d}</div>
               </div>
             ))}
           </div>
-          <div className="flex-1 bg-white/5 rounded-lg p-3 overflow-hidden">
-            <div className="text-[9px] font-semibold text-gray-300 mb-2">AI Prompt: &quot;Show me conversion trends&quot;</div>
-            <div className="flex items-end gap-1 h-20">
-              {[35, 42, 38, 55, 48, 62, 58, 72, 68, 78, 85, 92].map((h, i) => (
-                <div key={i} className="flex-1 rounded-t bg-gradient-to-t from-primary to-secondary" style={{ height: `${h}%` }} />
-              ))}
+          {/* Main content area */}
+          <div className="flex-1 flex gap-1.5 px-3 pb-2 overflow-hidden">
+            {/* Left: Charts */}
+            <div className="flex-[2] flex flex-col gap-1.5">
+              {/* Line + bar chart combo */}
+              <div className="bg-white/5 rounded-lg p-2 flex-1">
+                <div className="text-[8px] text-gray-300 font-semibold mb-1">Revenue vs Visitors</div>
+                <div className="flex items-end gap-0.5 h-16 relative">
+                  {/* Bar chart */}
+                  {[35, 42, 38, 55, 48, 62, 58, 72, 68, 78, 85, 92].map((h, i) => (
+                    <div key={i} className="flex-1 rounded-t bg-gradient-to-t from-primary/60 to-primary/20" style={{ height: `${h}%` }} />
+                  ))}
+                  {/* Line overlay hint */}
+                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 120 64" fill="none" preserveAspectRatio="none">
+                    <polyline points="5,42 15,38 25,40 35,28 45,32 55,20 65,24 75,14 85,18 95,12 105,8 115,4" stroke="#06B6D4" strokeWidth="1.5" fill="none" opacity="0.8" />
+                  </svg>
+                </div>
+                <div className="flex justify-between mt-0.5 text-[6px] text-gray-500">
+                  <span>Jan</span><span>Mar</span><span>Jun</span><span>Sep</span><span>Dec</span>
+                </div>
+              </div>
+              {/* Funnel */}
+              <div className="bg-white/5 rounded-lg p-2">
+                <div className="text-[8px] text-gray-300 font-semibold mb-1">Conversion Funnel</div>
+                <div className="space-y-0.5">
+                  {[
+                    { stage: 'Page Views', val: '24,800', pct: 100, color: 'bg-blue-400' },
+                    { stage: 'Add to Cart', val: '4,960', pct: 62, color: 'bg-purple-400' },
+                    { stage: 'Checkout', val: '2,480', pct: 38, color: 'bg-pink-400' },
+                    { stage: 'Purchase', val: '1,247', pct: 20, color: 'bg-green-400' },
+                  ].map((f) => (
+                    <div key={f.stage} className="flex items-center gap-1.5">
+                      <span className="text-[6px] text-gray-400 w-12 truncate">{f.stage}</span>
+                      <div className="flex-1 h-2.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className={`h-full ${f.color} rounded-full`} style={{ width: `${f.pct}%` }} />
+                      </div>
+                      <span className="text-[6px] text-gray-300 w-8 text-end">{f.val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between mt-1 text-[7px] text-gray-500">
-              <span>Jan</span><span>Mar</span><span>Jun</span><span>Sep</span><span>Dec</span>
+            {/* Right column */}
+            <div className="flex-1 flex flex-col gap-1.5">
+              {/* Top pages */}
+              <div className="bg-white/5 rounded-lg p-2 flex-1 overflow-hidden">
+                <div className="text-[8px] text-gray-300 font-semibold mb-1">Top Pages</div>
+                {[
+                  { page: '/pajamas', views: '8.2K', cvr: '6.1%' },
+                  { page: '/gift-sets', views: '5.4K', cvr: '8.3%' },
+                  { page: '/sale', views: '4.1K', cvr: '4.7%' },
+                  { page: '/onesies', views: '3.8K', cvr: '5.2%' },
+                  { page: '/new', views: '2.1K', cvr: '7.8%' },
+                ].map((p, i) => (
+                  <div key={i} className="flex items-center gap-1 py-0.5 text-[6px]">
+                    <span className="text-gray-500 w-2">{i + 1}</span>
+                    <span className="flex-1 text-gray-300 truncate">{p.page}</span>
+                    <span className="text-gray-400">{p.views}</span>
+                    <span className="text-green-400">{p.cvr}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Geographic hint */}
+              <div className="bg-white/5 rounded-lg p-2">
+                <div className="text-[8px] text-gray-300 font-semibold mb-1">Top Locations</div>
+                {[
+                  { loc: 'Tel Aviv, IL', pct: 32 },
+                  { loc: 'New York, US', pct: 18 },
+                  { loc: 'London, UK', pct: 12 },
+                ].map((g) => (
+                  <div key={g.loc} className="flex items-center gap-1 mb-0.5">
+                    <span className="text-[6px] text-gray-400 flex-1 truncate">{g.loc}</span>
+                    <div className="w-10 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-secondary" style={{ width: `${g.pct * 3}%` }} />
+                    </div>
+                    <span className="text-[6px] text-gray-500">{g.pct}%</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -649,42 +898,100 @@ const HomePage = () => {
                 </div>
               </div>
               <div className="relative">
-                <div className="rounded-2xl border border-border bg-bg p-6 space-y-4">
-                  <div className="rounded-xl bg-bg-tertiary p-4">
-                    <div className="flex items-center gap-2 mb-3">
+                <div className="rounded-2xl border border-border bg-bg p-5 space-y-3">
+                  {/* Prompt card */}
+                  <div className="rounded-xl bg-bg-tertiary p-3">
+                    <div className="flex items-center gap-2 mb-2">
                       <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">
                         <svg className="h-3 w-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                       </div>
-                      <span className="text-[11px] font-semibold text-text-muted">Your Prompt</span>
+                      <span className="text-[10px] font-semibold text-text-muted">Your Prompt</span>
                     </div>
-                    <p className="text-sm text-text-secondary leading-relaxed">
-                      &quot;Build a modern coffee shop website with an online menu, reservation system, warm earthy tones, and hero image of latte art&quot;
+                    <p className="text-[11px] text-text-secondary leading-relaxed">
+                      &quot;Build a complete website for Cafe Bloom — a modern coffee shop. Include homepage with hero, about page, full menu with categories, online reservation system, blog, and contact page. Use warm earthy tones, latte art imagery, and make it SEO-optimized.&quot;
                     </p>
                   </div>
-                  <div className="flex justify-center">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-b from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform duration-500">
-                      <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+                  {/* Generation progress */}
+                  <div className="rounded-xl bg-bg-tertiary/50 border border-primary/10 p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-4 w-4 rounded-full bg-gradient-to-b from-primary to-secondary flex items-center justify-center">
+                        <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" /></svg>
+                      </div>
+                      <span className="text-[10px] font-semibold text-primary">AI Generating...</span>
+                      <span className="text-[8px] text-text-muted ms-auto">42s</span>
+                    </div>
+                    <div className="space-y-1">
+                      {[
+                        { step: 'Analyzing layout requirements', done: true },
+                        { step: 'Generating 6 pages (Home, About, Menu, Reservations, Blog, Contact)', done: true },
+                        { step: 'Creating responsive design system', done: true },
+                        { step: 'Optimizing for SEO + Schema.org', done: true },
+                        { step: 'Generating AI-matched imagery', done: true },
+                        { step: 'Adding AI chatbot agent', done: false },
+                      ].map((s, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          {s.done ? (
+                            <svg className="h-3 w-3 text-success shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                          ) : (
+                            <div className="h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
+                          )}
+                          <span className={`text-[9px] ${s.done ? 'text-text-muted' : 'text-primary font-medium'}`}>{s.step}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-2 h-1 rounded-full bg-bg-tertiary overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-primary to-secondary" style={{ width: '85%' }} />
                     </div>
                   </div>
+                  {/* Result: multi-page browser */}
                   <div className="rounded-xl border border-border overflow-hidden">
                     <div className="flex items-center gap-1.5 bg-bg-tertiary px-3 py-1.5">
                       <div className="h-2 w-2 rounded-full bg-[#FF5F57]" />
                       <div className="h-2 w-2 rounded-full bg-[#FEBC2E]" />
                       <div className="h-2 w-2 rounded-full bg-[#28C840]" />
-                      <span className="ms-2 text-[9px] text-text-muted">cafebloom.ubuilder.co</span>
+                      <span className="ms-2 text-[8px] text-text-muted">cafebloom.ubuilder.co</span>
                     </div>
-                    <div className="relative h-44">
-                      <Image
-                        src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80"
-                        alt="AI generated coffee shop website"
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-700"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-bg/80 to-transparent" />
-                      <div className="absolute bottom-3 left-3">
-                        <div className="text-xs font-bold text-text">Cafe Bloom</div>
-                        <div className="text-[10px] text-text-muted">Your cozy neighborhood cafe</div>
+                    {/* Page tabs */}
+                    <div className="flex items-center gap-0 border-b border-border bg-bg-tertiary/50 px-2">
+                      {['Home', 'About', 'Menu', 'Reservations', 'Blog', 'Contact'].map((tab, i) => (
+                        <span key={tab} className={`text-[8px] px-2.5 py-1.5 font-medium border-b-2 ${i === 0 ? 'text-primary border-primary' : 'text-text-muted border-transparent'}`}>{tab}</span>
+                      ))}
+                    </div>
+                    {/* CSS website preview */}
+                    <div className="h-40 bg-[#2C1810] relative overflow-hidden">
+                      {/* Nav */}
+                      <div className="flex items-center justify-between px-3 py-1.5 bg-[#1A0E08]/80">
+                        <span className="text-[9px] font-bold text-amber-200">Cafe Bloom</span>
+                        <div className="flex gap-2 text-[7px] text-amber-100/60">
+                          <span>Menu</span><span>Reserve</span><span>About</span><span>Blog</span>
+                        </div>
+                      </div>
+                      {/* Hero */}
+                      <div className="px-3 py-3 bg-gradient-to-br from-[#3B2012] to-[#1A0E08]">
+                        <div className="text-[7px] text-amber-400 uppercase tracking-wider mb-0.5">Est. 2020</div>
+                        <div className="text-[12px] font-bold text-amber-50 leading-tight mb-1">Where Every Cup<br/>Tells a Story</div>
+                        <div className="text-[7px] text-amber-100/50 mb-2">Specialty coffee, house-made pastries, cozy vibes.</div>
+                        <div className="flex gap-1">
+                          <span className="rounded-full bg-amber-600 px-2 py-0.5 text-[6px] font-semibold text-white">View Menu</span>
+                          <span className="rounded-full border border-amber-600/50 px-2 py-0.5 text-[6px] font-semibold text-amber-200">Reserve Table</span>
+                        </div>
+                      </div>
+                      {/* Featured items row */}
+                      <div className="px-3 py-2 bg-[#1A0E08]">
+                        <div className="text-[7px] text-amber-300 font-semibold mb-1">Popular Today</div>
+                        <div className="flex gap-1.5">
+                          {[
+                            { name: 'Flat White', price: '$4.50', color: 'bg-amber-900/40' },
+                            { name: 'Croissant', price: '$3.80', color: 'bg-amber-800/40' },
+                            { name: 'Matcha Latte', price: '$5.20', color: 'bg-green-900/40' },
+                            { name: 'Avocado Toast', price: '$8.90', color: 'bg-amber-700/40' },
+                          ].map((item) => (
+                            <div key={item.name} className={`flex-1 ${item.color} rounded p-1.5 text-center`}>
+                              <div className="text-[7px] text-amber-100 font-medium">{item.name}</div>
+                              <div className="text-[7px] text-amber-400 font-bold">{item.price}</div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -704,27 +1011,99 @@ const HomePage = () => {
               <p className="text-text-secondary text-sm leading-relaxed mb-6">
                 Click any element to edit visually. Or tell the AI what to change. Real-time preview with instant updates.
               </p>
-              <div className="rounded-xl border border-border overflow-hidden">
-                <div className="relative h-48">
-                  <Image
-                    src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&q=80"
-                    alt="Visual editor with code"
-                    fill
-                    className="object-cover opacity-50 group-hover:opacity-70 transition-opacity duration-500"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-bg to-transparent" />
-                  <div className="absolute top-4 right-4 rounded-lg bg-bg/90 backdrop-blur-sm border border-border px-2 py-1.5 flex items-center gap-2">
-                    <div className="h-3 w-3 rounded bg-primary" />
-                    <div className="h-3 w-3 rounded bg-secondary" />
-                    <div className="h-3 w-3 rounded bg-accent" />
-                    <div className="h-3 w-px bg-border" />
-                    <span className="text-[9px] text-text-muted font-medium">Aa</span>
+              <div className="rounded-xl border border-border overflow-hidden bg-bg">
+                <div className="h-52 flex">
+                  {/* Left sidebar: Elements */}
+                  <div className="w-16 border-e border-border bg-bg-secondary/50 p-1.5 flex flex-col gap-1">
+                    <div className="text-[7px] font-semibold text-text-muted uppercase tracking-wider px-0.5 mb-0.5">Elements</div>
+                    {[
+                      { icon: 'T', name: 'Text' },
+                      { icon: '▢', name: 'Image' },
+                      { icon: '◉', name: 'Button' },
+                      { icon: '☰', name: 'Form' },
+                      { icon: '⊞', name: 'Grid' },
+                      { icon: '▶', name: 'Video' },
+                    ].map((el) => (
+                      <div key={el.name} className="flex items-center gap-1 px-1 py-1 rounded bg-bg-tertiary/50 hover:bg-bg-tertiary cursor-pointer">
+                        <span className="text-[9px] text-text-muted w-3 text-center">{el.icon}</span>
+                        <span className="text-[7px] text-text-muted">{el.name}</span>
+                      </div>
+                    ))}
+                    <div className="mt-auto text-[7px] font-semibold text-text-muted uppercase tracking-wider px-0.5">Layers</div>
+                    {['Hero', 'Heading', 'Subtext', 'CTA Btn'].map((l, i) => (
+                      <div key={l} className={`text-[7px] px-1 py-0.5 rounded truncate ${i === 1 ? 'bg-primary/10 text-primary font-medium' : 'text-text-muted'}`}>{l}</div>
+                    ))}
                   </div>
-                  <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-bg/90 backdrop-blur-sm border border-primary/30 px-3 py-2 flex items-center gap-2">
-                    <svg className="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" /></svg>
-                    <span className="text-[10px] text-text-muted animate-typing-cursor">&quot;Make this heading larger and bolder&quot;</span>
+                  {/* Canvas */}
+                  <div className="flex-1 bg-bg-tertiary/30 p-2 relative overflow-hidden">
+                    {/* Simulated canvas content */}
+                    <div className="rounded-lg bg-bg border border-border p-3 h-full relative">
+                      <div className="text-[7px] text-text-muted uppercase tracking-wider mb-1">Hero Section</div>
+                      {/* Selected element with handles */}
+                      <div className="border-2 border-dashed border-primary rounded p-1.5 relative mb-1.5">
+                        <div className="text-[11px] font-bold text-text leading-tight">Build Beautiful Websites</div>
+                        {/* Selection handles */}
+                        <div className="absolute -top-1 -start-1 h-2 w-2 rounded-full bg-primary border border-bg" />
+                        <div className="absolute -top-1 -end-1 h-2 w-2 rounded-full bg-primary border border-bg" />
+                        <div className="absolute -bottom-1 -start-1 h-2 w-2 rounded-full bg-primary border border-bg" />
+                        <div className="absolute -bottom-1 -end-1 h-2 w-2 rounded-full bg-primary border border-bg" />
+                        <div className="absolute -top-4 start-0 bg-primary text-[6px] text-white px-1 py-0.5 rounded">Heading</div>
+                      </div>
+                      <div className="text-[8px] text-text-muted mb-2 leading-relaxed">Your perfect website, powered by AI. Click to edit any element.</div>
+                      <div className="flex gap-1">
+                        <span className="rounded bg-primary px-2 py-0.5 text-[7px] font-semibold text-white">Get Started</span>
+                        <span className="rounded border border-border px-2 py-0.5 text-[7px] text-text-muted">Learn More</span>
+                      </div>
+                      {/* Grid guide lines */}
+                      <div className="absolute inset-0 pointer-events-none">
+                        <div className="absolute top-0 start-1/2 h-full border-s border-primary/10 border-dashed" />
+                      </div>
+                    </div>
                   </div>
+                  {/* Right sidebar: Properties */}
+                  <div className="w-20 border-s border-border bg-bg-secondary/50 p-1.5 space-y-1.5 overflow-hidden">
+                    <div className="text-[7px] font-semibold text-text-muted uppercase tracking-wider">Properties</div>
+                    <div>
+                      <div className="text-[6px] text-text-muted mb-0.5">Font Size</div>
+                      <div className="flex items-center gap-1 bg-bg-tertiary rounded px-1 py-0.5">
+                        <span className="text-[8px] text-text">24px</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[6px] text-text-muted mb-0.5">Font Weight</div>
+                      <div className="flex items-center gap-1 bg-bg-tertiary rounded px-1 py-0.5">
+                        <span className="text-[8px] text-text">Bold</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[6px] text-text-muted mb-0.5">Color</div>
+                      <div className="flex items-center gap-1">
+                        <div className="h-3 w-3 rounded bg-text border border-border" />
+                        <span className="text-[7px] text-text-muted">#FFFFFF</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[6px] text-text-muted mb-0.5">Padding</div>
+                      <div className="grid grid-cols-2 gap-0.5">
+                        {['8', '16', '8', '16'].map((v, i) => (
+                          <div key={i} className="bg-bg-tertiary rounded px-1 py-0.5 text-[7px] text-text-muted text-center">{v}</div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[6px] text-text-muted mb-0.5">Colors</div>
+                      <div className="flex items-center gap-1">
+                        <div className="h-3 w-3 rounded bg-primary" />
+                        <div className="h-3 w-3 rounded bg-secondary" />
+                        <div className="h-3 w-3 rounded bg-accent" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {/* Bottom AI prompt bar */}
+                <div className="border-t border-border px-3 py-1.5 flex items-center gap-2 bg-bg-secondary/30">
+                  <svg className="h-3.5 w-3.5 text-primary shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" /></svg>
+                  <span className="text-[9px] text-text-muted animate-typing-cursor">&quot;Make this heading larger and bolder&quot;</span>
                 </div>
               </div>
             </div>
@@ -738,16 +1117,47 @@ const HomePage = () => {
               <p className="text-text-secondary text-sm leading-relaxed mb-6">
                 Generate images, icons, backgrounds, and logos. Every visual element is customizable and on-brand.
               </p>
-              <div className="grid grid-cols-3 gap-2 rounded-xl overflow-hidden">
-                {[
-                  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&q=80',
-                  'https://images.unsplash.com/photo-1634017839464-5c339afa60f0?w=300&q=80',
-                  'https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=300&q=80',
-                ].map((src, i) => (
-                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden group/img">
-                    <Image src={src} alt={`AI generated visual ${i + 1}`} fill className="object-cover group-hover/img:scale-110 transition-transform duration-700" sizes="150px" />
-                  </div>
-                ))}
+              <div className="rounded-xl border border-border bg-bg overflow-hidden">
+                {/* Prompt input */}
+                <div className="px-3 py-2 border-b border-border flex items-center gap-2">
+                  <svg className="h-3.5 w-3.5 text-accent shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" /></svg>
+                  <span className="text-[9px] text-text-muted flex-1 truncate">&quot;Generate hero image for luxury spa, zen garden, warm lighting, soft tones&quot;</span>
+                  <span className="text-[8px] bg-accent/20 text-accent px-1.5 py-0.5 rounded font-medium shrink-0">Generate</span>
+                </div>
+                {/* Style selector */}
+                <div className="px-3 py-1.5 border-b border-border flex items-center gap-1">
+                  <span className="text-[7px] text-text-muted me-1">Style:</span>
+                  {['Photorealistic', 'Illustration', 'Abstract', 'Minimalist'].map((s, i) => (
+                    <span key={s} className={`text-[7px] px-1.5 py-0.5 rounded-full font-medium ${i === 0 ? 'bg-accent/20 text-accent' : 'bg-bg-tertiary text-text-muted'}`}>{s}</span>
+                  ))}
+                </div>
+                {/* 2x2 Results grid */}
+                <div className="grid grid-cols-2 gap-1.5 p-2">
+                  {[
+                    { gradient: 'from-emerald-800 via-teal-700 to-emerald-900', label: 'Zen Garden' },
+                    { gradient: 'from-amber-700 via-orange-600 to-amber-800', label: 'Warm Glow' },
+                    { gradient: 'from-slate-600 via-stone-500 to-slate-700', label: 'Stone Path' },
+                    { gradient: 'from-sky-700 via-cyan-600 to-sky-800', label: 'Water Flow' },
+                  ].map((img, i) => (
+                    <div key={i} className="relative aspect-[4/3] rounded-lg overflow-hidden group/img">
+                      <div className={`absolute inset-0 bg-gradient-to-br ${img.gradient}`} />
+                      {/* Abstract shapes for visual interest */}
+                      <div className="absolute inset-0 opacity-30">
+                        <div className="absolute top-1/4 start-1/4 h-8 w-8 rounded-full bg-white/20 blur-sm" />
+                        <div className="absolute bottom-1/3 end-1/3 h-6 w-10 rounded-full bg-white/10 blur-md" />
+                      </div>
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-1.5">
+                        <div className="text-[7px] text-white font-medium">{img.label}</div>
+                      </div>
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/40 transition-colors duration-300 flex items-center justify-center gap-1 opacity-0 group-hover/img:opacity-100">
+                        <span className="text-[7px] bg-white/90 text-gray-800 px-1.5 py-0.5 rounded font-medium">Use This</span>
+                        <span className="text-[7px] bg-white/20 text-white px-1.5 py-0.5 rounded font-medium backdrop-blur-sm">Regenerate</span>
+                      </div>
+                      {i === 0 && <div className="absolute top-1 end-1 text-[6px] bg-accent/90 text-white px-1 py-0.5 rounded font-medium">Best Match</div>}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -939,31 +1349,97 @@ const HomePage = () => {
               </div>
               {/* CRM Visual */}
               <div className="rounded-2xl border border-border bg-bg-secondary overflow-hidden">
-                <div className="p-4 border-b border-border flex items-center justify-between">
+                <div className="p-3 border-b border-border flex items-center justify-between">
                   <span className="text-xs font-bold text-text">BabyStyle — Management Hub</span>
-                  <span className="text-[9px] bg-success/20 text-success px-2 py-0.5 rounded-full">All systems active</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1 text-[8px] text-success"><span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" /> All systems active</span>
+                  </div>
                 </div>
-                <div className="p-4 space-y-3">
-                  <div className="grid grid-cols-3 gap-2">
+                <div className="p-3 space-y-2">
+                  {/* Stats row */}
+                  <div className="grid grid-cols-4 gap-1.5">
                     {[
-                      { label: 'Active Leads', value: '142', icon: '👤', delta: '+12 today', color: 'text-blue-400' },
-                      { label: 'Open Invoices', value: '$8.4K', icon: '📄', delta: '8 pending', color: 'text-amber-400' },
-                      { label: 'Email Campaigns', value: '3 live', icon: '📧', delta: '67% open rate', color: 'text-green-400' },
+                      { label: 'Active Leads', value: '142', delta: '+12', color: 'text-blue-400' },
+                      { label: 'Invoices', value: '$8.4K', delta: '8 pending', color: 'text-amber-400' },
+                      { label: 'Campaigns', value: '3 live', delta: '67% open', color: 'text-green-400' },
+                      { label: 'Orders', value: '89', delta: '+18 today', color: 'text-purple-400' },
                     ].map((card) => (
-                      <div key={card.label} className="rounded-xl bg-bg p-3 border border-border">
-                        <div className="text-lg mb-0.5">{card.icon}</div>
+                      <div key={card.label} className="rounded-lg bg-bg p-2 border border-border">
                         <div className={`text-sm font-bold ${card.color}`}>{card.value}</div>
-                        <div className="text-[9px] text-text-muted">{card.label}</div>
-                        <div className="text-[8px] text-success mt-1">{card.delta}</div>
+                        <div className="text-[8px] text-text-muted">{card.label}</div>
+                        <div className="text-[7px] text-success">{card.delta}</div>
                       </div>
                     ))}
                   </div>
-                  {/* AI Prompt bar */}
-                  <div className="rounded-xl bg-bg border border-primary/20 p-3 flex items-center gap-2">
-                    <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
-                      <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" /></svg>
+                  {/* Pipeline kanban row */}
+                  <div className="rounded-lg bg-bg border border-border p-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[9px] font-semibold text-text">Sales Pipeline</span>
+                      <span className="text-[7px] text-text-muted">$24.6K total</span>
                     </div>
-                    <span className="text-[10px] text-text-muted flex-1 animate-typing-cursor">&quot;Add a loyalty points system to the CRM and create a VIP tier for orders over $200&quot;</span>
+                    <div className="flex gap-1.5">
+                      {[
+                        { title: 'New', count: 12, val: '$3.2K', color: 'border-blue-500' },
+                        { title: 'Contacted', count: 8, val: '$5.8K', color: 'border-yellow-500' },
+                        { title: 'Qualified', count: 5, val: '$7.4K', color: 'border-green-500' },
+                        { title: 'Won', count: 3, val: '$8.2K', color: 'border-purple-500' },
+                      ].map((col) => (
+                        <div key={col.title} className={`flex-1 bg-bg-tertiary/50 rounded border-t-2 ${col.color} p-1.5`}>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-[7px] font-semibold text-text-secondary">{col.title}</span>
+                            <span className="text-[6px] bg-bg-tertiary rounded px-1 text-text-muted">{col.count}</span>
+                          </div>
+                          <div className="text-[8px] font-bold text-text">{col.val}</div>
+                          {/* Mini cards */}
+                          <div className="mt-1 space-y-0.5">
+                            {[0, 1].map(i => (
+                              <div key={i} className="bg-bg rounded p-1 border border-border">
+                                <div className="h-1.5 w-8 rounded bg-bg-tertiary" />
+                                <div className="h-1 w-12 rounded bg-bg-tertiary mt-0.5" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Bottom row: Calendar + Activity */}
+                  <div className="flex gap-2">
+                    {/* Mini calendar */}
+                    <div className="flex-1 rounded-lg bg-bg border border-border p-2">
+                      <div className="text-[8px] font-semibold text-text mb-1">March 2026</div>
+                      <div className="grid grid-cols-7 gap-0.5 text-center">
+                        {['S','M','T','W','T','F','S'].map(d => (
+                          <span key={d} className="text-[6px] text-text-muted font-medium">{d}</span>
+                        ))}
+                        {[...Array(31)].map((_, i) => (
+                          <span key={i} className={`text-[6px] rounded-full h-3 w-3 flex items-center justify-center mx-auto ${i === 15 ? 'bg-primary text-white' : i === 10 || i === 22 ? 'bg-secondary/20 text-secondary' : 'text-text-muted'}`}>{i + 1}</span>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Recent activity */}
+                    <div className="flex-1 rounded-lg bg-bg border border-border p-2">
+                      <div className="text-[8px] font-semibold text-text mb-1">Activity</div>
+                      {[
+                        { text: 'Sarah M. placed order', time: '2m', icon: 'bg-green-400' },
+                        { text: 'Email campaign sent', time: '1h', icon: 'bg-blue-400' },
+                        { text: 'New lead: David K.', time: '3h', icon: 'bg-purple-400' },
+                        { text: 'Invoice #142 paid', time: '5h', icon: 'bg-amber-400' },
+                      ].map((a, i) => (
+                        <div key={i} className="flex items-center gap-1.5 py-0.5">
+                          <div className={`h-1.5 w-1.5 rounded-full ${a.icon} shrink-0`} />
+                          <span className="text-[7px] text-text-muted flex-1 truncate">{a.text}</span>
+                          <span className="text-[6px] text-text-muted shrink-0">{a.time}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* AI Prompt bar */}
+                  <div className="rounded-lg bg-bg border border-primary/20 p-2 flex items-center gap-2">
+                    <div className="h-5 w-5 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
+                      <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" /></svg>
+                    </div>
+                    <span className="text-[9px] text-text-muted flex-1 animate-typing-cursor">&quot;Add a loyalty points system to the CRM and create a VIP tier for orders over $200&quot;</span>
                   </div>
                 </div>
               </div>
@@ -975,40 +1451,127 @@ const HomePage = () => {
             <div className="grid lg:grid-cols-2 gap-10 items-center">
               <div className="order-2 lg:order-1">
                 <div className="rounded-2xl border border-border bg-bg-secondary overflow-hidden">
-                  <div className="p-4 border-b border-border flex items-center justify-between">
-                    <span className="text-xs font-bold text-text">AI Analytics</span>
-                    <span className="text-[9px] bg-primary/20 text-primary px-2 py-0.5 rounded-full">Real-time</span>
+                  <div className="p-3 border-b border-border flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-text">AI Analytics</span>
+                      <span className="flex items-center gap-1 text-[7px] text-green-400"><span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" /> Live</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[7px] bg-bg-tertiary px-1.5 py-0.5 rounded text-text-muted">7d</span>
+                      <span className="text-[7px] bg-primary/20 px-1.5 py-0.5 rounded text-primary font-medium">30d</span>
+                      <span className="text-[7px] bg-bg-tertiary px-1.5 py-0.5 rounded text-text-muted">90d</span>
+                    </div>
                   </div>
-                  <div className="p-4 space-y-3">
-                    <div className="grid grid-cols-4 gap-2">
+                  <div className="p-3 space-y-2">
+                    {/* Stats row */}
+                    <div className="grid grid-cols-4 gap-1.5">
                       {[
                         { label: 'Visitors', value: '24.8K', delta: '+18%' },
                         { label: 'Sales', value: '$48.2K', delta: '+31%' },
                         { label: 'Conversion', value: '5.2%', delta: '+0.8%' },
                         { label: 'Bounce', value: '28%', delta: '-4%' },
                       ].map((m) => (
-                        <div key={m.label} className="text-center rounded-lg bg-bg p-2 border border-border">
+                        <div key={m.label} className="rounded-lg bg-bg p-2 border border-border">
                           <div className="text-sm font-bold text-text">{m.value}</div>
                           <div className="text-[8px] text-text-muted">{m.label}</div>
-                          <div className="text-[8px] text-success">{m.delta}</div>
+                          <div className="text-[7px] text-success">{m.delta}</div>
                         </div>
                       ))}
                     </div>
-                    {/* Chart bars */}
-                    <div className="rounded-xl bg-bg p-3 border border-border">
-                      <div className="text-[9px] text-text-muted mb-2">Revenue trend (last 12 months)</div>
-                      <div className="flex items-end gap-1 h-16">
-                        {[35, 42, 38, 55, 48, 62, 58, 72, 68, 78, 85, 92].map((h, i) => (
-                          <div key={i} className="flex-1 rounded-t bg-gradient-to-t from-primary/80 to-secondary/80 transition-all duration-300 hover:from-primary hover:to-secondary" style={{ height: `${h}%` }} />
+                    {/* Charts row */}
+                    <div className="flex gap-2">
+                      {/* Revenue chart */}
+                      <div className="flex-[2] rounded-lg bg-bg p-2 border border-border">
+                        <div className="text-[8px] text-text-muted mb-1.5">Revenue Trend</div>
+                        <div className="flex items-end gap-0.5 h-14 relative">
+                          {[35, 42, 38, 55, 48, 62, 58, 72, 68, 78, 85, 92].map((h, i) => (
+                            <div key={i} className="flex-1 rounded-t bg-gradient-to-t from-primary/80 to-secondary/80 transition-all duration-300 hover:from-primary hover:to-secondary" style={{ height: `${h}%` }} />
+                          ))}
+                          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 120 56" fill="none" preserveAspectRatio="none">
+                            <polyline points="5,36 15,32 25,35 35,25 45,28 55,18 65,22 75,14 85,16 95,10 105,7 115,3" stroke="#F59E0B" strokeWidth="1.2" fill="none" opacity="0.7" strokeDasharray="2,2" />
+                          </svg>
+                        </div>
+                        <div className="flex justify-between mt-0.5 text-[6px] text-text-muted">
+                          <span>Jan</span><span>Mar</span><span>Jun</span><span>Sep</span><span>Dec</span>
+                        </div>
+                      </div>
+                      {/* Donut chart (CSS) */}
+                      <div className="flex-1 rounded-lg bg-bg p-2 border border-border">
+                        <div className="text-[8px] text-text-muted mb-1">Traffic Source</div>
+                        <div className="relative h-16 w-16 mx-auto">
+                          <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
+                            <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" className="text-bg-tertiary" strokeWidth="4" />
+                            <circle cx="18" cy="18" r="14" fill="none" stroke="#7C3AED" strokeWidth="4" strokeDasharray="35 65" strokeDashoffset="0" strokeLinecap="round" />
+                            <circle cx="18" cy="18" r="14" fill="none" stroke="#06B6D4" strokeWidth="4" strokeDasharray="25 75" strokeDashoffset="-35" strokeLinecap="round" />
+                            <circle cx="18" cy="18" r="14" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray="20 80" strokeDashoffset="-60" strokeLinecap="round" />
+                            <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray="15 85" strokeDashoffset="-80" strokeLinecap="round" />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[8px] font-bold text-text">24.8K</span>
+                          </div>
+                        </div>
+                        <div className="mt-1 space-y-0.5">
+                          {[
+                            { src: 'Organic', pct: '40%', color: 'bg-primary' },
+                            { src: 'Direct', pct: '28%', color: 'bg-secondary' },
+                            { src: 'Social', pct: '22%', color: 'bg-success' },
+                            { src: 'Referral', pct: '10%', color: 'bg-accent' },
+                          ].map(s => (
+                            <div key={s.src} className="flex items-center gap-1 text-[6px]">
+                              <div className={`h-1.5 w-1.5 rounded-full ${s.color}`} />
+                              <span className="text-text-muted flex-1">{s.src}</span>
+                              <span className="text-text-secondary font-medium">{s.pct}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Funnel + Top pages */}
+                    <div className="flex gap-2">
+                      {/* Funnel */}
+                      <div className="flex-1 rounded-lg bg-bg p-2 border border-border">
+                        <div className="text-[8px] text-text-muted mb-1">Conversion Funnel</div>
+                        <div className="space-y-0.5">
+                          {[
+                            { stage: 'Views', val: '24.8K', pct: 100, color: 'bg-blue-400' },
+                            { stage: 'Cart', val: '4.9K', pct: 60, color: 'bg-purple-400' },
+                            { stage: 'Checkout', val: '2.4K', pct: 36, color: 'bg-pink-400' },
+                            { stage: 'Purchase', val: '1.2K', pct: 20, color: 'bg-green-400' },
+                          ].map(f => (
+                            <div key={f.stage} className="flex items-center gap-1">
+                              <span className="text-[6px] text-text-muted w-10 truncate">{f.stage}</span>
+                              <div className="flex-1 h-2 bg-bg-tertiary rounded-full overflow-hidden">
+                                <div className={`h-full ${f.color} rounded-full`} style={{ width: `${f.pct}%` }} />
+                              </div>
+                              <span className="text-[6px] text-text-secondary w-6 text-end">{f.val}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Top pages */}
+                      <div className="flex-1 rounded-lg bg-bg p-2 border border-border">
+                        <div className="text-[8px] text-text-muted mb-1">Top Pages</div>
+                        {[
+                          { page: '/pajamas', views: '8.2K', cvr: '6.1%' },
+                          { page: '/gift-sets', views: '5.4K', cvr: '8.3%' },
+                          { page: '/sale', views: '4.1K', cvr: '4.7%' },
+                          { page: '/onesies', views: '3.8K', cvr: '5.2%' },
+                        ].map((p, i) => (
+                          <div key={i} className="flex items-center gap-1 py-0.5 text-[6px]">
+                            <span className="text-text-muted w-2">{i + 1}.</span>
+                            <span className="flex-1 text-text-secondary truncate">{p.page}</span>
+                            <span className="text-text-muted">{p.views}</span>
+                            <span className="text-success font-medium">{p.cvr}</span>
+                          </div>
                         ))}
                       </div>
                     </div>
                     {/* AI Prompt */}
-                    <div className="rounded-xl bg-bg border border-primary/20 p-3 flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
-                        <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" /></svg>
+                    <div className="rounded-lg bg-bg border border-primary/20 p-2 flex items-center gap-2">
+                      <div className="h-5 w-5 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
+                        <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" /></svg>
                       </div>
-                      <span className="text-[10px] text-text-muted flex-1 animate-typing-cursor">&quot;Generate a visual report comparing Q1 vs Q2 sales by product category&quot;</span>
+                      <span className="text-[9px] text-text-muted flex-1 animate-typing-cursor">&quot;Generate a visual report comparing Q1 vs Q2 sales by product category&quot;</span>
                     </div>
                   </div>
                 </div>
@@ -1104,7 +1667,7 @@ const HomePage = () => {
                       <span className="text-[11px] text-text-muted ms-auto font-mono">yourdomain.com</span>
                     </div>
                     <div className="relative h-24 rounded-lg overflow-hidden">
-                      <Image src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&q=80" alt="Published website" fill className="object-cover" sizes="300px" />
+                      <Image src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&q=80" alt="Published website" fill className="object-cover" sizes="300px" />
                       <div className="absolute inset-0 bg-gradient-to-t from-bg-tertiary/80 to-transparent" />
                     </div>
                     <div className="mt-2 flex items-center gap-3 text-[10px] text-text-muted">
