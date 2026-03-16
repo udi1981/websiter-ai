@@ -4,6 +4,7 @@ import { useReducer, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { type ScanResult } from '@/lib/scanner'
 import { rebuildSite } from '@/lib/site-rebuilder'
+import { PREMIUM_GENERATION_PROMPT, buildUserPromptFromPlan } from '@/lib/generation-prompt'
 import { UnifiedInput } from '@/components/create/UnifiedInput'
 import { DiscoveryChat, type DiscoveryMessage } from '@/components/create/DiscoveryChat'
 import { type TemplateItem } from '@/components/create/TemplateInspiration'
@@ -296,138 +297,10 @@ const NewSitePage = () => {
   // ─── Build prompt from plan ────────────────────────────────────────────
 
   const buildPromptFromPlan = (plan: BuildPlan) => {
-    const systemPrompt = `You are the world's best web designer. You craft digital experiences that make people's jaws drop — sites that win design awards and look like they cost $15,000+ to build.
-
-## OUTPUT
-Return ONLY the HTML — from <!DOCTYPE html> to </html>. No markdown, no explanations.
-
-## TECHNICAL REQUIREMENTS
-- ALL CSS in a single <style> tag in <head>. NO external CSS frameworks. NO Tailwind CDN.
-- CSS custom properties at :root for the ENTIRE design system (colors, fonts, spacing, shadows, radii, transitions)
-- Fluid typography using clamp() for ALL text sizes
-- Mobile-first responsive: base → 768px → 1024px → 1280px
-- Google Fonts via <link> tag
-- Single <script> before </body> with:
-  - IntersectionObserver scroll-reveal with stagger delays
-  - Sticky header: transparent → solid on scroll
-  - Smooth scroll for anchor links
-  - Mobile hamburger → fullscreen overlay menu
-  - Counter animation for stats
-  - Subtle parallax on hero
-  - Testimonial auto-carousel (if testimonials exist)
-  - Back-to-top button
-  - Lazy loading images with fade-in
-
-## IMAGE STRATEGY
-Use Unsplash: https://images.unsplash.com/photo-{ID}?w={W}&h={H}&fit=crop&q=80
-ONLY use these verified IDs:
-People: 1522202176988-66273c2fd55f, 1507003211169-0a1dd7228f2d, 1494790108377-be9c29b29330, 1573496359142-b8d87734a5a2, 1560250097-0b93528c311a, 1438761681033-6461ffad8d80, 1472099645785-5658abf4ff4e
-Business: 1497366216548-37526070297c, 1497366811353-6870744d04b2, 1560472354-b33ff0c44a43, 1553877522-43269d4ea984, 1542744173-8e7e91415657, 1521737711867-e3b97375f902
-Food: 1517248135467-4c7edcad34c4, 1414235077428-338989a2e8c0, 1504674900247-0877df9cc836, 1555396273-367ea4eb4db5, 1476224203421-9ac39bcb3327, 1540189549336-e6e99c3679fe, 1565299624946-b28f40a0ae38
-Tech: 1460925895917-afdab827c52f, 1518770660439-4636190af475, 1550751827-4bd374c3f58b, 1451187580459-43490279c0fa, 1519389950473-47ba0277781c
-Fitness: 1534438327276-14e5300c3a48, 1571019613454-1cb2f99b2d8b, 1517836357463-d25dfeac3438
-Medical: 1629909613654-28e377c37b09, 1588776814546-1ffcf47267a5
-Real Estate: 1600596542815-ffad4c1539a9, 1600585154340-be6161a56b0c, 1512917774080-9991f1c4c750
-E-commerce: 1441986300917-64674bd600d8, 1556905055-8f358a7a47b2, 1560506840-ec148e82a604
-
-## DESIGN EXCELLENCE
-- GENEROUS whitespace — premium sites breathe. When in doubt, add MORE space.
-- Clear visual hierarchy: hero headline massive (clamp 3-6rem), section headings large, body comfortable
-- Color: 60% neutral, 30% primary, 10% accent — cohesive and intentional
-- Every section must have a DIFFERENT layout — no repetitive card grids
-- Alternate section backgrounds for visual rhythm (white → subtle gray → white → accent)
-- Typography: mix serif + sans-serif for personality. Tight letter-spacing on headlines.
-- Cards: hover lift effect (translateY + shadow increase)
-- Buttons: hover scale(1.02) + shadow
-- Scroll reveal animations: fade-up, fade-left, fade-right, scale-in with stagger
-- Custom scrollbar styling for premium feel
-- Include Schema.org structured data (Organization/LocalBusiness)
-- Include proper SEO meta tags (title, description, viewport, og:tags)
-
-## QUALITY GATES
-✓ Jaw-dropping on first load — genuinely impressive
-✓ Cohesive color system — nothing random
-✓ 10-14 unique sections, each visually distinct
-✓ Generous whitespace throughout
-✓ Smooth, purposeful animations
-✓ Beautiful at 375px AND 1920px
-✓ Professional, realistic content — never lorem ipsum
-✓ Minimum 1000 lines of premium code
-
-Follow the build plan EXACTLY. Every section, color, font, and piece of content must match the plan.`
-
-    // Serialize the plan into a readable format for the generation AI
-    const sections = plan.pages?.[0]?.sections || []
-    const sectionList = sections.map((s, i) => {
-      let desc = `${i + 1}. ${s.type.toUpperCase()}${s.variant ? ` (${s.variant})` : ''}`
-      if (s.headline) desc += `\n   Headline: "${s.headline}"`
-      if (s.subheadline) desc += `\n   Subheadline: "${s.subheadline}"`
-      if (s.title) desc += `\n   Title: "${s.title}"`
-      if (s.subtitle) desc += `\n   Subtitle: "${s.subtitle}"`
-      if (s.cta) desc += `\n   CTA: "${s.cta.text}" → ${s.cta.action}`
-      if (s.items?.length) {
-        desc += `\n   Items:`
-        s.items.forEach(item => {
-          desc += `\n     - ${item.icon || '•'} ${item.title}: ${item.description}`
-        })
-      }
-      if (s.notes) desc += `\n   Notes: ${s.notes}`
-      return desc
-    }).join('\n\n')
-
-    const userPrompt = `Build a phenomenal website following the Team 100 build plan:
-
-## IDENTITY
-SITE: ${plan.siteName}
-INDUSTRY: ${plan.industry}
-DESIGN STYLE: ${plan.designStyle}
-CONTENT TONE: ${plan.contentTone}
-
-## COLOR PALETTE (use these exact colors)
-${Object.entries(plan.colorPalette || {}).map(([k, v]) => `  --color-${k}: ${v}`).join('\n')}
-
-## TYPOGRAPHY
-  Headings: ${plan.typography?.headingFont || 'Inter'} (weight: ${plan.typography?.headingWeight || '700'})
-  Body: ${plan.typography?.bodyFont || 'Inter'} (weight: ${plan.typography?.bodyWeight || '400'})
-  ${plan.typography?.accentFont ? `Accent: ${plan.typography.accentFont}` : ''}
-
-## LAYOUT
-  Max width: ${plan.layout?.maxWidth || '1280px'}
-  Header: ${plan.layout?.headerStyle || 'fixed-transparent'}
-  Hero: ${plan.layout?.heroStyle || 'full-screen-image-overlay'}
-  Section spacing: ${plan.layout?.sectionSpacing || 'clamp(5rem, 10vw, 9rem)'}
-
-## SECTIONS (build ALL of these, in this exact order)
-${sectionList}
-
-## CONVERSION STRATEGY
-  Primary Goal: ${(plan.conversionStrategy as Record<string, unknown>)?.primaryGoal || 'generate leads'}
-  Main CTA: ${(plan.conversionStrategy as Record<string, unknown>)?.mainCTA || 'Get Started'}
-  Trust Elements: ${JSON.stringify((plan.conversionStrategy as Record<string, unknown>)?.trustElements || [])}
-
-## SEO
-  <title>: ${(plan.seoStrategy as Record<string, unknown>)?.metaTitle || plan.siteName}
-  <meta description>: ${(plan.seoStrategy as Record<string, unknown>)?.metaDescription || ''}
-  Keywords: ${JSON.stringify((plan.seoStrategy as Record<string, unknown>)?.targetKeywords || [])}
-
-## MOTION
-  Intensity: ${(plan.motionPreset as Record<string, unknown>)?.intensity || 'moderate'}
-  Scroll reveal: ${(plan.motionPreset as Record<string, unknown>)?.scrollReveal !== false ? 'yes - fade-up with stagger' : 'minimal'}
-  Hover effects: ${(plan.motionPreset as Record<string, unknown>)?.hoverEffects !== false ? 'yes - lift + shadow on cards, scale on buttons' : 'subtle'}
-  Parallax: ${(plan.motionPreset as Record<string, unknown>)?.parallax ? 'yes - subtle on hero' : 'no'}
-
-${plan.preserveFromScan ? `## PRESERVED FROM ORIGINAL SITE\n${(plan.preserveFromScan as Record<string, unknown>)?.notes || 'Colors, fonts, and section order preserved from the scanned original site. Match the original closely.'}` : ''}
-
-## REMEMBER
-- Follow this plan PRECISELY. Use the exact colors, fonts, headlines, and content specified.
-- Write ALL content as realistic, professional, industry-specific copy. Never lorem ipsum.
-- Make the hero section jaw-droppingly beautiful — this is the first impression.
-- Each section must have a UNIQUE visual layout. No two sections should look the same.
-- Include a FAQ section with real, helpful questions and detailed answers.
-- Include Schema.org structured data appropriate for this business type.
-- The site must look phenomenal on mobile. Not just "responsive" — genuinely beautiful on a phone.`
-
-    return { systemPrompt, userPrompt }
+    return {
+      systemPrompt: PREMIUM_GENERATION_PROMPT,
+      userPrompt: buildUserPromptFromPlan(plan),
+    }
   }
 
   // ─── Handlers ────────────────────────────────────────────────────────────
@@ -695,13 +568,27 @@ ${plan.preserveFromScan ? `## PRESERVED FROM ORIGINAL SITE\n${(plan.preserveFrom
         .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
         .join('\n')
 
-      const fallbackSystem = `You are an elite web designer. Generate a complete, stunning HTML website.
-Return ONLY the HTML — from <!DOCTYPE html> to </html>. No markdown fences, no explanations.
-Include ALL CSS in a single <style> tag. Include JS for scroll animations, mobile menu, and smooth scroll in a single <script> before </body>.
-Use Google Fonts via <link> tag. Use Unsplash images.
-Make it look like a $10,000 agency-built website. 800+ lines minimum.`
+      const fallbackSystem = PREMIUM_GENERATION_PROMPT
 
-      const fallbackUser = `Create a stunning website.\n\nBusiness: ${siteName}\nType: ${businessType}\nContext:\n${discoveryInfo}\nDescription: "${state.description}"`
+      const fallbackUser = `Build a PHENOMENAL website that looks like it cost $20,000+ to build.
+
+## BRAND
+- **Name:** ${siteName}
+- **Industry:** ${businessType}
+- **Description:** "${state.description}"
+
+## CONTEXT FROM DISCOVERY
+${discoveryInfo}
+
+## REQUIREMENTS
+1. 12-16 unique sections, each with distinct visual treatment
+2. Massive hero with gradient overlay, jaw-dropping typography
+3. Professional, realistic content specific to this business
+4. Full CSS design system with custom properties
+5. Scroll animations, mobile menu, smooth scroll, parallax
+6. Schema.org structured data + SEO meta tags
+7. 1200+ lines of premium code
+8. Every section must have a DIFFERENT layout — no repetitive patterns`
 
       try {
         dispatch({ type: 'BUILD_PROGRESS', status: 'Generating with AI...', progress: 30 })

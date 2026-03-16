@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { PREMIUM_GENERATION_PROMPT } from '@/lib/generation-prompt'
 
 // Vercel: allow up to 60s for generation
 export const maxDuration = 60
@@ -7,7 +8,10 @@ const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages'
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514'
 const FETCH_TIMEOUT = 55000
 
-const GENERATION_PROMPT = `You are the world's best web designer. You don't build websites — you craft digital experiences that make people stop scrolling, lean forward, and say "wow." Your sites have won design awards. Agencies charge $15,000+ for what you create in a single output.
+const GENERATION_PROMPT = PREMIUM_GENERATION_PROMPT
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+const _LEGACY_PROMPT = `You are the world's best web designer. You don't build websites — you craft digital experiences that make people stop scrolling, lean forward, and say "wow." Your sites have won design awards. Agencies charge $15,000+ for what you create in a single output.
 
 ## YOUR STANDARD
 Look at sites like:

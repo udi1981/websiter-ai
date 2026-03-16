@@ -24,11 +24,12 @@ export async function POST(request: Request) {
       )
     }
 
-    // Use provided prompts or build minimal ones
-    const system = systemPrompt || 'You are a web developer. Generate a complete HTML page. Return ONLY the HTML, no markdown fences.'
-    const user = userPrompt || `Generate a website for "${siteName || 'My Site'}" (${businessType || 'business'}).
+    // Use provided prompts or build comprehensive ones
+    const system = systemPrompt || `You are the world's #1 web designer. Generate a complete, stunning HTML website from <!DOCTYPE html> to </html>. No markdown fences, no explanations. Include all CSS in <style>, all JS in <script>. Use Google Fonts via <link>. Use verified Unsplash photo IDs. Make it look like a $20,000 agency site. 1200+ lines minimum. Include Schema.org structured data, SEO meta tags, scroll animations, mobile hamburger menu, smooth scroll, parallax, counter animations, testimonial carousel, and back-to-top button.`
+    const user = userPrompt || `Generate a phenomenal website for "${siteName || 'My Site'}" (${businessType || 'business'}).
 Design DNA: ${JSON.stringify(designDna || {})}
-Original content: ${JSON.stringify(originalContent || {})}`
+Original content: ${JSON.stringify(originalContent || {})}
+Build 12-16 unique sections. Every section must have a different visual layout.`
 
     // Try Claude first, then fall back to Gemini
     let response: Response | null = null
@@ -48,6 +49,7 @@ Original content: ${JSON.stringify(originalContent || {})}`
           body: JSON.stringify({
             model: CLAUDE_MODEL,
             max_tokens: 32000,
+            temperature: 0.7,
             stream: true,
             system,
             messages: [{ role: 'user', content: user }],
