@@ -2,7 +2,7 @@
 
 import { useReducer, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { scanWebsite, type ScanResult } from '@/lib/scanner'
+import { type ScanResult } from '@/lib/scanner'
 import { rebuildSite } from '@/lib/site-rebuilder'
 import { UnifiedInput } from '@/components/create/UnifiedInput'
 import { DiscoveryChat, type DiscoveryMessage } from '@/components/create/DiscoveryChat'
@@ -361,7 +361,7 @@ Make ALL content realistic and professional. Never use lorem ipsum.`
   const handleContinue = useCallback(async () => {
     dispatch({ type: 'GO_DISCOVERY' })
 
-    // Start URL scan in background if URL provided
+    // Start deep URL scan in background if URL provided
     let scanResult: ScanResult | null = null
     if (state.url.trim()) {
       dispatch({ type: 'SCAN_START' })
@@ -370,24 +370,128 @@ Make ALL content realistic and professional. Never use lorem ipsum.`
         message: {
           id: `msg_scan_${Date.now()}`,
           role: 'system',
-          content: `🔍 Team 100 Scanner is analyzing ${state.url.trim()}...`,
+          content: `🔍 Team 100 Deep Scanner is analyzing ${state.url.trim()}... This may take 1-3 minutes.`,
         },
       })
 
       try {
         const url = state.url.trim().startsWith('http') ? state.url.trim() : `https://${state.url.trim()}`
-        scanResult = await scanWebsite(url)
-        dispatch({ type: 'SCAN_DONE', result: scanResult })
+
+        // Use deep scanner with SSE progress
+        const res = await fetch('/api/scan/deep', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        })
+
+        if (res.ok && res.body) {
+          const reader = res.body.getReader()
+          const decoder = new TextDecoder()
+          let buffer = ''
+
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            buffer += decoder.decode(value, { stream: true })
+            const lines = buffer.split('\n\n')
+            buffer = lines.pop() || ''
+
+            for (const block of lines) {
+              const eventMatch = block.match(/^event: (\w+)\ndata: ([\s\S]+)$/)
+              if (!eventMatch) continue
+              const [, eventType, dataStr] = eventMatch
+              try {
+                const data = JSON.parse(dataStr)
+
+                if (eventType === 'progress') {
+                  dispatch({
+                    type: 'SYSTEM_MESSAGE',
+                    message: {
+                      id: `msg_scan_progress_${Date.now()}`,
+                      role: 'system',
+                      content: `📊 ${data.message} (${data.percent}%)`,
+                    },
+                  })
+                } else if (eventType === 'phase') {
+                  if (data.status === 'running') {
+                    dispatch({
+                      type: 'SYSTEM_MESSAGE',
+                      message: {
+                        id: `msg_phase_${Date.now()}`,
+                        role: 'system',
+                        content: `⚡ ${data.description}`,
+                      },
+                    })
+                  }
+                } else if (eventType === 'result' && data.ok) {
+                  // Convert deep scan result to ScanResult format for compatibility
+                  const deepResult = data.data
+                  scanResult = {
+                    url: deepResult.url,
+                    domain: deepResult.domain,
+                    title: deepResult.seoMeta?.title || '',
+                    description: deepResult.seoMeta?.description || '',
+                    favicon: '',
+                    ogImage: deepResult.seoMeta?.ogTags?.['og:image'] || '',
+                    colors: (deepResult.designTokens?.colors || []).map((c: { hex: string; usage: string; frequency: number }) => ({
+                      hex: c.hex,
+                      usage: c.usage as 'primary' | 'secondary' | 'background' | 'text' | 'accent' | 'border',
+                      frequency: c.frequency,
+                    })),
+                    fonts: (deepResult.designTokens?.fonts || []).map((f: { family: string; usage: string; weight: string; source: string }) => ({
+                      family: f.family,
+                      usage: f.usage as 'heading' | 'body' | 'accent',
+                      weight: f.weight,
+                      source: f.source as 'google-fonts' | 'system' | 'custom',
+                    })),
+                    sections: deepResult.contentMap?.[0]?.sections || [],
+                    navigation: deepResult.navigation || [],
+                    headings: deepResult.contentMap?.[0]?.headings || [],
+                    paragraphs: [],
+                    images: (deepResult.images || []).slice(0, 20),
+                    ctaButtons: deepResult.contentMap?.[0]?.ctaButtons || [],
+                    seoMeta: deepResult.seoMeta || { title: '', description: '', keywords: '', canonical: '', ogTags: {} },
+                    businessType: deepResult.businessType || '',
+                    businessName: deepResult.siteName || '',
+                    motion: deepResult.motion ? {
+                      hasAnimationLibrary: deepResult.motion.hasAnimationLibrary,
+                      hasScrollAnimations: deepResult.motion.hasScrollAnimations,
+                      hasParallax: deepResult.motion.hasParallax,
+                      hasStickyHeader: deepResult.motion.hasStickyHeader,
+                      suggestedPreset: 'moderate' as const,
+                    } : undefined,
+                    designDna: deepResult.designDna || undefined,
+                  } as ScanResult
+
+                  dispatch({ type: 'SCAN_DONE', result: scanResult })
+                  dispatch({
+                    type: 'SYSTEM_MESSAGE',
+                    message: {
+                      id: `msg_scan_done_${Date.now()}`,
+                      role: 'system',
+                      content: `✅ Deep scan complete — analyzed ${deepResult.pageCount} pages, found ${deepResult.designTokens?.colors?.length || 0} colors, ${deepResult.designTokens?.fonts?.length || 0} fonts, ${deepResult.contentMap?.reduce((s: number, p: { sections: unknown[] }) => s + p.sections.length, 0) || 0} sections. Design DNA captured in ${Math.round(deepResult.scanDuration / 1000)}s.`,
+                    },
+                  })
+                } else if (eventType === 'error') {
+                  throw new Error(data.error)
+                }
+              } catch { /* skip malformed events */ }
+            }
+          }
+        } else {
+          throw new Error('Deep scan request failed')
+        }
+      } catch (err) {
+        console.error('Deep scan failed:', err)
+        dispatch({ type: 'SCAN_ERROR' })
         dispatch({
           type: 'SYSTEM_MESSAGE',
           message: {
-            id: `msg_scan_done_${Date.now()}`,
+            id: `msg_scan_err_${Date.now()}`,
             role: 'system',
-            content: `Scan complete — found ${scanResult.sections?.length || 0} sections, ${scanResult.colors?.length || 0} colors, ${scanResult.fonts?.length || 0} fonts. DNA captured.`,
+            content: `⚠️ Scan encountered an issue. Continuing with discovery questions...`,
           },
         })
-      } catch {
-        dispatch({ type: 'SCAN_ERROR' })
       }
     }
 
