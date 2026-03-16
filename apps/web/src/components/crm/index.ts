@@ -1,0 +1,5 @@
+export { CrmKpiCards } from './CrmKpiCards'
+export { CrmOverviewTab } from './CrmOverviewTab'
+export { CrmLeadsTab } from './CrmLeadsTab'
+export { CrmCampaignsTab } from './CrmCampaignsTab'
+export { CrmAnalyticsTab } from './CrmAnalyticsTab'

@@ -124,14 +124,21 @@ You MUST respond with valid JSON only. No markdown, no code fences, no explanati
 }
 
 ## RULES
-1. Every section must have REAL, specific content — never placeholder text
-2. Headlines must be compelling and conversion-oriented
-3. Include 6-12 sections per page minimum
-4. Color palette must have proper contrast (WCAG AA)
-5. If scan data exists, the plan must reflect the scanned site's DNA
-6. Items arrays should have 3-6 items each with full content
-7. Image descriptions should be specific enough for an AI to find/generate the right image
-8. The plan must be comprehensive enough that a developer could build the site from it alone`
+1. Every section must have REAL, specific, compelling content — never placeholder text
+2. Headlines must be benefit-oriented and conversion-focused, not generic
+3. Include 10-14 sections per page for a comprehensive, premium feel
+4. Color palette must have proper contrast (WCAG AA) and include ALL semantic colors
+5. If scan data exists, the plan must CLOSELY MATCH the scanned site's structure and style
+6. Items arrays should have 4-6 items each with FULL, detailed descriptions (2-3 sentences each)
+7. Image descriptions should be specific enough to find the perfect Unsplash photo
+8. The plan must be comprehensive enough that a developer could build the ENTIRE site from it alone
+9. Include an FAQ section with 5-8 REAL, helpful questions and detailed answers
+10. Include a testimonials section with 3-4 realistic testimonials (name, role, company, quote)
+11. Include proper Schema.org type recommendation (Organization, LocalBusiness, Restaurant, etc.)
+12. Typography: recommend specific Google Fonts that match the brand personality
+13. The hero section must specify exactly: headline, subheadline, CTAs, image mood, layout style
+14. Sections must vary in layout: no two sections should use the same visual pattern
+15. Include conversion strategy with specific trust elements relevant to the industry`
 
 type PlanningRequest = {
   discoveryContext: Record<string, unknown>
@@ -173,18 +180,29 @@ export const POST = async (request: Request) => {
     // Build comprehensive context for the planner
     const contextParts: string[] = []
 
-    // Discovery context
+    // Discovery context — supports both old and new dimension formats
     if (body.discoveryContext) {
       const dc = body.discoveryContext
       if (dc.business_name) contextParts.push(`Business name: ${dc.business_name}`)
       if (dc.industry) contextParts.push(`Industry: ${dc.industry}`)
+      if (dc.brand_personality) contextParts.push(`Brand personality: ${dc.brand_personality}`)
       if (dc.target_audience) contextParts.push(`Target audience: ${dc.target_audience}`)
+      if (dc.competitive_edge) contextParts.push(`Competitive edge: ${dc.competitive_edge}`)
+      if (dc.competitors) contextParts.push(`Competitors: ${dc.competitors}`)
       if (dc.primary_goal) contextParts.push(`Primary goal: ${dc.primary_goal}`)
-      if (dc.key_features) contextParts.push(`Key features needed: ${JSON.stringify(dc.key_features)}`)
-      if (dc.design_preference) contextParts.push(`Design preference: ${dc.design_preference}`)
-      if (dc.content_tone) contextParts.push(`Content tone: ${dc.content_tone}`)
-      if (dc.unique_value) contextParts.push(`Unique value proposition: ${dc.unique_value}`)
+      if (dc.conversion_action) contextParts.push(`Primary conversion action: ${dc.conversion_action}`)
+      if (dc.trust_factors) contextParts.push(`Trust factors: ${JSON.stringify(dc.trust_factors)}`)
+      if (dc.key_services || dc.key_features) contextParts.push(`Key services/features: ${JSON.stringify(dc.key_services || dc.key_features)}`)
       if (dc.pages_needed) contextParts.push(`Pages requested: ${JSON.stringify(dc.pages_needed)}`)
+      if (dc.existing_content) contextParts.push(`Existing content: ${dc.existing_content}`)
+      if (dc.design_mood || dc.design_preference) contextParts.push(`Design mood: ${dc.design_mood || dc.design_preference}`)
+      if (dc.color_preferences) contextParts.push(`Color preferences: ${dc.color_preferences}`)
+      if (dc.inspiration_sites) contextParts.push(`Inspiration sites: ${dc.inspiration_sites}`)
+      if (dc.photography_style) contextParts.push(`Photography style: ${dc.photography_style}`)
+      if (dc.content_tone) contextParts.push(`Content tone: ${dc.content_tone}`)
+      if (dc.special_features) contextParts.push(`Special features: ${JSON.stringify(dc.special_features)}`)
+      if (dc.local_seo) contextParts.push(`Local SEO: ${dc.local_seo}`)
+      if (dc.unique_value) contextParts.push(`Unique value proposition: ${dc.unique_value}`)
     }
 
     if (body.description) {
@@ -276,7 +294,7 @@ export const POST = async (request: Request) => {
           },
           body: JSON.stringify({
             model: 'claude-sonnet-4-20250514',
-            max_tokens: 4096,
+            max_tokens: 8192,
             temperature: 0.3,
             system: PLANNING_SYSTEM_PROMPT,
             messages: [{ role: 'user', content: userContent }],

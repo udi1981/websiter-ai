@@ -42,7 +42,7 @@ Original content: ${JSON.stringify(originalContent || {})}`
           },
           body: JSON.stringify({
             model: CLAUDE_MODEL,
-            max_tokens: 16384,
+            max_tokens: 32000,
             stream: true,
             system,
             messages: [{ role: 'user', content: user }],

@@ -243,10 +243,15 @@ export const AIChatPanel = ({
                 </p>
                 <div className="w-full space-y-1.5">
                   {[
-                    'Change the hero title',
-                    'Update the color scheme',
+                    'Analyze my site and suggest improvements',
+                    'Make the design more modern and premium',
+                    'Optimize SEO and add Schema.org',
                     'Add a testimonials section',
-                    'Remove the contact form',
+                    'Switch to dark mode',
+                    'Rewrite the headline for better conversions',
+                    'שפר את העיצוב של האתר',
+                    'הוסף קטע שאלות נפוצות',
+                    'שנה את הצבעים לכהים',
                   ].map((s) => (
                     <button
                       key={s}
@@ -342,7 +347,7 @@ export const AIChatPanel = ({
                     handleSend()
                   }
                 }}
-                placeholder="Describe changes..."
+                placeholder="תאר שינויים... / Describe changes..."
                 className="w-full resize-none rounded-lg border border-border bg-bg-secondary px-3 py-2 pe-20 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 rows={2}
               />
@@ -376,8 +381,8 @@ export const AIChatPanel = ({
               </div>
             </div>
             <div className="mt-1.5 flex items-center justify-between text-[10px] text-text-muted">
-              <span>Version {version}</span>
-              <span>Shift+Enter for new line</span>
+              <span>גרסה / Version {version}</span>
+              <span>Shift+Enter לשורה חדשה / for new line</span>
             </div>
           </div>
         </div>
