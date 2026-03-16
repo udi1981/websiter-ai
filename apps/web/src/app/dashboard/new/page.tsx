@@ -1,1108 +1,625 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useReducer, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { scanWebsite, type ScanResult } from '@/lib/scanner'
 import { rebuildSite } from '@/lib/site-rebuilder'
-import type { MotionIntensity } from '@/lib/motion-presets'
+import { UnifiedInput } from '@/components/create/UnifiedInput'
+import { DiscoveryChat, type DiscoveryMessage } from '@/components/create/DiscoveryChat'
+import { type TemplateItem } from '@/components/create/TemplateInspiration'
 
-type TabId = 'scratch' | 'url' | 'template'
-type TemplateCategory = 'all' | 'restaurant' | 'saas' | 'ecommerce' | 'portfolio' | 'business' | 'blog' | 'dental' | 'yoga' | 'law' | 'realestate' | 'fitness' | 'photography'
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const tabs: { id: TabId; label: string; icon: string }[] = [
-  { id: 'scratch', label: 'Start from Scratch', icon: 'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z' },
-  { id: 'url', label: 'Start from URL', icon: 'M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244' },
-  { id: 'template', label: 'Start from Template', icon: 'M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z' },
-]
-
-const categories: { id: TemplateCategory; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'restaurant', label: 'Restaurant' },
-  { id: 'saas', label: 'SaaS' },
-  { id: 'ecommerce', label: 'E-commerce' },
-  { id: 'portfolio', label: 'Portfolio' },
-  { id: 'business', label: 'Business' },
-  { id: 'blog', label: 'Blog' },
-  { id: 'dental', label: 'Dental' },
-  { id: 'yoga', label: 'Wellness' },
-  { id: 'law', label: 'Legal' },
-  { id: 'realestate', label: 'Real Estate' },
-  { id: 'fitness', label: 'Fitness' },
-  { id: 'photography', label: 'Photography' },
-]
-
-const categoryColors: Record<string, string> = {
-  restaurant: 'bg-orange-500/10 text-orange-400',
-  saas: 'bg-blue-500/10 text-blue-400',
-  ecommerce: 'bg-emerald-500/10 text-emerald-400',
-  portfolio: 'bg-pink-500/10 text-pink-400',
-  business: 'bg-cyan-500/10 text-cyan-400',
-  blog: 'bg-amber-500/10 text-amber-400',
-  dental: 'bg-sky-500/10 text-sky-400',
-  yoga: 'bg-lime-500/10 text-lime-400',
-  law: 'bg-slate-500/10 text-slate-400',
-  realestate: 'bg-yellow-500/10 text-yellow-400',
-  fitness: 'bg-red-500/10 text-red-400',
-  photography: 'bg-violet-500/10 text-violet-400',
+type BuildPlan = {
+  siteName: string
+  industry: string
+  designStyle: string
+  colorPalette: Record<string, string>
+  typography: Record<string, string>
+  layout: Record<string, string>
+  pages: {
+    name: string
+    slug: string
+    purpose: string
+    sections: {
+      type: string
+      variant?: string
+      headline?: string
+      subheadline?: string
+      title?: string
+      subtitle?: string
+      cta?: { text: string; action: string }
+      items?: { title: string; description: string; icon?: string }[]
+      notes?: string
+    }[]
+  }[]
+  contentTone: string
+  conversionStrategy: Record<string, unknown>
+  seoStrategy: Record<string, unknown>
+  motionPreset: Record<string, unknown>
+  preserveFromScan?: Record<string, unknown>
 }
 
-const templateData = [
-  {
-    id: 'restaurant',
-    name: 'Saffron & Thyme',
-    category: 'restaurant' as TemplateCategory,
-    pages: 5,
-  },
-  {
-    id: 'saas',
-    name: 'Metrica SaaS',
-    category: 'saas' as TemplateCategory,
-    pages: 4,
-  },
-  {
-    id: 'ecommerce',
-    name: 'ATELIER Store',
-    category: 'ecommerce' as TemplateCategory,
-    pages: 6,
-  },
-  {
-    id: 'portfolio',
-    name: 'Creative Portfolio',
-    category: 'portfolio' as TemplateCategory,
-    pages: 3,
-  },
-  {
-    id: 'business',
-    name: 'Vantage Studio',
-    category: 'business' as TemplateCategory,
-    pages: 5,
-  },
-  {
-    id: 'blog',
-    name: 'The Inkwell Blog',
-    category: 'blog' as TemplateCategory,
-    pages: 4,
-  },
-  {
-    id: 'dental',
-    name: 'PearlCare Dental',
-    category: 'dental' as TemplateCategory,
-    pages: 5,
-  },
-  {
-    id: 'yoga',
-    name: 'Lotus Path Wellness',
-    category: 'yoga' as TemplateCategory,
-    pages: 5,
-  },
-  {
-    id: 'law',
-    name: 'Prescott & Associates',
-    category: 'law' as TemplateCategory,
-    pages: 4,
-  },
-  {
-    id: 'realestate',
-    name: 'Horizon Properties',
-    category: 'realestate' as TemplateCategory,
-    pages: 5,
-  },
-  {
-    id: 'fitness',
-    name: 'Summit Fit',
-    category: 'fitness' as TemplateCategory,
-    pages: 4,
-  },
-  {
-    id: 'photography',
-    name: 'Ember Studio',
-    category: 'photography' as TemplateCategory,
-    pages: 3,
-  },
-]
+// ─── State ────────────────────────────────────────────────────────────────────
 
-const scannerSteps = [
-  { label: 'Fetching HTML', icon: 'M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418' },
-  { label: 'Stylesheets', icon: 'M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5' },
-  { label: 'Metadata', icon: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z' },
-  { label: 'Colors', icon: 'M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z' },
-  { label: 'Typography', icon: 'M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12' },
-  { label: 'Content', icon: 'M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z' },
-  { label: 'Layout', icon: 'M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z' },
-  { label: 'Motion', icon: 'M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h1.5C5.496 19.5 6 18.996 6 18.375m-3.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-1.5A1.125 1.125 0 0118 18.375M20.625 4.5H3.375m17.25 0c.621 0 1.125.504 1.125 1.125M20.625 4.5h-1.5C18.504 4.5 18 5.004 18 5.625m3.75 0v1.5c0 .621-.504 1.125-1.125 1.125M3.375 4.5c-.621 0-1.125.504-1.125 1.125M3.375 4.5h1.5C5.496 4.5 6 5.004 6 5.625m-3.75 0v1.5c0 .621.504 1.125 1.125 1.125m0 0h1.5m-1.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m1.5-3.75C5.496 8.25 6 7.746 6 7.125v-1.5M4.875 8.25C5.496 8.25 6 8.754 6 9.375v1.5m0-5.25v5.25m0-5.25C6 5.004 6.504 4.5 7.125 4.5h9.75c.621 0 1.125.504 1.125 1.125m1.125 2.625h1.5m-1.5 0A1.125 1.125 0 0118 7.125v-1.5m1.125 2.625c-.621 0-1.125.504-1.125 1.125v1.5m2.625-2.625c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125M18 5.625v5.25M7.125 12h9.75m-9.75 0A1.125 1.125 0 016 10.875M7.125 12C6.504 12 6 12.504 6 13.125m0-2.25C6 11.496 5.496 12 4.875 12M18 10.875c0 .621-.504 1.125-1.125 1.125M18 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m-12 5.25v-5.25m0 5.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125m-12 0v-1.5c0-.621-.504-1.125-1.125-1.125M18 18.375v-5.25m0 5.25v-1.5c0-.621.504-1.125 1.125-1.125M18 13.125v1.5c0 .621.504 1.125 1.125 1.125M18 13.125c0-.621.504-1.125 1.125-1.125M6 13.125v1.5c0 .621-.504 1.125-1.125 1.125M6 13.125C6 12.504 5.496 12 4.875 12m-1.5 0h1.5m-1.5 0c-.621 0-1.125-.504-1.125-1.125v-1.5c0-.621.504-1.125 1.125-1.125m1.5 0c-.621 0-1.125-.504-1.125-1.125v-1.5' },
-  { label: 'AI Analysis', icon: 'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z' },
-]
+type Step = 'input' | 'discovery' | 'generating'
+
+type State = {
+  step: Step
+  // Step 1
+  description: string
+  url: string
+  uploadedImage: string | null
+  selectedTemplateId: string | null
+  selectedTemplateSeedText: string | null
+  // Scan
+  scanStatus: 'idle' | 'scanning' | 'done' | 'error'
+  scanResult: ScanResult | null
+  // Step 2
+  messages: DiscoveryMessage[]
+  discoveryContext: Record<string, unknown>
+  progress: { current: number; total: number }
+  readyToGenerate: boolean
+  isAiThinking: boolean
+  // Planning + Generation
+  buildPlan: BuildPlan | null
+  isGenerating: boolean
+  buildStatus: string
+  buildProgress: number
+}
+
+type Action =
+  | { type: 'SET_DESCRIPTION'; value: string }
+  | { type: 'SET_URL'; value: string }
+  | { type: 'SET_IMAGE'; value: string | null }
+  | { type: 'SELECT_TEMPLATE'; id: string | null; seedText: string | null }
+  | { type: 'GO_DISCOVERY' }
+  | { type: 'GO_INPUT' }
+  | { type: 'SCAN_START' }
+  | { type: 'SCAN_DONE'; result: ScanResult }
+  | { type: 'SCAN_ERROR' }
+  | { type: 'AI_THINKING' }
+  | { type: 'AI_RESPONSE'; message: DiscoveryMessage; context: Record<string, unknown>; progress: { current: number; total: number }; ready: boolean }
+  | { type: 'USER_MESSAGE'; message: DiscoveryMessage }
+  | { type: 'SYSTEM_MESSAGE'; message: DiscoveryMessage }
+  | { type: 'START_BUILD' }
+  | { type: 'SET_PLAN'; plan: BuildPlan }
+  | { type: 'BUILD_PROGRESS'; status: string; progress: number }
+  | { type: 'BUILD_DONE' }
+
+const initialState: State = {
+  step: 'input',
+  description: '',
+  url: '',
+  uploadedImage: null,
+  selectedTemplateId: null,
+  selectedTemplateSeedText: null,
+  scanStatus: 'idle',
+  scanResult: null,
+  messages: [],
+  discoveryContext: {},
+  progress: { current: 0, total: 6 },
+  readyToGenerate: false,
+  isAiThinking: false,
+  buildPlan: null,
+  isGenerating: false,
+  buildStatus: '',
+  buildProgress: 0,
+}
+
+const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case 'SET_DESCRIPTION':
+      return { ...state, description: action.value }
+    case 'SET_URL':
+      return { ...state, url: action.value }
+    case 'SET_IMAGE':
+      return { ...state, uploadedImage: action.value }
+    case 'SELECT_TEMPLATE':
+      return { ...state, selectedTemplateId: action.id, selectedTemplateSeedText: action.seedText }
+    case 'GO_DISCOVERY':
+      return { ...state, step: 'discovery' }
+    case 'GO_INPUT':
+      return { ...state, step: 'input', messages: [], discoveryContext: {}, progress: { current: 0, total: 6 }, readyToGenerate: false, isAiThinking: false, buildPlan: null }
+    case 'SCAN_START':
+      return { ...state, scanStatus: 'scanning' }
+    case 'SCAN_DONE':
+      return { ...state, scanStatus: 'done', scanResult: action.result }
+    case 'SCAN_ERROR':
+      return { ...state, scanStatus: 'error' }
+    case 'AI_THINKING':
+      return { ...state, isAiThinking: true }
+    case 'AI_RESPONSE':
+      return {
+        ...state,
+        isAiThinking: false,
+        messages: [...state.messages, action.message],
+        discoveryContext: action.context,
+        progress: action.progress,
+        readyToGenerate: action.ready,
+      }
+    case 'USER_MESSAGE':
+      return { ...state, messages: [...state.messages, action.message] }
+    case 'SYSTEM_MESSAGE':
+      return { ...state, messages: [...state.messages, action.message] }
+    case 'START_BUILD':
+      return { ...state, isGenerating: true, buildStatus: 'Preparing...', buildProgress: 0 }
+    case 'SET_PLAN':
+      return { ...state, buildPlan: action.plan }
+    case 'BUILD_PROGRESS':
+      return { ...state, buildStatus: action.status, buildProgress: action.progress }
+    case 'BUILD_DONE':
+      return { ...state, isGenerating: false, buildStatus: '', buildProgress: 0 }
+    default:
+      return state
+  }
+}
+
+// ─── Page Component ──────────────────────────────────────────────────────────
 
 const NewSitePage = () => {
   const router = useRouter()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [state, dispatch] = useReducer(reducer, initialState)
 
-  const [activeTab, setActiveTab] = useState<TabId>('scratch')
-  const [loading, setLoading] = useState(false)
+  // ─── Discovery API call ──────────────────────────────────────────────────
 
-  // Scratch tab state
-  const [prompt, setPrompt] = useState('')
-  const [platform, setPlatform] = useState<'both' | 'mobile'>('both')
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+  const callDiscovery = useCallback(async (userMessages: DiscoveryMessage[], context: Record<string, unknown>, scanResult: ScanResult | null) => {
+    dispatch({ type: 'AI_THINKING' })
 
-  // URL tab state
-  const [siteUrl, setSiteUrl] = useState('')
-  const [scanning, setScanning] = useState(false)
-  const [scanStep, setScanStep] = useState(-1)
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null)
-  const [scanError, setScanError] = useState('')
-
-  // Motion & media options
-  const [selectedMotion, setSelectedMotion] = useState<MotionIntensity>('premium')
-
-  // Template tab state
-  const [selectedCategory, setSelectedCategory] = useState<TemplateCategory>('all')
-
-  const filteredTemplates = selectedCategory === 'all'
-    ? templateData
-    : templateData.filter(t => t.category === selectedCategory)
-
-  const createSite = async (templateId: string, name: string, description: string) => {
-    const siteId = `site_${Date.now()}`
-
-    let html = ''
     try {
-      const res = await fetch(`/templates/${templateId}/index.html`)
-      html = await res.text()
-    } catch {
-      // fallback
+      const res = await fetch('/api/ai/discovery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initialInput: {
+            description: state.description,
+            templateId: state.selectedTemplateId,
+            scanResult: scanResult ? {
+              businessType: scanResult.businessType,
+              businessName: scanResult.businessName,
+              sections: scanResult.sections?.map(s => s.type),
+              colors: scanResult.colors?.slice(0, 5),
+            } : undefined,
+            hasUploadedImage: !!state.uploadedImage,
+          },
+          messages: userMessages
+            .filter(m => m.role !== 'system')
+            .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+          context,
+        }),
+      })
+
+      if (!res.ok) throw new Error('Discovery API failed')
+
+      const data = await res.json()
+
+      if (data.ok) {
+        const aiMessage: DiscoveryMessage = {
+          id: `msg_${Date.now()}`,
+          role: 'assistant',
+          content: data.data.question,
+          suggestions: data.data.suggestions,
+        }
+
+        dispatch({
+          type: 'AI_RESPONSE',
+          message: aiMessage,
+          context: data.data.context || context,
+          progress: data.data.progress || { current: 0, total: 6 },
+          ready: data.data.readyToGenerate || false,
+        })
+      } else {
+        throw new Error(data.error || 'Unknown error')
+      }
+    } catch (err) {
+      console.error('Discovery API call failed:', err)
+      const fallbackMessage: DiscoveryMessage = {
+        id: `msg_${Date.now()}`,
+        role: 'assistant',
+        content: 'Tell me more about your business — what do you do and who are your customers?',
+        suggestions: ['Service business', 'Online store', 'Portfolio / Creative', 'Local business'],
+      }
+      dispatch({
+        type: 'AI_RESPONSE',
+        message: fallbackMessage,
+        context,
+        progress: { current: 1, total: 6 },
+        ready: false,
+      })
     }
+  }, [state.description, state.selectedTemplateId, state.uploadedImage])
 
-    // If from scratch, customize the heading
-    if (activeTab === 'scratch' && description && html) {
-      const heading = description.slice(0, 60)
-      html = html.replace(/<h1[^>]*>([^<]*)<\/h1>/, `<h1>$1 - ${heading}</h1>`)
+  // ─── Planning API call ─────────────────────────────────────────────────
+
+  const callPlanning = useCallback(async (): Promise<BuildPlan | null> => {
+    dispatch({ type: 'BUILD_PROGRESS', status: 'Team 100 is planning your site...', progress: 10 })
+
+    try {
+      const res = await fetch('/api/ai/planning', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          discoveryContext: state.discoveryContext,
+          scanResult: state.scanResult ? {
+            colors: state.scanResult.colors,
+            fonts: state.scanResult.fonts,
+            sections: state.scanResult.sections,
+            navigation: state.scanResult.navigation,
+            headings: state.scanResult.headings,
+            paragraphs: state.scanResult.paragraphs?.slice(0, 20),
+            images: state.scanResult.images?.slice(0, 15),
+            businessType: state.scanResult.businessType,
+            businessName: state.scanResult.businessName,
+            title: state.scanResult.title,
+            description: state.scanResult.description,
+            seoMeta: state.scanResult.seoMeta,
+            motion: state.scanResult.motion,
+            designDna: state.scanResult.designDna,
+          } : undefined,
+          description: state.description,
+          templateId: state.selectedTemplateId,
+        }),
+      })
+
+      if (!res.ok) throw new Error('Planning API failed')
+
+      const data = await res.json()
+      if (data.ok && data.data?.plan) {
+        dispatch({ type: 'SET_PLAN', plan: data.data.plan })
+        dispatch({ type: 'BUILD_PROGRESS', status: 'Build plan ready — generating site...', progress: 25 })
+        return data.data.plan as BuildPlan
+      }
+      throw new Error('No plan returned')
+    } catch (err) {
+      console.error('Planning failed:', err)
+      dispatch({ type: 'BUILD_PROGRESS', status: 'Planning skipped — generating directly...', progress: 15 })
+      return null
     }
+  }, [state.discoveryContext, state.scanResult, state.description, state.selectedTemplateId])
 
-    const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
-    const savedSites = JSON.parse(localStorage.getItem('ubuilder_sites') || '[]')
-    savedSites.push({
-      id: siteId,
-      name,
-      status: 'draft',
-      lastEdited: 'Just now',
-      url: `${slug}.ubuilder.co`,
-      description,
-      template: templateId,
-    })
-    localStorage.setItem('ubuilder_sites', JSON.stringify(savedSites))
+  // ─── Build prompt from plan ────────────────────────────────────────────
 
-    // Save HTML content for the editor to load
-    if (html) {
-      localStorage.setItem(`ubuilder_html_${siteId}`, html)
-    }
-    router.push(`/editor/${siteId}`)
-  }
-
-  const handleScratchCreate = async () => {
-    if (!prompt.trim()) return
-    setLoading(true)
-    setBuildProgress(0)
-    setStreamPreview('')
-
-    const name = prompt.trim().slice(0, 40)
-
-    // Build a system prompt and user prompt for from-scratch generation
-    const systemPrompt = `You are an elite web designer. Generate a complete, stunning HTML website.
+  const buildPromptFromPlan = (plan: BuildPlan) => {
+    const systemPrompt = `You are an elite web designer building a website based on a detailed build plan from Team 100.
 Return ONLY the HTML — from <!DOCTYPE html> to </html>. No markdown fences, no explanations.
 Include ALL CSS in a single <style> tag. Include JS for scroll animations, mobile menu, and smooth scroll in a single <script> before </body>.
 Use Google Fonts via <link> tag. Use Unsplash images (https://images.unsplash.com/photo-{ID}?w={W}&h={H}&fit=crop&q=80).
 Verified Unsplash IDs: 1522202176988-66273c2fd55f, 1507003211169-0a1dd7228f2d, 1497366216548-37526070297c, 1560472354-b33ff0c44a43, 1553877522-43269d4ea984, 1517248135467-4c7edcad34c4, 1460925895917-afdab827c52f, 1534438327276-14e5300c3a48, 1600596542815-ffad4c1539a9, 1441986300917-64674bd600d8, 1470071459604-3b5ec3a7fe05, 1629909613654-28e377c37b09, 1504674900247-0877df9cc836, 1555396273-367ea4eb4db5, 1571019613454-1cb2f99b2d8b, 1518770660439-4636190af475, 1556905055-8f358a7a47b2, 1573496359142-b8d87734a5a2, 1494790108377-be9c29b29330, 1542744173-8e7e91415657.
-The site must have: fixed nav with mobile menu, full-height hero, features/services grid, about section, testimonials, stats with animated counters, CTA section, footer.
-Use CSS custom properties, fluid typography with clamp(), smooth transitions, hover effects, scroll reveal animations via IntersectionObserver.
-Make it look like a $10,000 agency-built website. 800+ lines minimum.`
 
-    const userPrompt = `Create a stunning website based on this description: "${prompt.trim()}"
-Make ALL content realistic and professional. Never use lorem ipsum. The design should be modern, premium, and responsive.
-Include at least 8 sections with unique visual treatments. Every section must contribute to the conversion goal.`
+CRITICAL: Follow the build plan EXACTLY. Use the exact colors, fonts, sections, content, and layout specified.
+Use CSS custom properties for the color palette. Use fluid typography with clamp().
+Make it look like a $10,000 agency-built website. 800+ lines minimum.
+Every section must match the plan's specification. Do not skip sections or add unplanned ones.`
 
-    let html = ''
-
-    // Try streaming generation
-    try {
-      setBuildStatus('AI is creating your website...')
-      const res = await fetch('/api/ai/generate-site-stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ systemPrompt, userPrompt, siteName: name }),
-      })
-
-      if (res.ok && res.body) {
-        const reader = res.body.getReader()
-        const decoder = new TextDecoder()
-        let buffer = ''
-
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          buffer += decoder.decode(value, { stream: true })
-          const lines = buffer.split('\n')
-          buffer = lines.pop() || ''
-
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue
-            try {
-              const event = JSON.parse(line.slice(6))
-              if (event.type === 'chunk' && event.text) {
-                html += event.text
-                const progress = Math.min(95, Math.round((html.length / 20000) * 100))
-                setBuildProgress(progress)
-                setBuildStatus(`AI generating... ${progress}%`)
-                if (html.length % 3000 < 100) setStreamPreview(html)
-              } else if (event.type === 'done') {
-                setBuildProgress(100)
-              } else if (event.type === 'error') {
-                throw new Error(event.error)
-              }
-            } catch { /* skip malformed */ }
-          }
-        }
-        html = html.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim()
-      }
-    } catch {
-      // Try non-streaming fallback
-      try {
-        setBuildStatus('Generating with AI...')
-        const res = await fetch('/api/ai/generate-site', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            designDna: { designStyle: 'modern-premium' },
-            siteName: name,
-            businessType: 'business',
-          }),
+    // Serialize the plan into a readable format for the generation AI
+    const sections = plan.pages?.[0]?.sections || []
+    const sectionList = sections.map((s, i) => {
+      let desc = `${i + 1}. ${s.type.toUpperCase()}${s.variant ? ` (${s.variant})` : ''}`
+      if (s.headline) desc += `\n   Headline: "${s.headline}"`
+      if (s.subheadline) desc += `\n   Subheadline: "${s.subheadline}"`
+      if (s.title) desc += `\n   Title: "${s.title}"`
+      if (s.subtitle) desc += `\n   Subtitle: "${s.subtitle}"`
+      if (s.cta) desc += `\n   CTA: "${s.cta.text}" → ${s.cta.action}`
+      if (s.items?.length) {
+        desc += `\n   Items:`
+        s.items.forEach(item => {
+          desc += `\n     - ${item.icon || '•'} ${item.title}: ${item.description}`
         })
-        if (res.ok) {
-          const data = await res.json()
-          if (data.ok && data.data?.html) html = data.data.html
-        }
-      } catch { /* fall through to template */ }
-    }
+      }
+      if (s.notes) desc += `\n   Notes: ${s.notes}`
+      return desc
+    }).join('\n\n')
 
-    // Final fallback to template
-    if (!html || html.length < 500) {
-      setBuildStatus('Building from templates...')
-      await new Promise(r => setTimeout(r, 500))
-      await createSite('saas', name, prompt.trim())
-      setLoading(false)
-      setBuildStatus('')
-      setBuildProgress(0)
-      return
-    }
+    const userPrompt = `Build this website following the Team 100 build plan:
 
-    // Save and navigate to editor
-    const siteId = `site_${Date.now()}`
-    const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
-    const savedSites = JSON.parse(localStorage.getItem('ubuilder_sites') || '[]')
-    savedSites.push({
-      id: siteId,
-      name,
-      status: 'draft',
-      lastEdited: 'Just now',
-      url: `${slug}.ubuilder.co`,
-      description: prompt.trim(),
-      template: 'ai-generated',
-    })
-    localStorage.setItem('ubuilder_sites', JSON.stringify(savedSites))
-    localStorage.setItem(`ubuilder_html_${siteId}`, html)
-    router.push(`/editor/${siteId}`)
-    setLoading(false)
-    setBuildStatus('')
-    setBuildProgress(0)
-    setStreamPreview('')
+SITE: ${plan.siteName}
+INDUSTRY: ${plan.industry}
+DESIGN STYLE: ${plan.designStyle}
+CONTENT TONE: ${plan.contentTone}
+
+COLOR PALETTE:
+${Object.entries(plan.colorPalette || {}).map(([k, v]) => `  --color-${k}: ${v}`).join('\n')}
+
+TYPOGRAPHY:
+  Headings: ${plan.typography?.headingFont || 'Inter'} (${plan.typography?.headingWeight || '700'})
+  Body: ${plan.typography?.bodyFont || 'Inter'} (${plan.typography?.bodyWeight || '400'})
+  ${plan.typography?.accentFont ? `Accent: ${plan.typography.accentFont}` : ''}
+
+LAYOUT:
+  Max width: ${plan.layout?.maxWidth || '1200px'}
+  Header: ${plan.layout?.headerStyle || 'fixed-transparent'}
+  Hero: ${plan.layout?.heroStyle || 'full-screen'}
+  Section spacing: ${plan.layout?.sectionSpacing || '100px'}
+
+SECTIONS (build these in this exact order):
+${sectionList}
+
+CONVERSION STRATEGY:
+  Goal: ${(plan.conversionStrategy as Record<string, unknown>)?.primaryGoal || 'leads'}
+  Main CTA: ${(plan.conversionStrategy as Record<string, unknown>)?.mainCTA || 'Get Started'}
+  Trust elements: ${JSON.stringify((plan.conversionStrategy as Record<string, unknown>)?.trustElements || [])}
+
+SEO:
+  Title: ${(plan.seoStrategy as Record<string, unknown>)?.metaTitle || plan.siteName}
+  Description: ${(plan.seoStrategy as Record<string, unknown>)?.metaDescription || ''}
+
+MOTION:
+  Intensity: ${(plan.motionPreset as Record<string, unknown>)?.intensity || 'moderate'}
+  Scroll reveal: ${(plan.motionPreset as Record<string, unknown>)?.scrollReveal !== false}
+  Hover effects: ${(plan.motionPreset as Record<string, unknown>)?.hoverEffects !== false}
+
+${plan.preserveFromScan ? `\nPRESERVED FROM SCAN: ${(plan.preserveFromScan as Record<string, unknown>)?.notes || 'Colors, fonts, and section order preserved from original site'}` : ''}
+
+Follow this plan precisely. Use the exact colors, fonts, headlines, and section content specified above.
+Make ALL content realistic and professional. Never use lorem ipsum.`
+
+    return { systemPrompt, userPrompt }
   }
 
-  const handleUrlScan = useCallback(async () => {
-    if (!siteUrl.trim()) return
-    setScanning(true)
-    setScanStep(0)
-    setScanError('')
-    setScanResult(null)
+  // ─── Handlers ────────────────────────────────────────────────────────────
 
-    try {
-      const url = siteUrl.trim().startsWith('http') ? siteUrl.trim() : `https://${siteUrl.trim()}`
+  const handleContinue = useCallback(async () => {
+    dispatch({ type: 'GO_DISCOVERY' })
 
-      // Scan with progress callback — the scanner reports 8 steps
-      const result = await scanWebsite(url, (progress) => {
-        // Map scanner steps (1-8) to UI steps (0-7)
-        setScanStep(progress.step - 1)
+    // Start URL scan in background if URL provided
+    let scanResult: ScanResult | null = null
+    if (state.url.trim()) {
+      dispatch({ type: 'SCAN_START' })
+      dispatch({
+        type: 'SYSTEM_MESSAGE',
+        message: {
+          id: `msg_scan_${Date.now()}`,
+          role: 'system',
+          content: `🔍 Team 100 Scanner is analyzing ${state.url.trim()}...`,
+        },
       })
 
-      // Auto-set motion preset from scan
-      if (result.motion?.suggestedPreset) {
-        setSelectedMotion(result.motion.suggestedPreset)
+      try {
+        const url = state.url.trim().startsWith('http') ? state.url.trim() : `https://${state.url.trim()}`
+        scanResult = await scanWebsite(url)
+        dispatch({ type: 'SCAN_DONE', result: scanResult })
+        dispatch({
+          type: 'SYSTEM_MESSAGE',
+          message: {
+            id: `msg_scan_done_${Date.now()}`,
+            role: 'system',
+            content: `Scan complete — found ${scanResult.sections?.length || 0} sections, ${scanResult.colors?.length || 0} colors, ${scanResult.fonts?.length || 0} fonts. DNA captured.`,
+          },
+        })
+      } catch {
+        dispatch({ type: 'SCAN_ERROR' })
       }
-
-      // Show scan results
-      setScanResult(result)
-      setScanStep(9) // all steps complete
-
-    } catch (err) {
-      setScanError(err instanceof Error ? err.message : 'Failed to scan website. Please check the URL and try again.')
-      setScanning(false)
-      setScanStep(-1)
     }
-  }, [siteUrl])
 
-  const [buildStatus, setBuildStatus] = useState('')
-  const [buildProgress, setBuildProgress] = useState(0)
-  const [streamPreview, setStreamPreview] = useState('')
+    // Start first discovery question
+    await callDiscovery([], {}, scanResult)
+  }, [state.url, callDiscovery])
 
-  /** Build original content payload for AI */
-  const buildOriginalContent = useCallback((result: ScanResult) => ({
-    headings: result.headings.map(h => h.text),
-    paragraphs: result.paragraphs.slice(0, 20),
-    navLinks: result.navigation.map(n => n.text),
-    images: result.images.slice(0, 15).map(img => ({ alt: img.alt, role: img.role })),
-    sections: result.sections.map(s => ({
-      type: s.type,
-      title: s.title,
-      content: s.content,
-      itemCount: s.itemCount,
-    })),
-    ctaButtons: result.ctaButtons.slice(0, 10).map(b => ({ text: b.text })),
-    colors: result.colors.slice(0, 10).map(c => ({ hex: c.hex, usage: c.usage })),
-    fonts: result.fonts.map(f => ({ family: f.family, usage: f.usage })),
-  }), [])
-
-  /** Try streaming generation first, fall back to regular */
-  const generateWithStreaming = useCallback(async (result: ScanResult): Promise<string> => {
-    const siteName = result.businessName || result.domain || 'My Website'
-
-    try {
-      const res = await fetch('/api/ai/generate-site-stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          designDna: result.designDna,
-          siteName,
-          businessType: result.businessType || 'business',
-          originalContent: buildOriginalContent(result),
-        }),
-      })
-
-      if (!res.ok || !res.body) throw new Error('Stream unavailable')
-
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let html = ''
-      let buffer = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          try {
-            const event = JSON.parse(line.slice(6))
-            if (event.type === 'chunk' && event.text) {
-              html += event.text
-              // Update progress based on estimated HTML length
-              const progress = Math.min(95, Math.round((html.length / 15000) * 100))
-              setBuildProgress(progress)
-              setBuildStatus(`AI generating... ${progress}%`)
-              // Show preview every 2000 chars
-              if (html.length % 2000 < 100) {
-                setStreamPreview(html)
-              }
-            } else if (event.type === 'done') {
-              setBuildProgress(100)
-            } else if (event.type === 'error') {
-              throw new Error(event.error)
-            }
-          } catch {
-            // skip malformed events
-          }
-        }
-      }
-
-      // Clean up markdown fences if present
-      return html.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim()
-    } catch {
-      return '' // fall back to non-streaming
+  const handleTemplateSelect = useCallback((template: TemplateItem) => {
+    if (state.selectedTemplateId === template.id) {
+      dispatch({ type: 'SELECT_TEMPLATE', id: null, seedText: null })
+      dispatch({ type: 'SET_DESCRIPTION', value: '' })
+    } else {
+      dispatch({ type: 'SELECT_TEMPLATE', id: template.id, seedText: template.seedText })
+      dispatch({ type: 'SET_DESCRIPTION', value: template.seedText })
     }
-  }, [buildOriginalContent])
+  }, [state.selectedTemplateId])
 
-  const handleBuildFromScan = useCallback(async () => {
-    if (!scanResult) return
-    setLoading(true)
-    setBuildProgress(0)
-    setStreamPreview('')
+  const handleSendMessage = useCallback(async (content: string) => {
+    const userMessage: DiscoveryMessage = {
+      id: `msg_${Date.now()}`,
+      role: 'user',
+      content,
+    }
+    dispatch({ type: 'USER_MESSAGE', message: userMessage })
+
+    const allMessages = [...state.messages, userMessage]
+    await callDiscovery(allMessages, state.discoveryContext, state.scanResult)
+  }, [state.messages, state.discoveryContext, state.scanResult, callDiscovery])
+
+  const handleBuild = useCallback(async () => {
+    dispatch({ type: 'START_BUILD' })
+
+    // ─── Phase 1: Planning ──────────────────────────────────────────────
+    const plan = await callPlanning()
+
+    const siteName = plan?.siteName
+      || (state.discoveryContext.business_name as string)
+      || state.description.slice(0, 40)
+      || 'My Website'
 
     let html = ''
 
-    // Try AI generation first if we have design DNA
-    if (scanResult.designDna) {
-      // Try streaming first
-      setBuildStatus('AI is generating your unique website...')
-      html = await generateWithStreaming(scanResult)
+    // ─── Phase 2: Generation (from plan or direct) ─────────────────────
+    if (plan) {
+      // Generate from the structured build plan
+      const { systemPrompt, userPrompt } = buildPromptFromPlan(plan)
 
-      // Fall back to non-streaming if streaming failed
-      if (!html) {
+      try {
+        dispatch({ type: 'BUILD_PROGRESS', status: 'AI is building your site from the plan...', progress: 30 })
+
+        const res = await fetch('/api/ai/generate-site-stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ systemPrompt, userPrompt, siteName }),
+        })
+
+        if (res.ok && res.body) {
+          const reader = res.body.getReader()
+          const decoder = new TextDecoder()
+          let buffer = ''
+
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            buffer += decoder.decode(value, { stream: true })
+            const lines = buffer.split('\n')
+            buffer = lines.pop() || ''
+
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue
+              try {
+                const event = JSON.parse(line.slice(6))
+                if (event.type === 'chunk' && event.text) {
+                  html += event.text
+                  const progress = Math.min(95, 30 + Math.round((html.length / 20000) * 65))
+                  dispatch({ type: 'BUILD_PROGRESS', status: `Building... ${progress}%`, progress })
+                } else if (event.type === 'done') {
+                  dispatch({ type: 'BUILD_PROGRESS', status: 'Finalizing...', progress: 98 })
+                } else if (event.type === 'error') {
+                  throw new Error(event.error)
+                }
+              } catch { /* skip malformed */ }
+            }
+          }
+          html = html.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim()
+        }
+      } catch (err) {
+        console.error('Streaming generation failed:', err)
+      }
+    }
+
+    // ─── Fallback: generate without plan ────────────────────────────────
+    if (!html || html.length < 500) {
+      const businessType = (state.discoveryContext.industry as string) || state.selectedTemplateId || 'business'
+
+      // Build a basic prompt from discovery context
+      const discoveryInfo = Object.entries(state.discoveryContext)
+        .filter(([, v]) => v !== null && v !== undefined)
+        .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
+        .join('\n')
+
+      const fallbackSystem = `You are an elite web designer. Generate a complete, stunning HTML website.
+Return ONLY the HTML — from <!DOCTYPE html> to </html>. No markdown fences, no explanations.
+Include ALL CSS in a single <style> tag. Include JS for scroll animations, mobile menu, and smooth scroll in a single <script> before </body>.
+Use Google Fonts via <link> tag. Use Unsplash images.
+Make it look like a $10,000 agency-built website. 800+ lines minimum.`
+
+      const fallbackUser = `Create a stunning website.\n\nBusiness: ${siteName}\nType: ${businessType}\nContext:\n${discoveryInfo}\nDescription: "${state.description}"`
+
+      try {
+        dispatch({ type: 'BUILD_PROGRESS', status: 'Generating with AI...', progress: 30 })
+        const res = await fetch('/api/ai/generate-site-stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ systemPrompt: fallbackSystem, userPrompt: fallbackUser, siteName }),
+        })
+        if (res.ok && res.body) {
+          const reader = res.body.getReader()
+          const decoder = new TextDecoder()
+          let buffer = ''
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            buffer += decoder.decode(value, { stream: true })
+            const lines = buffer.split('\n')
+            buffer = lines.pop() || ''
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue
+              try {
+                const event = JSON.parse(line.slice(6))
+                if (event.type === 'chunk' && event.text) html += event.text
+              } catch { /* skip */ }
+            }
+          }
+          html = html.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim()
+        }
+      } catch {
+        // Try non-streaming
         try {
-          setBuildStatus('AI is generating your unique website...')
-          const siteName = scanResult.businessName || scanResult.domain || 'My Website'
           const res = await fetch('/api/ai/generate-site', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              designDna: scanResult.designDna,
+              designDna: state.scanResult?.designDna || { designStyle: 'modern-premium' },
               siteName,
-              businessType: scanResult.businessType || 'business',
-              originalContent: buildOriginalContent(scanResult),
+              businessType,
             }),
           })
-
           if (res.ok) {
             const data = await res.json()
-            if (data.ok && data.data?.html) {
-              html = data.data.html
-            }
+            if (data.ok && data.data?.html) html = data.data.html
           }
-        } catch {
-          // Fall back to template-based generation
-        }
+        } catch { /* fall through */ }
       }
     }
 
-    // Fallback: use template-based rebuilder if AI generation failed
-    if (!html) {
-      setBuildStatus('Building from templates...')
-      html = rebuildSite(scanResult, {
-        motionPreset: selectedMotion,
+    // ─── Fallback: template ─────────────────────────────────────────────
+    if (!html || html.length < 500) {
+      dispatch({ type: 'BUILD_PROGRESS', status: 'Building from templates...', progress: 60 })
+
+      if (state.scanResult) {
+        html = rebuildSite(state.scanResult)
+      } else {
+        const templateId = state.selectedTemplateId || 'business'
+        try {
+          const res = await fetch(`/templates/${templateId}/index.html`)
+          html = await res.text()
+        } catch { /* empty */ }
+      }
+    }
+
+    // ─── Save and navigate ──────────────────────────────────────────────
+    if (html && html.length > 100) {
+      dispatch({ type: 'BUILD_PROGRESS', status: 'Saving your site...', progress: 100 })
+      const siteId = `site_${Date.now()}`
+      const slug = siteName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+      const savedSites = JSON.parse(localStorage.getItem('ubuilder_sites') || '[]')
+      savedSites.push({
+        id: siteId,
+        name: siteName,
+        status: 'draft',
+        lastEdited: 'Just now',
+        url: `${slug}.ubuilder.co`,
+        description: state.description,
+        template: state.selectedTemplateId || 'ai-generated',
       })
+      localStorage.setItem('ubuilder_sites', JSON.stringify(savedSites))
+      localStorage.setItem(`ubuilder_html_${siteId}`, html)
+
+      // Also save the build plan for the editor to reference
+      if (plan) {
+        localStorage.setItem(`ubuilder_plan_${siteId}`, JSON.stringify(plan))
+      }
+
+      router.push(`/editor/${siteId}`)
     }
 
-    const siteId = `site_${Date.now()}`
-    const shortId = siteId.slice(-6)
-    const generatedName = `My ${(scanResult.businessType || 'business').charAt(0).toUpperCase() + (scanResult.businessType || 'business').slice(1)} Site ${shortId}`
-    const slug = generatedName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+    dispatch({ type: 'BUILD_DONE' })
+  }, [state, router, callPlanning])
 
-    const savedSites = JSON.parse(localStorage.getItem('ubuilder_sites') || '[]')
-    savedSites.push({
-      id: siteId,
-      name: generatedName,
-      status: 'draft',
-      lastEdited: 'Just now',
-      url: `${slug}.ubuilder.co`,
-      description: `Inspired by ${scanResult.domain}`,
-      template: scanResult.businessType || 'business',
-    })
-    localStorage.setItem('ubuilder_sites', JSON.stringify(savedSites))
-    localStorage.setItem(`ubuilder_html_${siteId}`, html)
-
-    router.push(`/editor/${siteId}`)
-    setLoading(false)
-    setScanning(false)
-    setScanStep(-1)
-    setScanResult(null)
-    setBuildStatus('')
-    setBuildProgress(0)
-    setStreamPreview('')
-  }, [scanResult, router, selectedMotion, generateWithStreaming, buildOriginalContent])
-
-  const handleTemplateSelect = async (templateId: string) => {
-    setLoading(true)
-    const template = templateData.find(t => t.id === templateId)
-    const name = template ? template.name : 'New Site'
-    await createSite(templateId, name, `Created from ${name} template`)
-    setLoading(false)
-  }
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = () => setUploadedImage(reader.result as string)
-      reader.readAsDataURL(file)
-    }
-  }
+  // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-text">Create a New Website</h1>
-        <p className="mt-2 text-text-muted">Choose how you want to get started</p>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 mb-8 p-1 rounded-2xl bg-bg-secondary border border-border">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2.5 rounded-xl px-4 py-3 text-sm font-medium transition-all ${
-              activeTab === tab.id
-                ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                : 'text-text-muted hover:text-text hover:bg-bg-tertiary'
-            }`}
-          >
-            <svg className="h-4.5 w-4.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
-            </svg>
-            <span className="hidden sm:inline">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'scratch' && (
-        <div className="space-y-6">
-          {/* Description */}
-          <div className="rounded-2xl border border-border bg-bg-secondary p-6">
-            <label className="block text-sm font-medium text-text mb-3">Describe your website</label>
-            <div className="relative">
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="I want to create a modern website for my coffee shop with a warm, inviting design. It should include a menu page, about us section, location map, and online ordering..."
-                rows={5}
-                className="w-full rounded-xl border border-border bg-bg px-4 py-3 pe-12 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors resize-none"
-              />
-              {/* Voice input icon (decorative) */}
-              <button className="absolute end-3 bottom-3 rounded-lg p-2 text-text-muted hover:text-primary hover:bg-primary/10 transition-colors" title="Voice input (coming soon)">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Image Upload */}
-          <div className="rounded-2xl border border-border bg-bg-secondary p-6">
-            <label className="block text-sm font-medium text-text mb-3">Upload a reference image</label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-            {uploadedImage ? (
-              <div className="relative rounded-xl overflow-hidden border border-border">
-                <Image src={uploadedImage} alt="Reference" width={600} height={300} className="w-full h-48 object-cover" />
-                <button
-                  onClick={() => setUploadedImage(null)}
-                  className="absolute top-3 end-3 rounded-lg bg-bg/80 backdrop-blur-sm p-1.5 text-text-muted hover:text-error transition-colors"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full rounded-xl border-2 border-dashed border-border hover:border-primary/50 bg-bg p-8 text-center transition-all group"
-              >
-                <div className="flex flex-col items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-bg-tertiary group-hover:bg-primary/10 transition-colors">
-                    <svg className="h-6 w-6 text-text-muted group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-text-muted group-hover:text-text transition-colors">Click to upload an image</p>
-                    <p className="text-xs text-text-muted mt-1">PNG, JPG, or WebP up to 10MB</p>
-                  </div>
-                </div>
-              </button>
-            )}
-          </div>
-
-          {/* Platform Selector */}
-          <div className="rounded-2xl border border-border bg-bg-secondary p-6">
-            <label className="block text-sm font-medium text-text mb-3">Platform</label>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setPlatform('both')}
-                className={`flex-1 flex items-center justify-center gap-2.5 rounded-xl border px-4 py-3.5 text-sm font-medium transition-all ${
-                  platform === 'both'
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-bg text-text-muted hover:border-primary/30'
-                }`}
-              >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" />
-                </svg>
-                Web & Mobile
-              </button>
-              <button
-                onClick={() => setPlatform('mobile')}
-                className={`flex-1 flex items-center justify-center gap-2.5 rounded-xl border px-4 py-3.5 text-sm font-medium transition-all ${
-                  platform === 'mobile'
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-bg text-text-muted hover:border-primary/30'
-                }`}
-              >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-                </svg>
-                Mobile Only
-              </button>
-            </div>
-          </div>
-
-          {/* Build Progress */}
-          {loading && buildProgress > 0 && (
-            <div className="rounded-2xl border border-border bg-bg-secondary p-6 space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-text font-medium">{buildStatus || 'AI is generating your website...'}</span>
-                <span className="text-primary font-semibold">{buildProgress}%</span>
-              </div>
-              <div className="w-full h-2 bg-bg rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-300"
-                  style={{ width: `${buildProgress}%` }}
-                />
-              </div>
-              {streamPreview && (
-                <div className="mt-4 rounded-xl overflow-hidden border border-border" style={{ height: '300px' }}>
-                  <iframe
-                    srcDoc={streamPreview}
-                    className="w-full h-full border-0"
-                    title="Live preview"
-                    sandbox="allow-scripts"
-                    style={{ transform: 'scale(0.5)', transformOrigin: 'top left', width: '200%', height: '200%' }}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Generate Button */}
-          <button
-            onClick={handleScratchCreate}
-            disabled={loading || !prompt.trim()}
-            className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-hover px-6 py-4 text-sm font-semibold text-white shadow-2xl shadow-primary/30 hover:shadow-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-3">
-                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                {buildStatus || 'AI is generating your website...'}
-              </span>
-            ) : (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                </svg>
-                Generate with AI
-              </span>
-            )}
-          </button>
-        </div>
+    <div className="min-h-screen bg-bg px-4 py-8 md:py-12">
+      {state.step === 'input' && (
+        <UnifiedInput
+          description={state.description}
+          onDescriptionChange={(v) => dispatch({ type: 'SET_DESCRIPTION', value: v })}
+          url={state.url}
+          onUrlChange={(v) => dispatch({ type: 'SET_URL', value: v })}
+          uploadedImage={state.uploadedImage}
+          onImageUpload={(v) => dispatch({ type: 'SET_IMAGE', value: v })}
+          selectedTemplateId={state.selectedTemplateId}
+          onTemplateSelect={handleTemplateSelect}
+          onContinue={handleContinue}
+          isDisabled={state.isAiThinking}
+        />
       )}
 
-      {activeTab === 'url' && (
-        <div className="space-y-6">
-          {/* URL Input */}
-          <div className="rounded-2xl border border-border bg-bg-secondary p-8">
-            <label className="block text-sm font-medium text-text mb-3">Paste any website URL</label>
-            <div className="flex gap-3">
-              <div className="relative flex-1">
-                <svg className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-                </svg>
-                <input
-                  type="url"
-                  value={siteUrl}
-                  onChange={(e) => setSiteUrl(e.target.value)}
-                  placeholder="https://example.com"
-                  disabled={scanning}
-                  onKeyDown={(e) => e.key === 'Enter' && handleUrlScan()}
-                  className="w-full rounded-xl border border-border bg-bg ps-12 pe-4 py-3.5 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors disabled:opacity-50"
-                />
-              </div>
-              <button
-                onClick={handleUrlScan}
-                disabled={scanning || !siteUrl.trim()}
-                className="rounded-xl bg-gradient-to-r from-primary to-primary-hover px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-              >
-                {scanning && !scanResult ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Scanning...
-                  </span>
-                ) : (
-                  'Scan & Recreate'
-                )}
-              </button>
-            </div>
-            <p className="mt-4 text-xs text-text-muted">
-              Our AI will scan the website, extract its design DNA (colors, fonts, layout), and create an improved version.
-            </p>
-
-            {/* Optional: Reference Image Upload */}
-            <div className="mt-5 pt-5 border-t border-border">
-              <label className="block text-xs font-medium text-text-muted mb-2">Or upload a screenshot / design reference</label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              {uploadedImage ? (
-                <div className="relative rounded-xl overflow-hidden border border-border">
-                  <Image src={uploadedImage} alt="Reference" width={600} height={200} className="w-full h-32 object-cover" />
-                  <button
-                    onClick={() => setUploadedImage(null)}
-                    className="absolute top-2 end-2 rounded-lg bg-bg/80 backdrop-blur-sm p-1 text-text-muted hover:text-error transition-colors"
-                  >
-                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full rounded-xl border border-dashed border-border hover:border-primary/50 bg-bg px-4 py-3 text-center transition-all group"
-                >
-                  <span className="text-xs text-text-muted group-hover:text-primary transition-colors">
-                    Click to upload a screenshot or design mockup (optional)
-                  </span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Error Message */}
-          {scanError && (
-            <div className="rounded-xl border border-error/30 bg-error/5 px-5 py-4 flex items-start gap-3">
-              <svg className="h-5 w-5 text-error shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-              </svg>
-              <div>
-                <p className="text-sm font-medium text-error">Scan Failed</p>
-                <p className="text-xs text-error/70 mt-1">{scanError}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Scanner Steps */}
-          {(scanning || scanResult) && (
-            <div className="rounded-2xl border border-border bg-bg-secondary p-8">
-              <h3 className="text-sm font-medium text-text mb-5">Scanner Process</h3>
-              <div className="grid grid-cols-3 sm:grid-cols-9 gap-2">
-                {scannerSteps.map((step, i) => {
-                  const isComplete = scanStep > i
-                  const isActive = scanStep === i
-                  return (
-                    <div
-                      key={step.label}
-                      className={`flex flex-col items-center gap-2 rounded-xl border p-3 transition-all duration-500 ${
-                        isComplete
-                          ? 'border-success/30 bg-success/5'
-                          : isActive
-                            ? 'border-primary/30 bg-primary/5'
-                            : 'border-border bg-bg'
-                      }`}
-                    >
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-full transition-all duration-500 ${
-                        isComplete
-                          ? 'bg-success/20'
-                          : isActive
-                            ? 'bg-primary/20'
-                            : 'bg-bg-tertiary'
-                      }`}>
-                        {isComplete ? (
-                          <svg className="h-4 w-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                        ) : isActive ? (
-                          <svg className="h-4 w-4 text-primary animate-spin" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
-                        ) : (
-                          <svg className="h-4 w-4 text-text-muted/30" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d={step.icon} />
-                          </svg>
-                        )}
-                      </div>
-                      <span className={`text-xs font-medium text-center transition-colors ${
-                        isComplete ? 'text-success' : isActive ? 'text-primary' : 'text-text-muted'
-                      }`}>
-                        {step.label}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Scan Results */}
-          {scanResult && (
-            <div className="space-y-4">
-              {/* Header */}
-              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20">
-                    <svg className="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-text">{scanResult.businessName || scanResult.domain}</h3>
-                    <p className="text-sm text-text-muted">
-                      {scanResult.businessType.charAt(0).toUpperCase() + scanResult.businessType.slice(1)} website &middot; {scanResult.sections.length} sections detected
-                      {scanResult.designDna && (
-                        <span className="inline-flex items-center gap-1 ms-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                          </svg>
-                          AI Design DNA
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Colors */}
-                <div className="mb-4">
-                  <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Colors Detected</h4>
-                  <div className="flex gap-2 flex-wrap">
-                    {scanResult.colors.slice(0, 8).map((color, i) => (
-                      <div key={i} className="flex items-center gap-2 rounded-lg border border-border bg-bg px-3 py-1.5">
-                        <div className="h-4 w-4 rounded-full border border-white/20" style={{ backgroundColor: color.hex }} />
-                        <span className="text-xs font-mono text-text-muted">{color.hex}</span>
-                      </div>
-                    ))}
-                    {scanResult.colors.length === 0 && (
-                      <span className="text-xs text-text-muted">No colors detected — will use industry defaults</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Fonts */}
-                <div className="mb-4">
-                  <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Fonts Detected</h4>
-                  <div className="flex gap-2 flex-wrap">
-                    {scanResult.fonts.slice(0, 4).map((font, i) => (
-                      <span key={i} className="rounded-lg border border-border bg-bg px-3 py-1.5 text-xs font-medium text-text">
-                        {font.family} <span className="text-text-muted">({font.usage})</span>
-                      </span>
-                    ))}
-                    {scanResult.fonts.length === 0 && (
-                      <span className="text-xs text-text-muted">No custom fonts detected — will use industry defaults</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Sections */}
-                <div>
-                  <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Sections Detected</h4>
-                  <div className="flex gap-2 flex-wrap">
-                    {scanResult.sections.map((section, i) => (
-                      <span key={i} className="rounded-lg bg-bg-tertiary px-3 py-1.5 text-xs font-medium text-text capitalize">
-                        {section.type === 'unknown' ? section.title || 'Section' : section.type}
-                        {section.itemCount > 1 && <span className="text-text-muted ms-1">({section.itemCount})</span>}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Motion Preset Selector */}
-              <div className="rounded-2xl border border-border bg-bg-secondary p-6">
-                <h4 className="text-sm font-semibold text-text mb-1">Animation Style</h4>
-                <p className="text-xs text-text-muted mb-4">Choose how animated your site will be</p>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                  {([
-                    { id: 'none' as MotionIntensity, label: 'None', desc: 'Static' },
-                    { id: 'subtle' as MotionIntensity, label: 'Subtle', desc: 'Gentle fades' },
-                    { id: 'premium' as MotionIntensity, label: 'Premium', desc: 'Smooth & polished' },
-                    { id: 'dynamic' as MotionIntensity, label: 'Dynamic', desc: 'Bold & engaging' },
-                    { id: 'cinematic' as MotionIntensity, label: 'Cinematic', desc: 'Immersive feel' },
-                    { id: 'storytelling' as MotionIntensity, label: 'Story', desc: 'Maximum impact' },
-                  ]).map((preset) => (
-                    <button
-                      key={preset.id}
-                      onClick={() => setSelectedMotion(preset.id)}
-                      className={`flex flex-col items-center gap-1 rounded-xl border px-2 py-3 text-center transition-all ${
-                        selectedMotion === preset.id
-                          ? 'border-primary bg-primary/10 text-primary shadow-sm shadow-primary/10'
-                          : 'border-border bg-bg text-text-muted hover:border-primary/30 hover:text-text'
-                      }`}
-                    >
-                      <span className="text-xs font-semibold">{preset.label}</span>
-                      <span className="text-[10px] opacity-70">{preset.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Build Progress & Preview */}
-              {loading && buildProgress > 0 && (
-                <div className="rounded-2xl border border-primary/20 bg-bg-secondary p-6 space-y-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-text">AI Generation Progress</span>
-                    <span className="text-primary font-bold">{buildProgress}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-bg-tertiary overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-300"
-                      style={{ width: `${buildProgress}%` }}
-                    />
-                  </div>
-                  {streamPreview && (
-                    <div className="rounded-xl border border-border overflow-hidden h-48">
-                      <iframe
-                        srcDoc={streamPreview}
-                        className="w-full h-full pointer-events-none"
-                        sandbox="allow-same-origin"
-                        title="Live preview"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Build Button */}
-              <button
-                onClick={handleBuildFromScan}
-                disabled={loading}
-                className="w-full rounded-xl bg-gradient-to-r from-primary via-purple-500 to-secondary px-6 py-4 text-sm font-semibold text-white shadow-2xl shadow-primary/30 hover:shadow-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-3">
-                    <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    {buildStatus || 'Building your improved website...'}
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                    </svg>
-                    {scanResult?.designDna ? 'Build with AI' : 'Build Improved Version'}
-                  </span>
-                )}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'template' && (
-        <div className="space-y-6">
-          {/* Category Filter */}
-          <div className="flex gap-2 flex-wrap">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`rounded-full px-4 py-2 text-xs font-medium transition-all ${
-                  selectedCategory === cat.id
-                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                    : 'bg-bg-secondary border border-border text-text-muted hover:text-text hover:border-primary/30'
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Template Grid */}
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredTemplates.map((template) => (
-              <div
-                key={template.id}
-                className="group flex flex-col rounded-2xl border border-border bg-bg-secondary overflow-hidden hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all"
-              >
-                {/* Template Preview */}
-                <div className="relative h-48 overflow-hidden bg-bg-tertiary">
-                  <iframe
-                    src={`/templates/${template.id}/index.html`}
-                    title={template.name}
-                    sandbox="allow-same-origin"
-                    loading="lazy"
-                    className="border-0 pointer-events-none"
-                    style={{
-                      transform: 'scale(0.25)',
-                      transformOrigin: 'top left',
-                      width: '400%',
-                      height: '400%',
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary via-transparent to-transparent" />
-
-                  {/* Badges */}
-                  <div className="absolute top-3 start-3 flex gap-2">
-                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${categoryColors[template.category]}`}>
-                      {categories.find(c => c.id === template.category)?.label}
-                    </span>
-                    <span className="rounded-full bg-bg/60 backdrop-blur-sm px-2.5 py-1 text-[10px] font-semibold text-text">
-                      Multi Pages
-                    </span>
-                  </div>
-
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center gap-3 bg-bg/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300">
-                    <button
-                      onClick={() => handleTemplateSelect(template.id)}
-                      disabled={loading}
-                      className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-white shadow-lg hover:bg-primary-hover transition-colors disabled:opacity-50"
-                    >
-                      Use Template
-                    </button>
-                    <button
-                      onClick={() => window.open(`/templates/${template.id}/index.html`, '_blank')}
-                      className="rounded-xl bg-bg-secondary px-5 py-2.5 text-xs font-semibold text-text shadow-lg border border-border hover:bg-bg-tertiary transition-colors"
-                    >
-                      Preview
-                    </button>
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="p-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-text">{template.name}</h3>
-                    <span className="text-xs text-text-muted">{template.pages} pages</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleTemplateSelect(template.id)}
-                      disabled={loading}
-                      className="flex-1 rounded-lg bg-primary/10 px-4 py-2 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
-                    >
-                      Use Template
-                    </button>
-                    <button
-                      onClick={() => window.open(`/templates/${template.id}/index.html`, '_blank')}
-                      className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-text-muted hover:text-text hover:bg-bg-tertiary transition-colors"
-                    >
-                      Preview
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {(state.step === 'discovery' || state.step === 'generating') && (
+        <DiscoveryChat
+          messages={state.messages}
+          onSendMessage={handleSendMessage}
+          progress={state.progress}
+          readyToGenerate={state.readyToGenerate}
+          isAiThinking={state.isAiThinking}
+          onBuild={handleBuild}
+          onBack={() => dispatch({ type: 'GO_INPUT' })}
+          isBuilding={state.isGenerating}
+          buildStatus={state.buildStatus}
+          buildProgress={state.buildProgress}
+        />
       )}
     </div>
   )
