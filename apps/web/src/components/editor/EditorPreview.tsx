@@ -83,12 +83,28 @@ export const EditorPreview = ({
     const iframe = iframeRef.current
     if (!iframe) return
 
-    const finalHtml = injectSelectionScript(htmlContent, selectMode)
-    const doc = iframe.contentDocument
-    if (doc) {
-      doc.open()
-      doc.write(finalHtml)
-      doc.close()
+    // If htmlContent is empty or too short, show a placeholder
+    const content = htmlContent && htmlContent.trim().length > 50
+      ? htmlContent
+      : `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:system-ui;color:#888;background:#fafafa;"><div style="text-align:center"><p style="font-size:18px;margin-bottom:8px;">No content yet</p><p style="font-size:14px;">Use the AI chat to generate or modify your site</p></div></body></html>`
+
+    const finalHtml = injectSelectionScript(content, selectMode)
+
+    try {
+      const doc = iframe.contentDocument
+      if (doc) {
+        doc.open()
+        doc.write(finalHtml)
+        doc.close()
+      } else {
+        // Fallback: use srcdoc
+        console.warn('[EditorPreview] contentDocument unavailable, using srcdoc')
+        iframe.srcdoc = finalHtml
+      }
+    } catch (err) {
+      console.error('[EditorPreview] Failed to write to iframe:', err)
+      // Fallback: use srcdoc
+      iframe.srcdoc = finalHtml
     }
   }, [htmlContent, selectMode])
 

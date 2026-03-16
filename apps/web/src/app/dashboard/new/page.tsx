@@ -550,7 +550,12 @@ const NewSitePage = () => {
           } finally {
             reader.releaseLock()
           }
-          html = html.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim()
+          // Strip markdown fences robustly (handles whitespace, newlines, various fence formats)
+          html = html.trim()
+          html = html.replace(/^\s*```(?:html|HTML)?\s*\n?/, '')
+          html = html.replace(/\n?\s*```\s*$/, '')
+          html = html.trim()
+          console.log(`[Build] Stream generation complete: ${html.length} chars, starts with: "${html.substring(0, 50)}"`)
         }
         clearTimeout(streamTimeout)
       } catch (err) {
@@ -626,7 +631,11 @@ ${discoveryInfo}
           } finally {
             reader.releaseLock()
           }
-          html = html.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim()
+          html = html.trim()
+          html = html.replace(/^\s*```(?:html|HTML)?\s*\n?/, '')
+          html = html.replace(/\n?\s*```\s*$/, '')
+          html = html.trim()
+          console.log(`[Build] Fallback generation complete: ${html.length} chars`)
         }
         clearTimeout(fallbackTimeout)
       } catch {
@@ -669,6 +678,16 @@ ${discoveryInfo}
     }
 
     // ─── Save and navigate ──────────────────────────────────────────────
+    // Final cleanup — ensure no markdown fences remain
+    if (html) {
+      html = html.trim()
+      html = html.replace(/^\s*```(?:html|HTML)?\s*\n?/, '')
+      html = html.replace(/\n?\s*```\s*$/, '')
+      html = html.trim()
+    }
+
+    console.log(`[Build] Final HTML: ${html?.length || 0} chars, has DOCTYPE: ${html?.includes('<!DOCTYPE') || false}`)
+
     if (html && html.length > 100) {
       dispatch({ type: 'BUILD_PROGRESS', status: 'Saving your site...', progress: 100 })
       const siteId = `site_${Date.now()}`
@@ -692,6 +711,7 @@ ${discoveryInfo}
       })
       localStorage.setItem('ubuilder_sites', JSON.stringify(savedSites))
       localStorage.setItem(`ubuilder_html_${siteId}`, html)
+      console.log(`[Build] Saved site ${siteId} with ${html.length} chars of HTML`)
 
       // Also save the build plan for the editor to reference
       if (plan) {

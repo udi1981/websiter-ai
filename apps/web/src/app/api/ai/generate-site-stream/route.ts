@@ -4,12 +4,13 @@
  * Uses Claude's streaming API so the user sees progress in real-time.
  */
 
-// Vercel: allow up to 60s for streaming responses (hobby plan max)
-export const maxDuration = 60
+// Vercel: allow up to 300s for streaming responses (Pro plan)
+// Falls back to 60s on hobby plan automatically
+export const maxDuration = 300
 
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages'
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514'
-const FETCH_TIMEOUT = 55000 // 55s — leave headroom for Vercel's 60s limit
+const FETCH_TIMEOUT = 120000 // 120s — generous for large site generation
 
 export async function POST(request: Request) {
   try {

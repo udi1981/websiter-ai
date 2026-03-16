@@ -144,63 +144,99 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
   const [version, setVersion] = useState(1)
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
 
+  // Strip markdown code fences from AI-generated HTML
+  const cleanHtml = useCallback((raw: string): string => {
+    let cleaned = raw.trim()
+    // Remove leading ```html or ``` (possibly with whitespace/newlines before)
+    cleaned = cleaned.replace(/^\s*```(?:html|HTML)?\s*\n?/, '')
+    // Remove trailing ```
+    cleaned = cleaned.replace(/\n?\s*```\s*$/, '')
+    // If it doesn't look like HTML, wrap it
+    if (cleaned.length > 100 && !cleaned.includes('<!DOCTYPE') && !cleaned.includes('<html') && !cleaned.includes('<body')) {
+      console.warn('[Editor] HTML content missing doctype — using fallback')
+      return fallbackHtml
+    }
+    return cleaned.trim()
+  }, [])
+
   // Load site data from localStorage
   useEffect(() => {
-    const sites = JSON.parse(localStorage.getItem('ubuilder_sites') || '[]')
-    const site = sites.find((s: SiteData) => s.id === siteId)
+    try {
+      const sitesRaw = localStorage.getItem('ubuilder_sites')
+      const sites = sitesRaw ? JSON.parse(sitesRaw) : []
+      const site = sites.find((s: SiteData) => s.id === siteId)
 
-    if (!site) {
-      router.push('/dashboard')
-      return
-    }
+      if (!site) {
+        router.push('/dashboard')
+        return
+      }
 
-    setSiteData(site)
+      setSiteData(site)
 
-    // Check if we have saved HTML content for this site
-    const savedHtml = localStorage.getItem(`ubuilder_html_${siteId}`)
-    if (savedHtml) {
-      setHtmlContent(savedHtml)
-      setHistory([savedHtml])
+      // Check if we have saved HTML content for this site
+      const savedHtml = localStorage.getItem(`ubuilder_html_${siteId}`)
+      if (savedHtml && savedHtml.trim().length > 50) {
+        const cleaned = cleanHtml(savedHtml)
+        console.log(`[Editor] Loaded HTML from localStorage: ${cleaned.length} chars`)
+        setHtmlContent(cleaned)
+        setHistory([cleaned])
+        setHistoryIndex(0)
+        // Re-save cleaned version if it changed
+        if (cleaned !== savedHtml) {
+          localStorage.setItem(`ubuilder_html_${siteId}`, cleaned)
+        }
+        setLoading(false)
+      } else {
+        console.log('[Editor] No saved HTML found, loading template...')
+        // Load template HTML
+        const templateType = site.template || 'business'
+        const validTemplates = ['restaurant', 'saas', 'ecommerce', 'portfolio', 'business', 'blog', 'dental', 'yoga', 'law', 'realestate', 'fitness', 'photography']
+        const templatePath = validTemplates.includes(templateType)
+          ? `/templates/${templateType}/index.html`
+          : `/templates/business/index.html`
+
+        fetch(templatePath)
+          .then((res) => {
+            if (!res.ok) throw new Error('Template not found')
+            return res.text()
+          })
+          .then((html) => {
+            setHtmlContent(html)
+            setHistory([html])
+            setHistoryIndex(0)
+            localStorage.setItem(`ubuilder_html_${siteId}`, html)
+            setLoading(false)
+          })
+          .catch(() => {
+            // Use fallback HTML
+            setHtmlContent(fallbackHtml)
+            setHistory([fallbackHtml])
+            setHistoryIndex(0)
+            localStorage.setItem(`ubuilder_html_${siteId}`, fallbackHtml)
+            setLoading(false)
+          })
+      }
+
+      // Load saved version
+      const savedVersion = localStorage.getItem(`ubuilder_version_${siteId}`)
+      if (savedVersion) setVersion(parseInt(savedVersion, 10))
+
+      // Load saved chat
+      try {
+        const savedChat = localStorage.getItem(`ubuilder_chat_${siteId}`)
+        if (savedChat) setChatMessages(JSON.parse(savedChat))
+      } catch {
+        console.warn('[Editor] Failed to parse saved chat')
+      }
+    } catch (err) {
+      console.error('[Editor] Failed to load site data:', err)
+      // Use fallback
+      setHtmlContent(fallbackHtml)
+      setHistory([fallbackHtml])
       setHistoryIndex(0)
       setLoading(false)
-    } else {
-      // Load template HTML
-      const templateType = site.template || 'business'
-      const validTemplates = ['restaurant', 'saas', 'ecommerce', 'portfolio', 'business', 'blog', 'dental', 'yoga', 'law', 'realestate', 'fitness', 'photography']
-      const templatePath = validTemplates.includes(templateType)
-        ? `/templates/${templateType}/index.html`
-        : `/templates/business/index.html`
-
-      fetch(templatePath)
-        .then((res) => {
-          if (!res.ok) throw new Error('Template not found')
-          return res.text()
-        })
-        .then((html) => {
-          setHtmlContent(html)
-          setHistory([html])
-          setHistoryIndex(0)
-          localStorage.setItem(`ubuilder_html_${siteId}`, html)
-          setLoading(false)
-        })
-        .catch(() => {
-          // Use fallback HTML
-          setHtmlContent(fallbackHtml)
-          setHistory([fallbackHtml])
-          setHistoryIndex(0)
-          localStorage.setItem(`ubuilder_html_${siteId}`, fallbackHtml)
-          setLoading(false)
-        })
     }
-
-    // Load saved version
-    const savedVersion = localStorage.getItem(`ubuilder_version_${siteId}`)
-    if (savedVersion) setVersion(parseInt(savedVersion, 10))
-
-    // Load saved chat
-    const savedChat = localStorage.getItem(`ubuilder_chat_${siteId}`)
-    if (savedChat) setChatMessages(JSON.parse(savedChat))
-  }, [siteId, router])
+  }, [siteId, router, cleanHtml])
 
   // Push new HTML state to history
   const pushHtmlState = useCallback(
