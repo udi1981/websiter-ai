@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 
+export const maxDuration = 30
+
 /**
  * POST /api/scan
  * Server-side proxy for website scanning — bypasses CORS restrictions.

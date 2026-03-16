@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 
+// Vercel: allow up to 60s for generation
+export const maxDuration = 60
+
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages'
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514'
+const FETCH_TIMEOUT = 55000
 
 const GENERATION_PROMPT = `You are the world's best web designer. You don't build websites — you craft digital experiences that make people stop scrolling, lean forward, and say "wow." Your sites have won design awards. Agencies charge $15,000+ for what you create in a single output.
 
@@ -466,6 +470,8 @@ export async function POST(request: Request) {
     // Try Claude first, fall back to Gemini
     if (claudeKey) {
       try {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
         const response = await fetch(CLAUDE_API_URL, {
           method: 'POST',
           headers: {
@@ -480,7 +486,9 @@ export async function POST(request: Request) {
             system: GENERATION_PROMPT,
             messages: [{ role: 'user', content: userPrompt }],
           }),
+          signal: controller.signal,
         })
+        clearTimeout(timeout)
 
         if (response.ok) {
           const data = await response.json()

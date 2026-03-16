@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 
+// Vercel: allow up to 30s for discovery
+export const maxDuration = 30
+
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages'
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514'
+const FETCH_TIMEOUT = 25000
 
 /** Maximum number of user messages before forcing readyToGenerate */
 const MAX_QUESTIONS = 6
@@ -262,6 +266,8 @@ export const POST = async (request: Request) => {
           }
         }
 
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
         const claudeRes = await fetch(CLAUDE_API_URL, {
           method: 'POST',
           headers: {
@@ -276,7 +282,9 @@ export const POST = async (request: Request) => {
             system: DISCOVERY_SYSTEM_PROMPT,
             messages: claudeMessages,
           }),
+          signal: controller.signal,
         })
+        clearTimeout(timeout)
 
         if (claudeRes.ok) {
           const claudeData = await claudeRes.json()
@@ -294,6 +302,8 @@ export const POST = async (request: Request) => {
     // Fallback to Gemini if Claude failed
     if (!text && geminiKey) {
       try {
+        const gController = new AbortController()
+        const gTimeout = setTimeout(() => gController.abort(), FETCH_TIMEOUT)
         const geminiRes = await fetch(`${GEMINI_API_URL}?key=${geminiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -306,7 +316,9 @@ export const POST = async (request: Request) => {
               responseMimeType: 'application/json',
             },
           }),
+          signal: gController.signal,
         })
+        clearTimeout(gTimeout)
 
         if (geminiRes.ok) {
           const geminiData = await geminiRes.json()

@@ -4,9 +4,12 @@
  * Uses Claude's streaming API so the user sees progress in real-time.
  */
 
-// Import the generation prompt from the main route
+// Vercel: allow up to 60s for streaming responses (hobby plan max)
+export const maxDuration = 60
+
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages'
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514'
+const FETCH_TIMEOUT = 55000 // 55s — leave headroom for Vercel's 60s limit
 
 export async function POST(request: Request) {
   try {
@@ -33,6 +36,8 @@ Original content: ${JSON.stringify(originalContent || {})}`
 
     if (claudeKey) {
       try {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
         response = await fetch(CLAUDE_API_URL, {
           method: 'POST',
           headers: {
@@ -47,11 +52,15 @@ Original content: ${JSON.stringify(originalContent || {})}`
             system,
             messages: [{ role: 'user', content: user }],
           }),
+          signal: controller.signal,
         })
+        clearTimeout(timeout)
         if (!response.ok) {
-          response = null // Will fall through to Gemini
+          console.error('Claude stream error:', response.status)
+          response = null
         }
-      } catch {
+      } catch (err) {
+        console.error('Claude stream fetch failed:', err)
         response = null
       }
     }
@@ -59,15 +68,25 @@ Original content: ${JSON.stringify(originalContent || {})}`
     if (!response && geminiKey) {
       useGemini = true
       const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${geminiKey}`
-      response = await fetch(GEMINI_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: system }] },
-          contents: [{ role: 'user', parts: [{ text: user }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 65536 },
-        }),
-      })
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+      try {
+        response = await fetch(GEMINI_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: system }] },
+            contents: [{ role: 'user', parts: [{ text: user }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 65536 },
+          }),
+          signal: controller.signal,
+        })
+        clearTimeout(timeout)
+      } catch (err) {
+        clearTimeout(timeout)
+        console.error('Gemini stream fetch failed:', err)
+        response = null
+      }
     }
 
     if (!response || !response.ok) {

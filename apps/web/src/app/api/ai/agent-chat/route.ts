@@ -5,6 +5,8 @@
  * This is the "Team 100 Agent" that lives inside each generated site's editor.
  */
 
+export const maxDuration = 60
+
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages'
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514'
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'

@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 
+// Vercel: deep scan can take time
+export const maxDuration = 60
+
 /**
  * POST /api/scan/deep
  *

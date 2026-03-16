@@ -627,10 +627,14 @@ ${plan.preserveFromScan ? `## PRESERVED FROM ORIGINAL SITE\n${(plan.preserveFrom
       try {
         dispatch({ type: 'BUILD_PROGRESS', status: 'AI is building your site from the plan...', progress: 30 })
 
+        const streamController = new AbortController()
+        const streamTimeout = setTimeout(() => streamController.abort(), 90000) // 90s client-side limit
+
         const res = await fetch('/api/ai/generate-site-stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ systemPrompt, userPrompt, siteName }),
+          signal: streamController.signal,
         })
 
         if (res.ok && res.body) {
@@ -638,31 +642,36 @@ ${plan.preserveFromScan ? `## PRESERVED FROM ORIGINAL SITE\n${(plan.preserveFrom
           const decoder = new TextDecoder()
           let buffer = ''
 
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-            buffer += decoder.decode(value, { stream: true })
-            const lines = buffer.split('\n')
-            buffer = lines.pop() || ''
+          try {
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              buffer += decoder.decode(value, { stream: true })
+              const lines = buffer.split('\n')
+              buffer = lines.pop() || ''
 
-            for (const line of lines) {
-              if (!line.startsWith('data: ')) continue
-              try {
-                const event = JSON.parse(line.slice(6))
-                if (event.type === 'chunk' && event.text) {
-                  html += event.text
-                  const progress = Math.min(95, 30 + Math.round((html.length / 20000) * 65))
-                  dispatch({ type: 'BUILD_PROGRESS', status: `Building... ${progress}%`, progress })
-                } else if (event.type === 'done') {
-                  dispatch({ type: 'BUILD_PROGRESS', status: 'Finalizing...', progress: 98 })
-                } else if (event.type === 'error') {
-                  throw new Error(event.error)
-                }
-              } catch { /* skip malformed */ }
+              for (const line of lines) {
+                if (!line.startsWith('data: ')) continue
+                try {
+                  const event = JSON.parse(line.slice(6))
+                  if (event.type === 'chunk' && event.text) {
+                    html += event.text
+                    const progress = Math.min(95, 30 + Math.round((html.length / 20000) * 65))
+                    dispatch({ type: 'BUILD_PROGRESS', status: `Building... ${progress}%`, progress })
+                  } else if (event.type === 'done') {
+                    dispatch({ type: 'BUILD_PROGRESS', status: 'Finalizing...', progress: 98 })
+                  } else if (event.type === 'error') {
+                    throw new Error(event.error)
+                  }
+                } catch { /* skip malformed */ }
+              }
             }
+          } finally {
+            reader.releaseLock()
           }
           html = html.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim()
         }
+        clearTimeout(streamTimeout)
       } catch (err) {
         console.error('Streaming generation failed:', err)
       }
@@ -688,34 +697,48 @@ Make it look like a $10,000 agency-built website. 800+ lines minimum.`
 
       try {
         dispatch({ type: 'BUILD_PROGRESS', status: 'Generating with AI...', progress: 30 })
+        const fallbackController = new AbortController()
+        const fallbackTimeout = setTimeout(() => fallbackController.abort(), 90000)
         const res = await fetch('/api/ai/generate-site-stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ systemPrompt: fallbackSystem, userPrompt: fallbackUser, siteName }),
+          signal: fallbackController.signal,
         })
         if (res.ok && res.body) {
           const reader = res.body.getReader()
           const decoder = new TextDecoder()
           let buffer = ''
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-            buffer += decoder.decode(value, { stream: true })
-            const lines = buffer.split('\n')
-            buffer = lines.pop() || ''
-            for (const line of lines) {
-              if (!line.startsWith('data: ')) continue
-              try {
-                const event = JSON.parse(line.slice(6))
-                if (event.type === 'chunk' && event.text) html += event.text
-              } catch { /* skip */ }
+          try {
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              buffer += decoder.decode(value, { stream: true })
+              const lines = buffer.split('\n')
+              buffer = lines.pop() || ''
+              for (const line of lines) {
+                if (!line.startsWith('data: ')) continue
+                try {
+                  const event = JSON.parse(line.slice(6))
+                  if (event.type === 'chunk' && event.text) {
+                    html += event.text
+                    const progress = Math.min(95, 30 + Math.round((html.length / 20000) * 65))
+                    dispatch({ type: 'BUILD_PROGRESS', status: `Building... ${progress}%`, progress })
+                  }
+                } catch { /* skip */ }
+              }
             }
+          } finally {
+            reader.releaseLock()
           }
           html = html.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim()
         }
+        clearTimeout(fallbackTimeout)
       } catch {
-        // Try non-streaming
+        // Try non-streaming with timeout
         try {
+          const nsController = new AbortController()
+          const nsTimeout = setTimeout(() => nsController.abort(), 60000)
           const res = await fetch('/api/ai/generate-site', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -724,12 +747,14 @@ Make it look like a $10,000 agency-built website. 800+ lines minimum.`
               siteName,
               businessType,
             }),
+            signal: nsController.signal,
           })
+          clearTimeout(nsTimeout)
           if (res.ok) {
             const data = await res.json()
             if (data.ok && data.data?.html) html = data.data.html
           }
-        } catch { /* fall through */ }
+        } catch { /* fall through to template */ }
       }
     }
 

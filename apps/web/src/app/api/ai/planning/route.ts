@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 
+// Vercel: allow up to 30s for planning
+export const maxDuration = 30
+const FETCH_TIMEOUT = 25000
+
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
 
 const PLANNING_SYSTEM_PROMPT = `You are the Lead Architect of "Team 100" — a multi-agent AI system that builds world-class websites for UBuilder AI.
@@ -285,6 +289,8 @@ export const POST = async (request: Request) => {
     // Try Claude first (primary — higher quality planning)
     if (claudeKey) {
       try {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
         const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
@@ -299,7 +305,9 @@ export const POST = async (request: Request) => {
             system: PLANNING_SYSTEM_PROMPT,
             messages: [{ role: 'user', content: userContent }],
           }),
+          signal: controller.signal,
         })
+        clearTimeout(timeout)
 
         if (claudeRes.ok) {
           const claudeData = await claudeRes.json()
@@ -317,6 +325,8 @@ export const POST = async (request: Request) => {
     // Fallback to Gemini if Claude failed
     if (!text && geminiKey) {
       try {
+        const gController = new AbortController()
+        const gTimeout = setTimeout(() => gController.abort(), FETCH_TIMEOUT)
         const geminiRes = await fetch(`${GEMINI_API_URL}?key=${geminiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -329,7 +339,9 @@ export const POST = async (request: Request) => {
               responseMimeType: 'application/json',
             },
           }),
+          signal: gController.signal,
         })
+        clearTimeout(gTimeout)
 
         if (geminiRes.ok) {
           const geminiData = await geminiRes.json()
