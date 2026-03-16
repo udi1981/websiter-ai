@@ -67,6 +67,7 @@ type State = {
   isGenerating: boolean
   buildStatus: string
   buildProgress: number
+  buildError: string | null
 }
 
 type Action =
@@ -89,6 +90,7 @@ type Action =
   | { type: 'SET_PLAN'; plan: BuildPlan }
   | { type: 'BUILD_PROGRESS'; status: string; progress: number }
   | { type: 'BUILD_DONE' }
+  | { type: 'BUILD_ERROR'; error: string }
 
 const initialState: State = {
   step: 'input',
@@ -110,6 +112,7 @@ const initialState: State = {
   isGenerating: false,
   buildStatus: '',
   buildProgress: 0,
+  buildError: null,
 }
 
 const reducer = (state: State, action: Action): State => {
@@ -153,13 +156,15 @@ const reducer = (state: State, action: Action): State => {
     case 'SYSTEM_MESSAGE':
       return { ...state, messages: [...state.messages, action.message] }
     case 'START_BUILD':
-      return { ...state, isGenerating: true, buildStatus: 'Preparing...', buildProgress: 0 }
+      return { ...state, isGenerating: true, buildStatus: 'Preparing...', buildProgress: 0, buildError: null }
     case 'SET_PLAN':
       return { ...state, buildPlan: action.plan }
     case 'BUILD_PROGRESS':
       return { ...state, buildStatus: action.status, buildProgress: action.progress }
     case 'BUILD_DONE':
       return { ...state, isGenerating: false, buildStatus: '', buildProgress: 0 }
+    case 'BUILD_ERROR':
+      return { ...state, isGenerating: false, buildStatus: '', buildProgress: 0, buildError: action.error }
     default:
       return state
   }
@@ -609,6 +614,7 @@ ${plan.preserveFromScan ? `## PRESERVED FROM ORIGINAL SITE\n${(plan.preserveFrom
   const handleBuild = useCallback(async () => {
     dispatch({ type: 'START_BUILD' })
 
+    try {
     // ─── Phase 1: Planning ──────────────────────────────────────────────
     const plan = await callPlanning()
 
@@ -797,9 +803,17 @@ Make it look like a $10,000 agency-built website. 800+ lines minimum.`
       }
 
       router.push(`/editor/${siteId}`)
+    } else {
+      dispatch({ type: 'BUILD_ERROR', error: 'Generation produced no usable output. Please try again or use a template.' })
+      return
     }
 
     dispatch({ type: 'BUILD_DONE' })
+    } catch (err) {
+      console.error('Build failed:', err)
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred during site generation.'
+      dispatch({ type: 'BUILD_ERROR', error: errorMessage })
+    }
   }, [state, router, callPlanning])
 
   // ─── Render ──────────────────────────────────────────────────────────────
@@ -835,6 +849,8 @@ Make it look like a $10,000 agency-built website. 800+ lines minimum.`
           buildStatus={state.buildStatus}
           buildProgress={state.buildProgress}
           onFileUpload={handleChatFileUpload}
+          error={state.buildError}
+          onRetry={() => handleBuild()}
         />
       )}
     </div>

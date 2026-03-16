@@ -22,6 +22,8 @@ type DiscoveryChatProps = {
   buildStatus: string
   buildProgress: number
   onFileUpload?: (file: { name: string; textContent: string }) => void
+  error?: string | null
+  onRetry?: () => void
 }
 
 /** Extract text from a file (same logic as UnifiedInput) */
@@ -72,6 +74,8 @@ export const DiscoveryChat = ({
   buildStatus,
   buildProgress,
   onFileUpload,
+  error,
+  onRetry,
 }: DiscoveryChatProps) => {
   const [input, setInput] = useState('')
   const [isUploadingFile, setIsUploadingFile] = useState(false)
@@ -239,6 +243,37 @@ export const DiscoveryChat = ({
                 />
               </div>
               <p className="mt-2 text-xs text-text-muted">{buildProgress}%</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error card */}
+        {error && !isBuilding && (
+          <div className="flex justify-center pt-2">
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-5 text-center max-w-sm w-full">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20">
+                <svg className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-red-400 mb-1">הבנייה נכשלה / Generation Failed</p>
+              <p className="text-xs text-red-400/80 mb-4">{error}</p>
+              <div className="flex gap-2">
+                {onRetry && (
+                  <button
+                    onClick={onRetry}
+                    className="flex-1 rounded-xl bg-red-500/20 px-4 py-2.5 text-sm font-semibold text-red-400 hover:bg-red-500/30 transition-colors"
+                  >
+                    נסה שוב / Try Again
+                  </button>
+                )}
+                <button
+                  onClick={onBack}
+                  className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-text-muted hover:text-text hover:bg-bg-tertiary transition-colors"
+                >
+                  השתמש בתבנית / Use Template
+                </button>
+              </div>
             </div>
           </div>
         )}
