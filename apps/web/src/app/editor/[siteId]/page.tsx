@@ -6,6 +6,7 @@ import { EditorTopBar } from '@/components/editor/EditorTopBar'
 import { EditorSidebar } from '@/components/editor/EditorSidebar'
 import { EditorPreview } from '@/components/editor/EditorPreview'
 import { AIChatPanel } from '@/components/editor/AIChatPanel'
+import { LogoSelector } from '@/components/editor/LogoSelector'
 
 type PreviewMode = 'desktop' | 'tablet' | 'mobile'
 type RightPanelTab = 'chat' | 'code' | 'seo' | 'gso'
@@ -144,6 +145,7 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
   const [isGenerating, setIsGenerating] = useState(false)
   const [version, setVersion] = useState(1)
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
+  const [logoSelectorOpen, setLogoSelectorOpen] = useState(false)
 
   // Strip markdown code fences from AI-generated HTML
   const cleanHtml = useCallback((raw: string): string => {
@@ -474,6 +476,46 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
     [siteData, siteId]
   )
 
+  const handleLogoSelect = useCallback(
+    (logo: { id: string; name: string; style: string; svg: string }) => {
+      // Replace the first text-based logo in the nav with the SVG logo
+      let updated = htmlContent
+
+      // Strategy 1: Replace existing <a> logo in nav that contains brand text
+      const navLogoRegex = /<a[^>]*class=["'][^"']*logo[^"']*["'][^>]*>[\s\S]*?<\/a>/i
+      const navBrandRegex = /(<nav[\s\S]*?<a[^>]*>)([\s\S]*?)(<\/a>)/i
+
+      if (navLogoRegex.test(updated)) {
+        updated = updated.replace(navLogoRegex, (match) => {
+          const hrefMatch = match.match(/href=["']([^"']*)["']/)
+          const href = hrefMatch ? hrefMatch[1] : '#'
+          return `<a href="${href}" class="logo" style="display:inline-flex;align-items:center;height:40px;">${logo.svg}</a>`
+        })
+      } else if (navBrandRegex.test(updated)) {
+        // Replace the first link content in nav with the SVG
+        updated = updated.replace(navBrandRegex, (_match, before, _content, after) => {
+          return `${before}<span style="display:inline-flex;align-items:center;height:40px;">${logo.svg}</span>${after}`
+        })
+      } else {
+        // Fallback: try to find and replace the first brand-like text in header/nav
+        const headerTextRegex = /(<(?:header|nav)[^>]*>[\s\S]*?<(?:a|span|div)[^>]*>)([\s\S]*?)(<\/(?:a|span|div)>)/i
+        if (headerTextRegex.test(updated)) {
+          updated = updated.replace(headerTextRegex, (_match, before, _content, after) => {
+            return `${before}<span style="display:inline-flex;align-items:center;height:40px;">${logo.svg}</span>${after}`
+          })
+        }
+      }
+
+      if (updated !== htmlContent) {
+        handleHtmlChange(updated)
+      }
+
+      // Save logo to localStorage
+      localStorage.setItem(`ubuilder_logo_${siteId}`, JSON.stringify(logo))
+    },
+    [htmlContent, handleHtmlChange, siteId]
+  )
+
   const handlePreview = useCallback(() => {
     const blob = new Blob([htmlContent], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
@@ -600,6 +642,17 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
           {selectMode ? 'Click to select' : 'Select'}
         </button>
 
+        {/* Logo Picker */}
+        <button
+          onClick={() => setLogoSelectorOpen(true)}
+          className="flex items-center gap-2 rounded-full bg-[#1c2128]/90 text-white/50 border border-white/[0.08] px-4 py-2.5 text-xs font-medium hover:text-white/70 hover:border-white/[0.15] transition-all backdrop-blur-sm shadow-xl"
+        >
+          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+          </svg>
+          Logo
+        </button>
+
         {/* Quick AI prompt */}
         {!chatOpen && (
           <button
@@ -614,6 +667,16 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
           </button>
         )}
       </div>
+
+      {/* Logo Selector Modal */}
+      <LogoSelector
+        isOpen={logoSelectorOpen}
+        onClose={() => setLogoSelectorOpen(false)}
+        onSelect={handleLogoSelect}
+        businessName={siteData?.name || 'My Brand'}
+        primaryColor="#7C3AED"
+        industry={siteData?.template}
+      />
 
       {/* Publish Dialog */}
       {publishDialogOpen && (
