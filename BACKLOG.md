@@ -19,10 +19,10 @@
 - [x] 1.0.5g — DATABASE_URL configured on Vercel production
 
 ### 1.1 Auth System
-- [ ] 1.1.1 — Set up Better Auth (email + Google OAuth + magic links)
-- [ ] 1.1.2 — Auth middleware for API routes
-- [x] 1.1.3 — Login / Register pages (web app) — basic demo flow
-- [ ] 1.1.4 — Session management + protected routes
+- [x] 1.1.1 — Set up Better Auth (email + Google OAuth + magic links)
+- [ ] 1.1.2 — Auth middleware for API routes (pending Google OAuth credentials)
+- [x] 1.1.3 — Login / Register pages with Better Auth + localStorage fallback
+- [x] 1.1.4 — Session management + protected routes (dashboard layout gated)
 
 ### 1.2 Dashboard
 - [x] 1.2.1 — Dashboard layout (header, sidebar, main content)

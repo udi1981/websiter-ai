@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { useSession, signOut } from '@/lib/auth-client'
 
 const navItems = [
   {
@@ -38,6 +39,7 @@ const quickCreateTemplates = [
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname()
   const router = useRouter()
+  const { data: session, isPending: sessionPending } = useSession()
   const [user, setUser] = useState<{ name: string; email: string } | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [quickCreateOpen, setQuickCreateOpen] = useState(false)
@@ -45,6 +47,17 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const quickCreateRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // If Better Auth session exists, use it
+    if (session?.user) {
+      setUser({ name: session.user.name || 'User', email: session.user.email || '' })
+      setAuthChecked(true)
+      return
+    }
+
+    // If session check is still pending, wait
+    if (sessionPending) return
+
+    // Fallback: check localStorage
     const stored = localStorage.getItem('ubuilder_user')
     if (!stored) {
       router.replace('/login')
@@ -58,7 +71,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       localStorage.removeItem('ubuilder_token')
       router.replace('/login')
     }
-  }, [router])
+  }, [session, sessionPending, router])
 
   // Close quick create dropdown on outside click
   useEffect(() => {
@@ -76,10 +89,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     setSidebarOpen(false)
   }, [pathname])
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Sign out from Better Auth
+    try {
+      await signOut()
+    } catch { /* ignore if not using Better Auth */ }
+
+    // Clear localStorage
     localStorage.removeItem('ubuilder_user')
     localStorage.removeItem('ubuilder_token')
-    router.push('/login')
+    router.replace('/login')
   }
 
   const handleQuickCreate = async (templateId: string) => {
