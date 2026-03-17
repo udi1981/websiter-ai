@@ -89,7 +89,7 @@ const callAgentApi = async (
       body: JSON.stringify({
         message,
         htmlContent,
-        chatHistory: chatHistory.slice(-10), // Last 10 messages for context
+        chatHistory: chatHistory.slice(-10),
         siteData,
       }),
     })
@@ -135,7 +135,8 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
   const [historyIndex, setHistoryIndex] = useState(-1)
 
   // UI state
-  const [sidebarExpanded, setSidebarExpanded] = useState(true)
+  const [sidebarExpanded, setSidebarExpanded] = useState(false) // Default collapsed for max canvas
+  const [chatOpen, setChatOpen] = useState(false)
   const [rightPanel, setRightPanel] = useState<RightPanelTab>('chat')
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop')
   const [selectMode, setSelectMode] = useState(false)
@@ -147,11 +148,8 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
   // Strip markdown code fences from AI-generated HTML
   const cleanHtml = useCallback((raw: string): string => {
     let cleaned = raw.trim()
-    // Remove leading ```html or ``` (possibly with whitespace/newlines before)
     cleaned = cleaned.replace(/^\s*```(?:html|HTML)?\s*\n?/, '')
-    // Remove trailing ```
     cleaned = cleaned.replace(/\n?\s*```\s*$/, '')
-    // If it doesn't look like HTML, wrap it
     if (cleaned.length > 100 && !cleaned.includes('<!DOCTYPE') && !cleaned.includes('<html') && !cleaned.includes('<body')) {
       console.warn('[Editor] HTML content missing doctype — using fallback')
       return fallbackHtml
@@ -173,7 +171,6 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
 
       setSiteData(site)
 
-      // Check if we have saved HTML content for this site
       const savedHtml = localStorage.getItem(`ubuilder_html_${siteId}`)
       if (savedHtml && savedHtml.trim().length > 50) {
         const cleaned = cleanHtml(savedHtml)
@@ -181,14 +178,12 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
         setHtmlContent(cleaned)
         setHistory([cleaned])
         setHistoryIndex(0)
-        // Re-save cleaned version if it changed
         if (cleaned !== savedHtml) {
           localStorage.setItem(`ubuilder_html_${siteId}`, cleaned)
         }
         setLoading(false)
       } else {
         console.log('[Editor] No saved HTML found, loading template...')
-        // Load template HTML
         const templateType = site.template || 'business'
         const validTemplates = ['restaurant', 'saas', 'ecommerce', 'portfolio', 'business', 'blog', 'dental', 'yoga', 'law', 'realestate', 'fitness', 'photography']
         const templatePath = validTemplates.includes(templateType)
@@ -208,7 +203,6 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
             setLoading(false)
           })
           .catch(() => {
-            // Use fallback HTML
             setHtmlContent(fallbackHtml)
             setHistory([fallbackHtml])
             setHistoryIndex(0)
@@ -217,11 +211,9 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
           })
       }
 
-      // Load saved version
       const savedVersion = localStorage.getItem(`ubuilder_version_${siteId}`)
       if (savedVersion) setVersion(parseInt(savedVersion, 10))
 
-      // Load saved chat
       try {
         const savedChat = localStorage.getItem(`ubuilder_chat_${siteId}`)
         if (savedChat) setChatMessages(JSON.parse(savedChat))
@@ -230,7 +222,6 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
       }
     } catch (err) {
       console.error('[Editor] Failed to load site data:', err)
-      // Use fallback
       setHtmlContent(fallbackHtml)
       setHistory([fallbackHtml])
       setHistoryIndex(0)
@@ -238,22 +229,14 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
     }
   }, [siteId, router, cleanHtml])
 
-  // Push new HTML state to history
   const pushHtmlState = useCallback(
     (newHtml: string) => {
       setHtmlContent(newHtml)
-
-      // Truncate future history if we're not at the end
       const newHistory = history.slice(0, historyIndex + 1)
       newHistory.push(newHtml)
-
-      // Keep max 50 states
       if (newHistory.length > 50) newHistory.shift()
-
       setHistory(newHistory)
       setHistoryIndex(newHistory.length - 1)
-
-      // Save to localStorage
       localStorage.setItem(`ubuilder_html_${siteId}`, newHtml)
     },
     [history, historyIndex, siteId]
@@ -290,6 +273,11 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
           handleUndo()
         }
       }
+      // Ctrl+/ to toggle AI panel
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault()
+        setChatOpen(prev => !prev)
+      }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -309,6 +297,9 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
 
   const handleSendMessage = useCallback(
     async (message: string) => {
+      // Auto-open chat when sending a message
+      if (!chatOpen) setChatOpen(true)
+
       const userMsg: ChatMessage = {
         id: `msg-${Date.now()}`,
         role: 'user',
@@ -316,20 +307,18 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
       }
       setChatMessages((prev) => [...prev, userMsg])
 
-      // Warn if HTML is > 80KB
       const HTML_WARN_SIZE = 80 * 1024
       if (htmlContent.length > HTML_WARN_SIZE) {
         const warnMsg: ChatMessage = {
           id: `msg-warn-${Date.now()}`,
           role: 'assistant',
-          content: `Note: Your site HTML is large (${Math.round(htmlContent.length / 1024)}KB). The AI will work with a truncated version for context. Complex changes may need to be done in smaller steps.`,
+          content: `Note: Your site HTML is large (${Math.round(htmlContent.length / 1024)}KB). The AI will work with a truncated version for context.`,
         }
         setChatMessages((prev) => [...prev, warnMsg])
       }
 
       setIsGenerating(true)
 
-      // Show "thinking" indicator with tool calls
       const thinkingMsg: ChatMessage = {
         id: `msg-${Date.now() + 1}`,
         role: 'assistant',
@@ -338,12 +327,10 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
       }
       setChatMessages((prev) => [...prev, thinkingMsg])
 
-      // Build chat history for context
       const chatHistoryForApi = chatMessages
         .filter((m) => m.content)
         .map((m) => ({ role: m.role, content: m.content }))
 
-      // Call the AI agent API
       const result = await callAgentApi(
         message,
         htmlContent,
@@ -355,12 +342,11 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
         } : undefined
       )
 
-      // Apply HTML changes if any
       if (result.html && result.html !== htmlContent) {
         handleHtmlChange(result.html)
       }
 
-      // Handle scanRequested — show scanning message and feed results back
+      // Handle scanRequested
       if (result.scanRequested) {
         const scanningMsg: ChatMessage = {
           id: `msg-scan-${Date.now()}`,
@@ -373,7 +359,6 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
           return [...withoutThinking, scanningMsg]
         })
 
-        // If scan results weren't already returned from the API, call scan endpoint directly
         let scanData = result.scanResults
         if (!scanData) {
           try {
@@ -393,7 +378,6 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
           }
         }
 
-        // Feed scan results back into the agent for analysis
         const scanFollowUp = await callAgentApi(
           `Here are the scan results for ${result.scanRequested}:\n\n${scanData}\n\nPlease analyze these results and suggest how to improve my site based on what you found.`,
           htmlContent,
@@ -405,22 +389,19 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
           } : undefined
         )
 
-        // Update scanning message to done
         setChatMessages((prev) => prev.map((m) =>
           m.id === scanningMsg.id
             ? { ...m, content: `Scanned ${result.scanRequested}`, toolCalls: [{ name: 'Scanning URL', status: 'done' as const }] }
             : m
         ))
 
-        // Apply any HTML changes from scan follow-up
         if (scanFollowUp.html && scanFollowUp.html !== htmlContent) {
           handleHtmlChange(scanFollowUp.html)
         }
 
-        // Build the scan analysis response
         let scanResponseText = scanFollowUp.response
         if (scanFollowUp.proactiveTip) {
-          scanResponseText += `\n\n\u{1F4A1} **Tip:** ${scanFollowUp.proactiveTip}`
+          scanResponseText += `\n\n💡 **Tip:** ${scanFollowUp.proactiveTip}`
         }
 
         const scanAssistantMsg: ChatMessage = {
@@ -444,7 +425,6 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
         return
       }
 
-      // Build tool calls display
       const toolCalls = result.toolCalls?.length
         ? result.toolCalls.map((t) => ({ name: t.name, status: 'done' as const }))
         : result.html
@@ -454,7 +434,6 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
             ]
           : undefined
 
-      // Build response with proactive tip if available
       let responseText = result.response
       if (result.proactiveTip) {
         responseText += `\n\n💡 **Tip:** ${result.proactiveTip}`
@@ -468,7 +447,6 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
         suggestions: result.suggestions,
       }
 
-      // Replace the thinking message with the actual response
       setChatMessages((prev) => {
         const withoutThinking = prev.filter((m) => m.id !== thinkingMsg.id)
         const updated = [...withoutThinking, assistantMsg]
@@ -477,7 +455,7 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
       })
       setIsGenerating(false)
     },
-    [htmlContent, handleHtmlChange, siteId, chatMessages, siteData]
+    [htmlContent, handleHtmlChange, siteId, chatMessages, siteData, chatOpen]
   )
 
   const handleSiteNameChange = useCallback(
@@ -486,7 +464,6 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
       const updated = { ...siteData, name: newName }
       setSiteData(updated)
 
-      // Update in localStorage
       const sites = JSON.parse(localStorage.getItem('ubuilder_sites') || '[]')
       const idx = sites.findIndex((s: SiteData) => s.id === siteId)
       if (idx >= 0) {
@@ -505,7 +482,6 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
 
   const handlePublish = useCallback(() => {
     setPublishDialogOpen(true)
-    // Update site status
     if (siteData) {
       const sites = JSON.parse(localStorage.getItem('ubuilder_sites') || '[]')
       const idx = sites.findIndex((s: SiteData) => s.id === siteId)
@@ -520,6 +496,7 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
   const handleElementSelected = useCallback(
     (info: { tag: string; text: string; classList: string }) => {
       setSelectMode(false)
+      setChatOpen(true)
       const desc = info.text.trim().slice(0, 60)
       const contextMsg = `I selected a <${info.tag}> element${desc ? ` with text "${desc}"` : ''}. What would you like to change about it?`
       setChatMessages((prev) => [
@@ -529,9 +506,9 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
           role: 'assistant',
           content: contextMsg,
           suggestions: [
-            `Change this text`,
-            `Change its color`,
-            `Remove this element`,
+            'Change this text',
+            'Change its color',
+            'Remove this element',
           ],
         },
       ])
@@ -542,20 +519,20 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-bg">
+      <div className="flex h-screen items-center justify-center bg-[#0d1117]">
         <div className="flex flex-col items-center gap-4">
-          <svg className="h-10 w-10 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <p className="text-sm text-text-muted">Loading editor...</p>
+          <div className="relative">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 animate-pulse" />
+            <div className="absolute inset-0 h-12 w-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 animate-ping opacity-20" />
+          </div>
+          <p className="text-sm text-white/30">Loading editor...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-screen flex-col bg-[#0d1117]">
       <EditorTopBar
         siteName={siteData?.name || 'Untitled'}
         previewMode={previewMode}
@@ -568,6 +545,10 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
         canRedo={historyIndex < history.length - 1}
         onSiteNameChange={handleSiteNameChange}
         version={version}
+        onToggleChat={() => setChatOpen(prev => !prev)}
+        chatOpen={chatOpen}
+        onToggleSidebar={() => setSidebarExpanded(prev => !prev)}
+        sidebarExpanded={sidebarExpanded}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -586,57 +567,77 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
           selectMode={selectMode}
           onElementSelected={handleElementSelected}
         />
-
-        <AIChatPanel
-          activeTab={rightPanel}
-          onTabChange={setRightPanel}
-          messages={chatMessages}
-          onSendMessage={handleSendMessage}
-          isGenerating={isGenerating}
-          htmlContent={htmlContent}
-          onHtmlChange={handleHtmlChange}
-          version={version}
-        />
       </div>
 
-      {/* Select Mode Toggle (floating) */}
-      <button
-        onClick={() => setSelectMode((prev) => !prev)}
-        className={`fixed bottom-6 start-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium shadow-xl transition-all ${
-          selectMode
-            ? 'bg-primary text-white shadow-primary/30'
-            : 'bg-bg-secondary text-text border border-border hover:border-primary'
-        }`}
-      >
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" />
-        </svg>
-        {selectMode ? 'Click an element to select it' : 'Select to Edit'}
-      </button>
+      {/* Floating AI Panel (overlay) */}
+      <AIChatPanel
+        activeTab={rightPanel}
+        onTabChange={setRightPanel}
+        messages={chatMessages}
+        onSendMessage={handleSendMessage}
+        isGenerating={isGenerating}
+        htmlContent={htmlContent}
+        onHtmlChange={handleHtmlChange}
+        version={version}
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+      />
+
+      {/* Bottom Quick Actions */}
+      <div className="fixed bottom-5 start-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
+        {/* Select to Edit */}
+        <button
+          onClick={() => setSelectMode((prev) => !prev)}
+          className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-medium shadow-xl transition-all backdrop-blur-sm ${
+            selectMode
+              ? 'bg-violet-600 text-white shadow-violet-500/30'
+              : 'bg-[#1c2128]/90 text-white/50 border border-white/[0.08] hover:text-white/70 hover:border-white/[0.15]'
+          }`}
+        >
+          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" />
+          </svg>
+          {selectMode ? 'Click to select' : 'Select'}
+        </button>
+
+        {/* Quick AI prompt */}
+        {!chatOpen && (
+          <button
+            onClick={() => setChatOpen(true)}
+            className="flex items-center gap-2 rounded-full bg-[#1c2128]/90 text-white/40 border border-white/[0.08] px-5 py-2.5 text-xs hover:text-white/60 hover:border-white/[0.15] transition-all backdrop-blur-sm shadow-xl"
+          >
+            <svg className="h-3.5 w-3.5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+            Ask AI to edit...
+            <kbd className="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-white/20 font-mono">Ctrl+/</kbd>
+          </button>
+        )}
+      </div>
 
       {/* Publish Dialog */}
       {publishDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-bg border border-border p-6 shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/20">
-                <svg className="h-5 w-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-[#161b22] border border-white/[0.08] p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/20">
+                <svg className="h-5 w-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <div>
-                <h3 className="font-bold text-text">Site Published!</h3>
-                <p className="text-xs text-text-muted">Your site is now live</p>
+                <h3 className="font-semibold text-white">Site Published!</h3>
+                <p className="text-xs text-white/30">Your site is now live</p>
               </div>
             </div>
-            <div className="rounded-lg bg-bg-tertiary px-3 py-2 mb-4">
-              <p className="text-xs text-text-muted mb-1">Your site URL</p>
-              <p className="text-sm font-medium text-primary">{siteData?.url || 'your-site.ubuilder.co'}</p>
+            <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 mb-5">
+              <p className="text-[10px] text-white/20 mb-1 uppercase tracking-wider font-semibold">Your site URL</p>
+              <p className="text-sm font-medium text-violet-400">{siteData?.url || 'your-site.ubuilder.co'}</p>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setPublishDialogOpen(false)}
-                className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text hover:bg-bg-secondary transition-colors"
+                className="flex-1 rounded-xl border border-white/[0.08] px-4 py-2.5 text-sm font-medium text-white/50 hover:text-white/70 hover:bg-white/[0.04] transition-all"
               >
                 Close
               </button>
@@ -645,7 +646,7 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
                   navigator.clipboard.writeText(`https://${siteData?.url || 'your-site.ubuilder.co'}`)
                   setPublishDialogOpen(false)
                 }}
-                className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
+                className="flex-1 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20"
               >
                 Copy URL
               </button>

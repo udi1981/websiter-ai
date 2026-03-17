@@ -21,6 +21,8 @@ type AIChatPanelProps = {
   htmlContent: string
   onHtmlChange: (html: string) => void
   version: number
+  isOpen: boolean
+  onClose: () => void
 }
 
 /** Extract SEO data from HTML */
@@ -35,7 +37,6 @@ const extractSeoData = (html: string) => {
     h2s.push(h2m[1].replace(/<[^>]*>/g, '').trim())
   }
 
-  // Count images without alt
   const imgRegex = /<img[^>]*>/gi
   let imgMatch
   let missingAlt = 0
@@ -104,6 +105,8 @@ export const AIChatPanel = ({
   htmlContent,
   onHtmlChange,
   version,
+  isOpen,
+  onClose,
 }: AIChatPanelProps) => {
   const [input, setInput] = useState('')
   const [codeContent, setCodeContent] = useState('')
@@ -111,14 +114,12 @@ export const AIChatPanel = ({
   const [copyFeedback, setCopyFeedback] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Sync code content with htmlContent
   useEffect(() => {
     if (!codeEditing) {
       setCodeContent(htmlContent)
     }
   }, [htmlContent, codeEditing])
 
-  // Auto-scroll messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isGenerating])
@@ -155,8 +156,6 @@ export const AIChatPanel = ({
 
   const handleSeoAutoOptimize = () => {
     let updated = htmlContent
-
-    // Add meta description if missing
     if (!seoData.description) {
       const title = seoData.title || 'Website'
       const desc = `Welcome to ${title}. Discover our products and services.`
@@ -164,22 +163,17 @@ export const AIChatPanel = ({
         updated = updated.replace('</head>', `  <meta name="description" content="${desc}">\n</head>`)
       }
     }
-
-    // Add og tags if missing
     if (!seoData.hasOgTags) {
       const ogTags = `  <meta property="og:title" content="${seoData.title || 'Website'}">\n  <meta property="og:description" content="${seoData.description || 'Welcome to our website'}">\n  <meta property="og:type" content="website">\n`
       if (updated.includes('</head>')) {
         updated = updated.replace('</head>', `${ogTags}</head>`)
       }
     }
-
-    // Add canonical if missing
     if (!seoData.hasCanonical) {
       if (updated.includes('</head>')) {
         updated = updated.replace('</head>', `  <link rel="canonical" href="/">\n</head>`)
       }
     }
-
     if (updated !== htmlContent) {
       onHtmlChange(updated)
     }
@@ -187,404 +181,402 @@ export const AIChatPanel = ({
 
   const handleGsoAutoFix = () => {
     let updated = htmlContent
-
-    // Add schema.org if missing
     if (!gsoData.checks[0].passed) {
       const schema = `\n<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "WebSite",\n  "name": "${seoData.title || 'Website'}",\n  "description": "${seoData.description || 'Welcome to our website'}"\n}\n</script>\n`
       if (updated.includes('</head>')) {
         updated = updated.replace('</head>', `${schema}</head>`)
       }
     }
-
     if (updated !== htmlContent) {
       onHtmlChange(updated)
     }
   }
 
-  // Calculate SEO score ring
   const seoCircumference = 2 * Math.PI * 24
   const seoOffset = seoCircumference - (seoData.score / 100) * seoCircumference
   const seoColor = seoData.score >= 70 ? '#10B981' : seoData.score >= 40 ? '#F59E0B' : '#EF4444'
 
-  return (
-    <div className="flex w-80 flex-col border-s border-border bg-bg">
-      {/* Tab Bar */}
-      <div className="flex border-b border-border">
-        {(['chat', 'code', 'seo', 'gso'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => onTabChange(tab)}
-            className={`flex-1 py-2 text-xs font-medium transition-colors ${
-              activeTab === tab
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-text-muted hover:text-text'
-            }`}
-          >
-            {tab.toUpperCase()}
-          </button>
-        ))}
-      </div>
+  if (!isOpen) return null
 
-      {/* CHAT TAB */}
-      {activeTab === 'chat' && (
-        <div className="flex flex-1 flex-col overflow-hidden">
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-3">
-            {messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                <div className="w-12 h-12 rounded-full bg-primary-light flex items-center justify-center mb-3">
-                  <svg className="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
-                  </svg>
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] lg:hidden"
+        onClick={onClose}
+      />
+
+      {/* Floating Panel */}
+      <div className="fixed top-0 end-0 z-50 h-full w-full max-w-[420px] flex flex-col bg-[#0d1117] border-s border-white/[0.06] shadow-2xl shadow-black/50 animate-slide-in-right">
+        {/* Panel Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+          <div className="flex items-center gap-1">
+            {(['chat', 'code', 'seo', 'gso'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => onTabChange(tab)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                  activeTab === tab
+                    ? 'bg-violet-500/15 text-violet-300'
+                    : 'text-white/40 hover:text-white/60 hover:bg-white/[0.04]'
+                }`}
+              >
+                {tab === 'chat' && (
+                  <span className="flex items-center gap-1.5">
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                    </svg>
+                    AI Chat
+                  </span>
+                )}
+                {tab === 'code' && 'Code'}
+                {tab === 'seo' && 'SEO'}
+                {tab === 'gso' && 'GSO'}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-white/30 hover:text-white/60 hover:bg-white/[0.06] transition-all"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* CHAT TAB */}
+        {activeTab === 'chat' && (
+          <div className="flex flex-1 flex-col overflow-hidden">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+              {messages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center px-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 flex items-center justify-center mb-4 border border-violet-500/10">
+                    <svg className="h-7 w-7 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-sm font-semibold text-white/80 mb-1">AI Design Assistant</h3>
+                  <p className="text-xs text-white/30 mb-5 max-w-[280px]">
+                    Describe changes in natural language. I will modify your site in real time.
+                  </p>
+                  <div className="w-full space-y-1.5">
+                    {[
+                      { text: 'Analyze and suggest improvements', icon: '🔍' },
+                      { text: 'Make design more modern & premium', icon: '✨' },
+                      { text: 'Optimize SEO and Schema.org', icon: '📈' },
+                      { text: 'Add a testimonials section', icon: '💬' },
+                      { text: 'Switch to dark mode', icon: '🌙' },
+                      { text: 'Rewrite headline for conversions', icon: '✍️' },
+                      { text: 'שפר את העיצוב של האתר', icon: '🎨' },
+                      { text: 'הוסף קטע שאלות נפוצות', icon: '❓' },
+                      { text: 'שנה את הצבעים', icon: '🎯' },
+                    ].map(({ text, icon }) => (
+                      <button
+                        key={text}
+                        onClick={() => onSendMessage(text)}
+                        className="flex w-full items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5 text-start text-[13px] text-white/50 hover:text-white/70 hover:border-violet-500/30 hover:bg-violet-500/5 transition-all group"
+                      >
+                        <span className="text-sm opacity-60 group-hover:opacity-100 transition-opacity">{icon}</span>
+                        <span>{text}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <p className="text-sm font-medium text-text mb-1">AI Assistant</p>
-                <p className="text-xs text-text-muted mb-4">
-                  Describe what you want to change and I will update your site in real time.
-                </p>
-                <div className="w-full space-y-1.5">
-                  {[
-                    'Analyze my site and suggest improvements',
-                    'Make the design more modern and premium',
-                    'Optimize SEO and add Schema.org',
-                    'Add a testimonials section',
-                    'Switch to dark mode',
-                    'Rewrite the headline for better conversions',
-                    'שפר את העיצוב של האתר',
-                    'הוסף קטע שאלות נפוצות',
-                    'שנה את הצבעים לכהים',
-                  ].map((s) => (
+              )}
+
+              {messages.map((msg) => (
+                <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed ${
+                      msg.role === 'user'
+                        ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-ee-md shadow-lg shadow-violet-500/10'
+                        : 'bg-white/[0.06] text-white/70 rounded-es-md border border-white/[0.04]'
+                    }`}
+                  >
+                    {msg.content}
+                    {msg.toolCalls && msg.toolCalls.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {msg.toolCalls.map((tool, i) => (
+                          <div
+                            key={i}
+                            className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] ${
+                              msg.role === 'user' ? 'bg-white/20' : 'bg-white/[0.04]'
+                            }`}
+                          >
+                            {tool.status === 'running' ? (
+                              <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+                            ) : (
+                              <svg className="h-3 w-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                            <span className="text-white/50">{tool.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {/* Suggestions after last message */}
+              {messages.length > 0 && !isGenerating && messages[messages.length - 1]?.suggestions && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {messages[messages.length - 1].suggestions!.map((s) => (
                     <button
                       key={s}
                       onClick={() => onSendMessage(s)}
-                      className="w-full rounded-lg border border-border px-3 py-2 text-start text-xs text-text-secondary hover:border-primary hover:text-primary transition-colors"
+                      className="rounded-full border border-white/[0.08] bg-white/[0.02] px-3 py-1.5 text-[11px] text-white/40 hover:text-violet-300 hover:border-violet-500/30 hover:bg-violet-500/5 transition-all"
                     >
                       {s}
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
 
-            {messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
-                    msg.role === 'user'
-                      ? 'bg-primary text-white rounded-ee-sm'
-                      : 'bg-bg-tertiary text-text rounded-es-sm'
-                  }`}
-                >
-                  {msg.content}
-                  {msg.toolCalls && msg.toolCalls.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      {msg.toolCalls.map((tool, i) => (
-                        <div
-                          key={i}
-                          className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs ${
-                            msg.role === 'user' ? 'bg-white/20' : 'bg-bg/30'
-                          }`}
-                        >
-                          {tool.status === 'running' ? (
-                            <div className="h-2 w-2 animate-pulse rounded-full bg-warning" />
-                          ) : (
-                            <svg className="h-3 w-3 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                          <span>{tool.name}</span>
-                        </div>
-                      ))}
+              {isGenerating && (
+                <div className="flex justify-start">
+                  <div className="rounded-2xl rounded-es-md bg-white/[0.06] border border-white/[0.04] px-4 py-3">
+                    <div className="flex gap-1.5">
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-violet-400/60" style={{ animationDelay: '0ms' }} />
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-violet-400/60" style={{ animationDelay: '150ms' }} />
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-violet-400/60" style={{ animationDelay: '300ms' }} />
                     </div>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {isGenerating && (
-              <div className="flex justify-start">
-                <div className="rounded-xl rounded-es-sm bg-bg-tertiary px-3 py-2">
-                  <div className="flex gap-1">
-                    <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-text-muted" style={{ animationDelay: '0ms' }} />
-                    <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-text-muted" style={{ animationDelay: '150ms' }} />
-                    <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-text-muted" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
 
-          {/* Suggestion Cards after messages */}
-          {messages.length > 0 && !isGenerating && (
-            <div className="border-t border-border px-3 py-2">
-              <div className="flex flex-wrap gap-1.5">
-                {(messages[messages.length - 1]?.suggestions || [
-                  'Change colors',
-                  'Edit text',
-                  'Add section',
-                ]).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => onSendMessage(s)}
-                    className="rounded-full border border-border px-2.5 py-1 text-[11px] text-text-secondary hover:border-primary hover:text-primary transition-colors"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Input Area */}
-          <div className="border-t border-border p-3">
-            <div className="relative">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    handleSend()
-                  }
-                }}
-                placeholder="תאר שינויים... / Describe changes..."
-                className="w-full resize-none rounded-lg border border-border bg-bg-secondary px-3 py-2 pe-20 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                rows={2}
-              />
-              <div className="absolute bottom-2 end-2 flex items-center gap-1">
-                <button
-                  className="rounded p-1 text-text-muted hover:text-text transition-colors"
-                  title="Voice input"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                </button>
-                <button
-                  className="rounded p-1 text-text-muted hover:text-text transition-colors"
-                  title="Upload image"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </button>
-                <button
-                  onClick={handleSend}
-                  disabled={!input.trim() || isGenerating}
-                  className="rounded-md bg-primary p-1 text-white disabled:opacity-40 hover:bg-primary-hover transition-colors"
-                  title="Send"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="mt-1.5 flex items-center justify-between text-[10px] text-text-muted">
-              <span>גרסה / Version {version}</span>
-              <span>Shift+Enter לשורה חדשה / for new line</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CODE TAB */}
-      {activeTab === 'code' && (
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex items-center justify-between border-b border-border px-3 py-2">
-            <span className="text-xs font-medium text-text-muted">index.html</span>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={handleCopy}
-                className="rounded px-2 py-0.5 text-xs text-text-muted hover:text-primary transition-colors"
-              >
-                {copyFeedback ? 'Copied!' : 'Copy'}
-              </button>
-              <button
-                onClick={handleDownload}
-                className="rounded px-2 py-0.5 text-xs text-text-muted hover:text-primary transition-colors"
-              >
-                Download
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto p-2">
-            {codeEditing ? (
-              <textarea
-                value={codeContent}
-                onChange={(e) => setCodeContent(e.target.value)}
-                className="w-full h-full min-h-[400px] rounded-lg bg-bg-tertiary p-3 text-xs font-mono text-text-secondary leading-relaxed resize-none border border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                spellCheck={false}
-              />
-            ) : (
-              <pre
-                className="rounded-lg bg-bg-tertiary p-3 text-xs font-mono text-text-secondary whitespace-pre-wrap leading-relaxed cursor-text overflow-x-auto"
-                onClick={() => setCodeEditing(true)}
-              >
-                {htmlContent}
-              </pre>
-            )}
-          </div>
-          <div className="border-t border-border p-2 flex gap-2">
-            {codeEditing ? (
-              <>
-                <button
-                  onClick={handleApplyCode}
-                  className="flex-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-hover transition-colors"
-                >
-                  Apply Changes
-                </button>
-                <button
-                  onClick={() => {
-                    setCodeContent(htmlContent)
-                    setCodeEditing(false)
+            {/* Input Area */}
+            <div className="border-t border-white/[0.06] p-4">
+              <div className="relative">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSend()
+                    }
                   }}
-                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-text transition-colors"
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setCodeEditing(true)}
-                className="flex-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-secondary hover:border-primary hover:text-primary transition-colors"
-              >
-                Edit Code
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* SEO TAB */}
-      {activeTab === 'seo' && (
-        <div className="flex-1 overflow-y-auto p-3 space-y-4">
-          {/* Score */}
-          <div className="flex items-center gap-4">
-            <div className="relative h-16 w-16 shrink-0">
-              <svg className="h-16 w-16 -rotate-90" viewBox="0 0 56 56">
-                <circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="3" className="text-bg-tertiary" />
-                <circle
-                  cx="28" cy="28" r="24" fill="none"
-                  stroke={seoColor}
-                  strokeWidth="3"
-                  strokeDasharray={seoCircumference}
-                  strokeDashoffset={seoOffset}
-                  strokeLinecap="round"
+                  placeholder="Describe what to change..."
+                  className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 pe-14 text-sm text-white/80 placeholder:text-white/20 focus:border-violet-500/40 focus:outline-none focus:ring-1 focus:ring-violet-500/20 transition-all"
+                  rows={2}
                 />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-sm font-bold" style={{ color: seoColor }}>
-                {seoData.score}
-              </span>
-            </div>
-            <div className="text-xs space-y-1">
-              {seoData.title && <p className="text-success">Title tag present</p>}
-              {!seoData.title && <p className="text-error">Missing title tag</p>}
-              {seoData.description && <p className="text-success">Meta description set</p>}
-              {!seoData.description && <p className="text-error">Missing meta description</p>}
-              {seoData.h1 && <p className="text-success">H1 heading found</p>}
-              {!seoData.h1 && <p className="text-warning">No H1 heading</p>}
-              {seoData.missingAlt > 0 && <p className="text-warning">Missing alt on {seoData.missingAlt} image{seoData.missingAlt > 1 ? 's' : ''}</p>}
-              {!seoData.hasSchemaOrg && <p className="text-error">No Schema.org markup</p>}
-              {seoData.hasSchemaOrg && <p className="text-success">Schema.org present</p>}
-              {seoData.hasOgTags && <p className="text-success">Open Graph tags</p>}
-              {!seoData.hasOgTags && <p className="text-warning">Missing OG tags</p>}
-            </div>
-          </div>
-
-          {/* Details */}
-          <div className="space-y-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-text-muted">Title Tag</label>
-              <p className="rounded-md bg-bg-tertiary px-2 py-1.5 text-sm text-text-secondary">
-                {seoData.title || <span className="text-text-muted italic">Not set</span>}
-              </p>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-text-muted">Meta Description</label>
-              <p className="rounded-md bg-bg-tertiary px-2 py-1.5 text-sm text-text-secondary">
-                {seoData.description || <span className="text-text-muted italic">Not set</span>}
-              </p>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-text-muted">H1</label>
-              <p className="rounded-md bg-bg-tertiary px-2 py-1.5 text-sm text-text-secondary">
-                {seoData.h1 || <span className="text-text-muted italic">Not found</span>}
-              </p>
-            </div>
-            {seoData.h2s.length > 0 && (
-              <div>
-                <label className="mb-1 block text-xs font-medium text-text-muted">H2 Headings ({seoData.h2s.length})</label>
-                <div className="space-y-1">
-                  {seoData.h2s.map((h2, i) => (
-                    <p key={i} className="rounded-md bg-bg-tertiary px-2 py-1 text-xs text-text-secondary">{h2}</p>
-                  ))}
+                <div className="absolute bottom-2.5 end-2.5 flex items-center gap-1">
+                  <button
+                    onClick={handleSend}
+                    disabled={!input.trim() || isGenerating}
+                    className="rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 p-2 text-white disabled:opacity-30 hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20"
+                    title="Send"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                    </svg>
+                  </button>
                 </div>
               </div>
-            )}
-          </div>
-
-          <button
-            onClick={handleSeoAutoOptimize}
-            className="w-full rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary-hover transition-colors"
-          >
-            Auto-optimize with AI
-          </button>
-        </div>
-      )}
-
-      {/* GSO TAB */}
-      {activeTab === 'gso' && (
-        <div className="flex-1 overflow-y-auto p-3 space-y-4">
-          <div className="rounded-lg bg-primary-light p-3">
-            <h3 className="text-sm font-medium text-primary mb-1">GSO Score</h3>
-            <p className="text-xs text-text-secondary mb-2">
-              Generative Search Optimization — how well AI engines understand your site.
-            </p>
-            <div className="flex items-center gap-2">
-              <div className="h-2 flex-1 rounded-full bg-bg-tertiary overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-primary transition-all duration-500"
-                  style={{ width: `${gsoData.score}%` }}
-                />
+              <div className="mt-2 flex items-center justify-between text-[10px] text-white/20">
+                <span>v{version}</span>
+                <span>Shift+Enter for new line</span>
               </div>
-              <span className="text-xs font-bold text-primary">{gsoData.score}%</span>
             </div>
           </div>
+        )}
 
-          <div className="space-y-2">
-            <h4 className="text-xs font-medium text-text-muted">Checklist</h4>
-            {gsoData.checks.map((check, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-2 rounded-md border px-2.5 py-2 text-xs transition-colors ${
-                  check.passed
-                    ? 'border-success/30 bg-success/5 text-success'
-                    : 'border-border text-text-secondary'
-                }`}
-              >
-                {check.passed ? (
-                  <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  <svg className="h-3.5 w-3.5 shrink-0 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                )}
-                {check.label}
+        {/* CODE TAB */}
+        {activeTab === 'code' && (
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
+              <span className="text-xs font-medium text-white/30 font-mono">index.html</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCopy}
+                  className="rounded-md px-2 py-1 text-xs text-white/30 hover:text-white/60 hover:bg-white/[0.04] transition-all"
+                >
+                  {copyFeedback ? '✓ Copied' : 'Copy'}
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="rounded-md px-2 py-1 text-xs text-white/30 hover:text-white/60 hover:bg-white/[0.04] transition-all"
+                >
+                  Download
+                </button>
               </div>
-            ))}
+            </div>
+            <div className="flex-1 overflow-y-auto p-3">
+              {codeEditing ? (
+                <textarea
+                  value={codeContent}
+                  onChange={(e) => setCodeContent(e.target.value)}
+                  className="w-full h-full min-h-[400px] rounded-xl bg-white/[0.03] p-4 text-xs font-mono text-white/50 leading-relaxed resize-none border border-white/[0.06] focus:border-violet-500/40 focus:outline-none focus:ring-1 focus:ring-violet-500/20"
+                  spellCheck={false}
+                />
+              ) : (
+                <pre
+                  className="rounded-xl bg-white/[0.03] p-4 text-xs font-mono text-white/40 whitespace-pre-wrap leading-relaxed cursor-text overflow-x-auto border border-white/[0.04]"
+                  onClick={() => setCodeEditing(true)}
+                >
+                  {htmlContent}
+                </pre>
+              )}
+            </div>
+            <div className="border-t border-white/[0.06] p-3 flex gap-2">
+              {codeEditing ? (
+                <>
+                  <button
+                    onClick={handleApplyCode}
+                    className="flex-1 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-2 text-xs font-medium text-white hover:from-violet-500 hover:to-indigo-500 transition-all"
+                  >
+                    Apply Changes
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCodeContent(htmlContent)
+                      setCodeEditing(false)
+                    }}
+                    className="rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-medium text-white/40 hover:text-white/60 hover:bg-white/[0.04] transition-all"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setCodeEditing(true)}
+                  className="flex-1 rounded-xl border border-white/[0.08] px-3 py-2 text-xs font-medium text-white/40 hover:text-white/60 hover:border-white/[0.15] hover:bg-white/[0.04] transition-all"
+                >
+                  Edit Code
+                </button>
+              )}
+            </div>
           </div>
+        )}
 
-          <button
-            onClick={handleGsoAutoFix}
-            className="w-full rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary-hover transition-colors"
-          >
-            Auto-fix Issues
-          </button>
-        </div>
-      )}
-    </div>
+        {/* SEO TAB */}
+        {activeTab === 'seo' && (
+          <div className="flex-1 overflow-y-auto p-4 space-y-5">
+            <div className="flex items-center gap-4 rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+              <div className="relative h-16 w-16 shrink-0">
+                <svg className="h-16 w-16 -rotate-90" viewBox="0 0 56 56">
+                  <circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="3" className="text-white/[0.06]" />
+                  <circle
+                    cx="28" cy="28" r="24" fill="none"
+                    stroke={seoColor}
+                    strokeWidth="3"
+                    strokeDasharray={seoCircumference}
+                    strokeDashoffset={seoOffset}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold" style={{ color: seoColor }}>
+                  {seoData.score}
+                </span>
+              </div>
+              <div className="text-xs space-y-1">
+                {seoData.title && <p className="text-emerald-400">✓ Title tag present</p>}
+                {!seoData.title && <p className="text-red-400">✗ Missing title tag</p>}
+                {seoData.description && <p className="text-emerald-400">✓ Meta description set</p>}
+                {!seoData.description && <p className="text-red-400">✗ Missing meta description</p>}
+                {seoData.h1 && <p className="text-emerald-400">✓ H1 heading found</p>}
+                {!seoData.h1 && <p className="text-amber-400">⚠ No H1 heading</p>}
+                {seoData.missingAlt > 0 && <p className="text-amber-400">⚠ {seoData.missingAlt} images missing alt</p>}
+                {seoData.hasSchemaOrg && <p className="text-emerald-400">✓ Schema.org present</p>}
+                {!seoData.hasSchemaOrg && <p className="text-red-400">✗ No Schema.org</p>}
+                {seoData.hasOgTags && <p className="text-emerald-400">✓ Open Graph tags</p>}
+                {!seoData.hasOgTags && <p className="text-amber-400">⚠ Missing OG tags</p>}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                { label: 'Title Tag', value: seoData.title },
+                { label: 'Meta Description', value: seoData.description },
+                { label: 'H1', value: seoData.h1 },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <label className="mb-1.5 block text-[11px] font-semibold text-white/30 uppercase tracking-widest">{label}</label>
+                  <p className="rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-2 text-sm text-white/50">
+                    {value || <span className="text-white/20 italic">Not set</span>}
+                  </p>
+                </div>
+              ))}
+              {seoData.h2s.length > 0 && (
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-semibold text-white/30 uppercase tracking-widest">H2 Headings ({seoData.h2s.length})</label>
+                  <div className="space-y-1">
+                    {seoData.h2s.map((h2, i) => (
+                      <p key={i} className="rounded-lg bg-white/[0.03] border border-white/[0.04] px-3 py-1.5 text-xs text-white/40">{h2}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={handleSeoAutoOptimize}
+              className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-violet-500/20 hover:from-violet-500 hover:to-indigo-500 transition-all"
+            >
+              Auto-optimize SEO
+            </button>
+          </div>
+        )}
+
+        {/* GSO TAB */}
+        {activeTab === 'gso' && (
+          <div className="flex-1 overflow-y-auto p-4 space-y-5">
+            <div className="rounded-xl bg-gradient-to-br from-violet-500/10 to-indigo-500/10 border border-violet-500/10 p-4">
+              <h3 className="text-sm font-semibold text-violet-300 mb-1">GSO Score</h3>
+              <p className="text-xs text-white/30 mb-3">
+                Generative Search Optimization — how well AI engines understand your site.
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="h-2 flex-1 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-500"
+                    style={{ width: `${gsoData.score}%` }}
+                  />
+                </div>
+                <span className="text-sm font-bold text-violet-300 tabular-nums">{gsoData.score}%</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest">Checklist</h4>
+              {gsoData.checks.map((check, i) => (
+                <div
+                  key={i}
+                  className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs transition-all ${
+                    check.passed
+                      ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400'
+                      : 'border-white/[0.06] bg-white/[0.02] text-white/40'
+                  }`}
+                >
+                  {check.passed ? (
+                    <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="h-3.5 w-3.5 shrink-0 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                  )}
+                  {check.label}
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={handleGsoAutoFix}
+              className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-violet-500/20 hover:from-violet-500 hover:to-indigo-500 transition-all"
+            >
+              Auto-fix Issues
+            </button>
+          </div>
+        )}
+      </div>
+    </>
   )
 }
