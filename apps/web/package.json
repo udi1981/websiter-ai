@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ubuilder/db": "workspace:*",
     "@ubuilder/types": "workspace:*",
     "@ubuilder/ui": "workspace:*",
     "@ubuilder/utils": "workspace:*",

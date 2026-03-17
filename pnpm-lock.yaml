@@ -94,6 +94,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@ubuilder/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@ubuilder/types':
         specifier: workspace:*
         version: link:../../packages/types

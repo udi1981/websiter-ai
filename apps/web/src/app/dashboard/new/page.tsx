@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { type ScanResult } from '@/lib/scanner'
 import { rebuildSite } from '@/lib/site-rebuilder'
 import { PREMIUM_GENERATION_PROMPT, buildUserPromptFromPlan } from '@/lib/generation-prompt'
+import { createSite } from '@/lib/sites-api'
 import { UnifiedInput } from '@/components/create/UnifiedInput'
 import { DiscoveryChat, type DiscoveryMessage } from '@/components/create/DiscoveryChat'
 import { type TemplateItem } from '@/components/create/TemplateInspiration'
@@ -798,6 +799,18 @@ ${scanDnaSection}## REQUIREMENTS
       if (plan) {
         localStorage.setItem(`ubuilder_plan_${siteId}`, JSON.stringify(plan))
       }
+
+      // Persist to database (fire-and-forget)
+      createSite({
+        id: siteId,
+        name: siteName,
+        slug,
+        html,
+        buildPlan: plan || undefined,
+        industry: plan?.industry || undefined,
+        primaryColor: plan?.colorPalette?.primary || '#7C3AED',
+        sourceUrl: state.url || undefined,
+      }).catch(err => console.warn('[Build] DB sync failed:', err))
 
       router.push(`/editor/${siteId}`)
     } else {

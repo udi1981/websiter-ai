@@ -7,6 +7,8 @@ export const pages = pgTable('pages', {
   title: text('title').notNull(),
   slug: text('slug').notNull(),
   path: text('path').notNull(),
+  /** Full HTML of this page */
+  html: text('html'),
   blocks: jsonb('blocks').notNull().default([]),
   meta: jsonb('meta').notNull().default({}),
   locale: text('locale').notNull().default('en'),

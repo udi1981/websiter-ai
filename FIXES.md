@@ -46,6 +46,14 @@ Each entry: `[Date] [File] — Description of the bug and its fix`
 
 ---
 
+## 2026-03-17 — Database Connection + Persistence Layer
+
+### Feature: Neon PostgreSQL Integration
+**Files:** `packages/db/src/schema/sites.ts`, `packages/db/src/schema/users.ts`, `packages/db/src/index.ts`, `apps/web/src/app/api/sites/route.ts`, `apps/web/src/app/api/sites/[siteId]/route.ts`, `apps/web/src/lib/sites-api.ts`, `apps/web/src/app/dashboard/new/page.tsx`, `apps/web/src/app/editor/[siteId]/page.tsx`
+**Description:** Connected the web app to Neon PostgreSQL database. Created `sites` table with full schema (html, build_plan, logo_svg, industry, version, etc.). Built CRUD API routes and hybrid localStorage+DB persistence layer that syncs data to both stores. Site creation, HTML edits, logo changes, and name changes now persist to database. localStorage remains the fast cache, DB is the durable store.
+
+---
+
 ## Known Issues (non-blocking)
 
 - **React duplicate key warnings** in discovery chat — suggestion buttons rendered with duplicate keys. Cosmetic only.

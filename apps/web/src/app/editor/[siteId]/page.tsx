@@ -7,6 +7,7 @@ import { EditorSidebar } from '@/components/editor/EditorSidebar'
 import { EditorPreview } from '@/components/editor/EditorPreview'
 import { AIChatPanel } from '@/components/editor/AIChatPanel'
 import { LogoSelector } from '@/components/editor/LogoSelector'
+import { updateSiteHtml, updateSite } from '@/lib/sites-api'
 
 type PreviewMode = 'desktop' | 'tablet' | 'mobile'
 type RightPanelTab = 'chat' | 'code' | 'seo' | 'gso'
@@ -240,6 +241,7 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
       setHistory(newHistory)
       setHistoryIndex(newHistory.length - 1)
       localStorage.setItem(`ubuilder_html_${siteId}`, newHtml)
+      updateSiteHtml(siteId, newHtml) // Debounced DB sync
     },
     [history, historyIndex, siteId]
   )
@@ -251,6 +253,7 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
       const prevHtml = history[newIndex]
       setHtmlContent(prevHtml)
       localStorage.setItem(`ubuilder_html_${siteId}`, prevHtml)
+      updateSiteHtml(siteId, prevHtml)
     }
   }, [history, historyIndex, siteId])
 
@@ -261,6 +264,7 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
       const nextHtml = history[newIndex]
       setHtmlContent(nextHtml)
       localStorage.setItem(`ubuilder_html_${siteId}`, nextHtml)
+      updateSiteHtml(siteId, nextHtml)
     }
   }, [history, historyIndex, siteId])
 
@@ -472,6 +476,9 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
         sites[idx].name = newName
         localStorage.setItem('ubuilder_sites', JSON.stringify(sites))
       }
+
+      // Sync to DB
+      updateSite(siteId, { name: newName })
     },
     [siteData, siteId]
   )
@@ -510,8 +517,9 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
         handleHtmlChange(updated)
       }
 
-      // Save logo to localStorage
+      // Save logo to localStorage + DB
       localStorage.setItem(`ubuilder_logo_${siteId}`, JSON.stringify(logo))
+      updateSite(siteId, { logoSvg: logo.svg })
     },
     [htmlContent, handleHtmlChange, siteId]
   )

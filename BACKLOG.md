@@ -7,12 +7,21 @@
 - [x] 1.0.2 — Create all apps (web, api, renderer)
 - [x] 1.0.3 — Create all packages (db, ui, ai, i18n, types, utils, config)
 - [x] 1.0.4 — Configure TypeScript, ESLint, Tailwind v4
-- [ ] 1.0.5 — Install dependencies and verify build
+- [x] 1.0.5 — Install dependencies and verify build
+
+### 1.0.5 Database Connection (Neon PostgreSQL)
+- [x] 1.0.5a — Provision Neon database (ubuilder-platform project)
+- [x] 1.0.5b — Create `sites` table with html, build_plan, logo_svg columns
+- [x] 1.0.5c — Align Drizzle schemas with Better Auth tables
+- [x] 1.0.5d — Sites CRUD API routes (/api/sites, /api/sites/[id])
+- [x] 1.0.5e — Hybrid localStorage + DB persistence layer (sites-api.ts)
+- [x] 1.0.5f — Wire up site creation + editor to DB sync
+- [x] 1.0.5g — DATABASE_URL configured on Vercel production
 
 ### 1.1 Auth System
 - [ ] 1.1.1 — Set up Better Auth (email + Google OAuth + magic links)
 - [ ] 1.1.2 — Auth middleware for API routes
-- [ ] 1.1.3 — Login / Register pages (web app)
+- [x] 1.1.3 — Login / Register pages (web app) — basic demo flow
 - [ ] 1.1.4 — Session management + protected routes
 
 ### 1.2 Dashboard
