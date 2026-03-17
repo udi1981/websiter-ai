@@ -540,8 +540,19 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
         sites[idx].lastEdited = new Date().toLocaleDateString()
         localStorage.setItem('ubuilder_sites', JSON.stringify(sites))
       }
+
+      // Publish to DB — save HTML and set status
+      updateSite(siteId, { status: 'published', html: htmlContent })
+      fetch(`/api/sites/${siteId}/publish`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            console.log('[Publish] Published at:', data.data?.url)
+          }
+        })
+        .catch(err => console.warn('[Publish] DB publish failed:', err))
     }
-  }, [siteData, siteId])
+  }, [siteData, siteId, htmlContent])
 
   const handleElementSelected = useCallback(
     (info: { tag: string; text: string; classList: string }) => {
