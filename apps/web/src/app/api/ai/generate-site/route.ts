@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server'
 import { PREMIUM_GENERATION_PROMPT } from '@/lib/generation-prompt'
 
-// Vercel: allow up to 60s for generation
-export const maxDuration = 60
+// Vercel: allow up to 300s for generation (Claude needs time for 1000+ line sites)
+export const maxDuration = 300
 
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages'
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514'
-const FETCH_TIMEOUT = 55000
 
 const GENERATION_PROMPT = PREMIUM_GENERATION_PROMPT
 
@@ -474,8 +473,6 @@ export async function POST(request: Request) {
     // Try Claude first, fall back to Gemini
     if (claudeKey) {
       try {
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
         const response = await fetch(CLAUDE_API_URL, {
           method: 'POST',
           headers: {
@@ -485,14 +482,12 @@ export async function POST(request: Request) {
           },
           body: JSON.stringify({
             model: CLAUDE_MODEL,
-            max_tokens: 32000,
+            max_tokens: 64000,
             temperature: 0.7,
             system: GENERATION_PROMPT,
             messages: [{ role: 'user', content: userPrompt }],
           }),
-          signal: controller.signal,
         })
-        clearTimeout(timeout)
 
         if (response.ok) {
           const data = await response.json()

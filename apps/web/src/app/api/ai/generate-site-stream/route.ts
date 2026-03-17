@@ -38,8 +38,6 @@ Build 12-16 unique sections. Every section must have a different visual layout.`
 
     if (claudeKey) {
       try {
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
         response = await fetch(CLAUDE_API_URL, {
           method: 'POST',
           headers: {
@@ -49,17 +47,15 @@ Build 12-16 unique sections. Every section must have a different visual layout.`
           },
           body: JSON.stringify({
             model: CLAUDE_MODEL,
-            max_tokens: 32000,
+            max_tokens: 64000,
             temperature: 0.7,
             stream: true,
             system,
             messages: [{ role: 'user', content: user }],
           }),
-          signal: controller.signal,
         })
-        clearTimeout(timeout)
         if (!response.ok) {
-          console.error('Claude stream error:', response.status)
+          console.error('Claude stream error:', response.status, await response.text().catch(() => ''))
           response = null
         }
       } catch (err) {
@@ -71,8 +67,6 @@ Build 12-16 unique sections. Every section must have a different visual layout.`
     if (!response && geminiKey) {
       useGemini = true
       const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${geminiKey}`
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
       try {
         response = await fetch(GEMINI_URL, {
           method: 'POST',
@@ -82,11 +76,8 @@ Build 12-16 unique sections. Every section must have a different visual layout.`
             contents: [{ role: 'user', parts: [{ text: user }] }],
             generationConfig: { temperature: 0.7, maxOutputTokens: 65536 },
           }),
-          signal: controller.signal,
         })
-        clearTimeout(timeout)
       } catch (err) {
-        clearTimeout(timeout)
         console.error('Gemini stream fetch failed:', err)
         response = null
       }

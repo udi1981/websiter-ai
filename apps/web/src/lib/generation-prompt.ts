@@ -23,6 +23,15 @@ Return ONLY the complete HTML document — from <!DOCTYPE html> to </html>.
 NO markdown fences. NO explanations. NO comments outside the HTML. JUST the code.
 The output MUST be 1200+ lines of premium, well-structured code.
 
+## CRITICAL: TOKEN BUDGET MANAGEMENT
+You have a large but finite output budget. Prioritize CONTENT over CSS verbosity:
+- Keep CSS concise: use shorthand properties, minimal comments, compact selectors
+- DO NOT generate hundreds of lines of CSS custom properties — use a focused set (~30-40 variables max)
+- DO NOT repeat similar CSS rules — use comma-separated selectors and shared classes
+- The <body> content with all sections is MORE IMPORTANT than elaborate CSS
+- Aim for roughly: 200-300 lines CSS, 700-900 lines HTML content, 100-200 lines JS
+- NEVER stop generating before the closing </html> tag — the complete document is essential
+
 ## DESIGN SYSTEM ARCHITECTURE
 
 ### Color Strategy
@@ -499,7 +508,8 @@ ${sectionList}
 9. Use ONLY the verified Unsplash photo IDs from the system prompt
 10. Custom scrollbar, smooth scroll, all animations mentioned in system prompt
 11. Mix font styles for personality: serif headings + sans-serif body, or vice versa
-12. OUTPUT 1200+ LINES of premium, well-organized code`
+12. OUTPUT 1200+ LINES of premium, well-organized code
+13. CRITICAL: Keep CSS compact (~250 lines). Spend your token budget on rich HTML content and sections, NOT verbose CSS. The complete document from <!DOCTYPE html> to </html> is essential — NEVER stop mid-generation.`
 
   return prompt
 }

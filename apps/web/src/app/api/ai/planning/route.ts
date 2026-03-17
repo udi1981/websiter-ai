@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 
-// Vercel: allow up to 30s for planning
-export const maxDuration = 30
-const FETCH_TIMEOUT = 25000
+// Vercel: allow up to 120s for planning (Claude needs ~90s for complex build plans)
+export const maxDuration = 120
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
 
@@ -147,21 +146,43 @@ You MUST respond with valid JSON only. No markdown, no code fences, no explanati
 type PlanningRequest = {
   discoveryContext: Record<string, unknown>
   scanResult?: {
-    colors?: { hex: string; usage: string }[]
+    _source?: 'deep-scan-v2' | 'legacy-scan'
+    // Deep scan V2 fields (full intelligence)
+    pages?: { url: string; path: string; title: string; purpose: string; depth: number; isNav: boolean; sectionCount: number; hasForm: boolean; hasMedia: boolean }[]
+    pageCount?: number
+    designTokens?: {
+      colors?: { hex: string; usage: string; frequency: number; pages?: string[] }[]
+      fonts?: { family: string; usage: string; weight: string; source: string }[]
+      spacing?: string[]
+      borderRadius?: string[]
+      shadows?: string[]
+      gradients?: string[]
+      cssVariables?: Record<string, string>
+    }
+    contentMap?: {
+      pagePath: string
+      sections: { type: string; title: string; content: string; hasImages: boolean; hasForm: boolean; itemCount: number; order: number }[]
+      headings: { level: number; text: string }[]
+      ctaButtons: { text: string; href: string }[]
+    }[]
+    rebuildPlan?: { preserve: string[]; rebuild: string[]; improve: string[]; upgrade: string[] }
+    footerLinks?: { text: string; href: string; group: string }[]
+    // Shared fields
+    colors?: { hex: string; usage: string; frequency?: number }[]
     fonts?: { family: string; usage: string }[]
     sections?: { type: string; title?: string; content?: string; hasImages?: boolean; hasForm?: boolean; itemCount?: number }[]
     navigation?: { text: string; href: string }[]
-    headings?: string[]
+    headings?: string[] | { level: number; text: string }[]
     paragraphs?: string[]
-    images?: { src: string; alt: string; role?: string }[]
+    images?: { src: string; alt: string; role?: string; description?: string; page?: string }[]
     businessType?: string
     businessName?: string
+    siteName?: string
     title?: string
     description?: string
     seoMeta?: Record<string, string>
     motion?: Record<string, unknown>
     designDna?: Record<string, unknown>
-    rawHtml?: string
   }
   description: string
   templateId?: string
@@ -220,63 +241,135 @@ export const POST = async (request: Request) => {
     // Scan results (when URL was provided)
     if (body.scanResult) {
       const scan = body.scanResult
+      const isDeepScan = scan._source === 'deep-scan-v2'
       contextParts.push('\n--- SCANNED WEBSITE DATA ---')
       contextParts.push('IMPORTANT: The generated site must closely match this scanned site.')
+      if (isDeepScan) contextParts.push('(Full deep scan — multi-page analysis with AI design DNA)')
 
-      if (scan.businessName) contextParts.push(`Scanned business name: ${scan.businessName}`)
+      // Business identity
+      const bizName = scan.businessName || scan.siteName
+      if (bizName) contextParts.push(`Scanned business name: ${bizName}`)
       if (scan.businessType) contextParts.push(`Scanned business type: ${scan.businessType}`)
       if (scan.title) contextParts.push(`Page title: ${scan.title}`)
       if (scan.description) contextParts.push(`Meta description: ${scan.description}`)
 
-      if (scan.colors?.length) {
-        contextParts.push(`\nColor palette found:`)
-        scan.colors.slice(0, 10).forEach(c => {
-          contextParts.push(`  ${c.hex} — ${c.usage}`)
+      // Multi-page structure (deep scan only)
+      if (scan.pages?.length) {
+        contextParts.push(`\n📄 Site structure (${scan.pageCount || scan.pages.length} pages):`)
+        scan.pages.forEach(p => {
+          contextParts.push(`  - ${p.path} — "${p.title}" (${p.purpose})${p.isNav ? ' [in nav]' : ''}${p.hasForm ? ' [form]' : ''}${p.hasMedia ? ' [media]' : ''} ${p.sectionCount} sections`)
         })
       }
 
-      if (scan.fonts?.length) {
-        contextParts.push(`\nFonts found:`)
-        scan.fonts.forEach(f => {
-          contextParts.push(`  ${f.family} — ${f.usage}`)
+      // Design tokens (deep scan — full palette)
+      const colors = scan.designTokens?.colors || scan.colors
+      if (colors?.length) {
+        contextParts.push(`\n🎨 Color palette (${colors.length} colors):`)
+        colors.slice(0, 15).forEach((c: { hex: string; usage: string; frequency?: number; pages?: string[] }) => {
+          const pages = (c as { pages?: string[] }).pages
+          contextParts.push(`  ${c.hex} — ${c.usage} (freq: ${c.frequency || '?'})${pages?.length ? ` used on: ${pages.join(', ')}` : ''}`)
         })
       }
 
-      if (scan.sections?.length) {
+      const fonts = scan.designTokens?.fonts || scan.fonts
+      if (fonts?.length) {
+        contextParts.push(`\n🔤 Typography:`)
+        fonts.forEach((f: { family: string; usage: string; weight?: string; source?: string }) => {
+          contextParts.push(`  ${f.family} — ${f.usage}${f.weight ? ` (${f.weight})` : ''}${f.source ? ` [${f.source}]` : ''}`)
+        })
+      }
+
+      // Design tokens extras (deep scan only)
+      if (scan.designTokens) {
+        const dt = scan.designTokens
+        if (dt.spacing?.length) contextParts.push(`\n📏 Spacing values: ${dt.spacing.join(', ')}`)
+        if (dt.borderRadius?.length) contextParts.push(`📐 Border radius: ${dt.borderRadius.join(', ')}`)
+        if (dt.shadows?.length) contextParts.push(`🌑 Shadows: ${dt.shadows.slice(0, 5).join(' | ')}`)
+        if (dt.gradients?.length) contextParts.push(`🌈 Gradients: ${dt.gradients.slice(0, 5).join(' | ')}`)
+        if (dt.cssVariables && Object.keys(dt.cssVariables).length > 0) {
+          const vars = Object.entries(dt.cssVariables).slice(0, 20)
+          contextParts.push(`🔧 CSS Variables (${Object.keys(dt.cssVariables).length} total):`)
+          vars.forEach(([k, v]) => contextParts.push(`  ${k}: ${v}`))
+        }
+      }
+
+      // Per-page content architecture (deep scan only)
+      if (scan.contentMap?.length) {
+        contextParts.push(`\n📋 Content architecture per page:`)
+        scan.contentMap.forEach(page => {
+          contextParts.push(`\n  Page: ${page.pagePath}`)
+          if (page.sections.length) {
+            contextParts.push(`  Sections (${page.sections.length}):`)
+            page.sections.forEach((s, i) => {
+              contextParts.push(`    ${i + 1}. ${s.type}${s.title ? `: "${s.title}"` : ''}${s.hasForm ? ' [form]' : ''}${s.hasImages ? ' [images]' : ''}${s.itemCount ? ` [${s.itemCount} items]` : ''}`)
+              if (s.content) contextParts.push(`       Preview: "${s.content.slice(0, 200)}"`)
+            })
+          }
+          if (page.headings.length) {
+            contextParts.push(`  Headings:`)
+            page.headings.slice(0, 10).forEach(h => contextParts.push(`    H${h.level}: ${h.text}`))
+          }
+          if (page.ctaButtons.length) {
+            contextParts.push(`  CTAs: ${page.ctaButtons.map(c => `"${c.text}"`).join(', ')}`)
+          }
+        })
+      } else if (scan.sections?.length) {
+        // Legacy scan fallback
         contextParts.push(`\nSections found (${scan.sections.length}):`)
         scan.sections.forEach((s, i) => {
-          contextParts.push(`  ${i + 1}. ${s.type}${s.title ? `: "${s.title}"` : ''}${s.hasForm ? ' [has form]' : ''}${s.hasImages ? ' [has images]' : ''}${s.itemCount ? ` [${s.itemCount} items]` : ''}`)
+          contextParts.push(`  ${i + 1}. ${s.type}${s.title ? `: "${s.title}"` : ''}${s.hasForm ? ' [form]' : ''}${s.hasImages ? ' [images]' : ''}${s.itemCount ? ` [${s.itemCount} items]` : ''}`)
           if (s.content) contextParts.push(`     Content preview: "${s.content.slice(0, 200)}"`)
         })
       }
 
-      if (scan.headings?.length) {
-        contextParts.push(`\nHeadings found:`)
-        scan.headings.slice(0, 15).forEach(h => contextParts.push(`  - ${h}`))
-      }
-
+      // Navigation
       if (scan.navigation?.length) {
-        contextParts.push(`\nNavigation links:`)
-        scan.navigation.forEach(n => contextParts.push(`  - ${n.text} → ${n.href}`))
+        contextParts.push(`\n🧭 Navigation: ${scan.navigation.map(n => `${n.text} → ${n.href}`).join(' | ')}`)
+      }
+      if (scan.footerLinks?.length) {
+        contextParts.push(`Footer links: ${scan.footerLinks.map(n => `${n.text} (${n.group})`).join(', ')}`)
       }
 
+      // Images
       if (scan.images?.length) {
-        contextParts.push(`\nImages found (${scan.images.length}):`)
-        scan.images.slice(0, 10).forEach(img => {
-          contextParts.push(`  - ${img.role || 'unknown'}: ${img.alt || 'no alt'}`)
+        contextParts.push(`\n🖼️ Images (${scan.images.length}):`)
+        scan.images.slice(0, 15).forEach(img => {
+          contextParts.push(`  - ${img.role || 'unknown'}: ${img.description || img.alt || 'no description'}${img.page ? ` [${img.page}]` : ''}`)
         })
       }
 
+      // Motion & animation
       if (scan.motion) {
-        contextParts.push(`\nMotion/animation: ${JSON.stringify(scan.motion)}`)
+        contextParts.push(`\n✨ Motion/animation: ${JSON.stringify(scan.motion)}`)
       }
 
+      // AI-analyzed design DNA (from deep scan phase 7)
       if (scan.designDna) {
-        contextParts.push(`\nAI-analyzed design DNA: ${JSON.stringify(scan.designDna)}`)
+        contextParts.push(`\n🧬 AI-analyzed design DNA: ${JSON.stringify(scan.designDna)}`)
       }
 
+      // AI-generated rebuild plan (deep scan only)
+      if (scan.rebuildPlan) {
+        contextParts.push(`\n📋 AI Rebuild Plan:`)
+        if (scan.rebuildPlan.preserve?.length) contextParts.push(`  ✅ Preserve: ${scan.rebuildPlan.preserve.join(', ')}`)
+        if (scan.rebuildPlan.rebuild?.length) contextParts.push(`  🔧 Rebuild: ${scan.rebuildPlan.rebuild.join(', ')}`)
+        if (scan.rebuildPlan.improve?.length) contextParts.push(`  ⬆️ Improve: ${scan.rebuildPlan.improve.join(', ')}`)
+        if (scan.rebuildPlan.upgrade?.length) contextParts.push(`  🚀 Upgrade: ${scan.rebuildPlan.upgrade.join(', ')}`)
+      }
+
+      // SEO
       if (scan.seoMeta) {
-        contextParts.push(`\nSEO meta tags: ${JSON.stringify(scan.seoMeta)}`)
+        contextParts.push(`\n🔍 SEO meta: ${JSON.stringify(scan.seoMeta)}`)
+      }
+
+      // Legacy headings fallback
+      if (!scan.contentMap && scan.headings?.length) {
+        contextParts.push(`\nHeadings:`)
+        const headings = scan.headings as (string | { level: number; text: string })[]
+        headings.slice(0, 15).forEach(h => {
+          if (typeof h === 'string') contextParts.push(`  - ${h}`)
+          else contextParts.push(`  H${h.level}: ${h.text}`)
+        })
       }
 
       contextParts.push('--- END SCANNED DATA ---')
@@ -287,10 +380,10 @@ export const POST = async (request: Request) => {
     let text = ''
 
     // Try Claude first (primary — higher quality planning)
+    console.log('Planning: Starting Claude request, prompt length:', userContent.length)
     if (claudeKey) {
       try {
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+        const startTime = Date.now()
         const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
@@ -305,17 +398,16 @@ export const POST = async (request: Request) => {
             system: PLANNING_SYSTEM_PROMPT,
             messages: [{ role: 'user', content: userContent }],
           }),
-          signal: controller.signal,
         })
-        clearTimeout(timeout)
+        console.log('Planning: Claude responded in', Date.now() - startTime, 'ms, status:', claudeRes.status)
 
         if (claudeRes.ok) {
           const claudeData = await claudeRes.json()
           text = claudeData.content?.[0]?.text || ''
-          console.log('Planning: Claude fallback response received')
+          console.log('Planning: Claude response received,', text.length, 'chars')
         } else {
           const errText = await claudeRes.text()
-          console.error('Planning: Claude API error:', claudeRes.status, errText)
+          console.error('Planning: Claude API error:', claudeRes.status, errText.substring(0, 300))
         }
       } catch (err) {
         console.error('Planning: Claude fetch error:', err)
@@ -325,8 +417,7 @@ export const POST = async (request: Request) => {
     // Fallback to Gemini if Claude failed
     if (!text && geminiKey) {
       try {
-        const gController = new AbortController()
-        const gTimeout = setTimeout(() => gController.abort(), FETCH_TIMEOUT)
+        const startTime = Date.now()
         const geminiRes = await fetch(`${GEMINI_API_URL}?key=${geminiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -339,17 +430,16 @@ export const POST = async (request: Request) => {
               responseMimeType: 'application/json',
             },
           }),
-          signal: gController.signal,
         })
-        clearTimeout(gTimeout)
+        console.log('Planning: Gemini responded in', Date.now() - startTime, 'ms, status:', geminiRes.status)
 
         if (geminiRes.ok) {
           const geminiData = await geminiRes.json()
           text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || ''
-          console.log('Planning: Gemini fallback response received')
+          console.log('Planning: Gemini response received,', text.length, 'chars')
         } else {
           const errText = await geminiRes.text()
-          console.error('Planning: Gemini API error:', geminiRes.status, errText.substring(0, 200))
+          console.error('Planning: Gemini API error:', geminiRes.status, errText.substring(0, 300))
         }
       } catch (err) {
         console.error('Planning: Gemini fetch error:', err)

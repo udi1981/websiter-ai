@@ -57,6 +57,8 @@ type State = {
   // Scan
   scanStatus: 'idle' | 'scanning' | 'done' | 'error'
   scanResult: ScanResult | null
+  /** Full deep scan result — preserves 100% of scanner intelligence */
+  deepScanData: Record<string, unknown> | null
   // Step 2
   messages: DiscoveryMessage[]
   discoveryContext: Record<string, unknown>
@@ -81,7 +83,7 @@ type Action =
   | { type: 'GO_DISCOVERY' }
   | { type: 'GO_INPUT' }
   | { type: 'SCAN_START' }
-  | { type: 'SCAN_DONE'; result: ScanResult }
+  | { type: 'SCAN_DONE'; result: ScanResult; deepData?: Record<string, unknown> }
   | { type: 'SCAN_ERROR' }
   | { type: 'AI_THINKING' }
   | { type: 'AI_RESPONSE'; message: DiscoveryMessage; context: Record<string, unknown>; progress: { current: number; total: number }; ready: boolean }
@@ -103,6 +105,7 @@ const initialState: State = {
   documentText: null,
   scanStatus: 'idle',
   scanResult: null,
+  deepScanData: null,
   messages: [],
   discoveryContext: {},
   progress: { current: 0, total: 6 }
@@ -138,7 +141,7 @@ const reducer = (state: State, action: Action): State => {
     case 'SCAN_START':
       return { ...state, scanStatus: 'scanning' }
     case 'SCAN_DONE':
-      return { ...state, scanStatus: 'done', scanResult: action.result }
+      return { ...state, scanStatus: 'done', scanResult: action.result, deepScanData: action.deepData ?? null }
     case 'SCAN_ERROR':
       return { ...state, scanStatus: 'error' }
     case 'AI_THINKING':
@@ -193,8 +196,10 @@ const NewSitePage = () => {
             scanResult: scanResult ? {
               businessType: scanResult.businessType,
               businessName: scanResult.businessName,
-              sections: scanResult.sections?.map(s => s.type),
-              colors: scanResult.colors?.slice(0, 5),
+              sections: scanResult.sections?.map((s: { type: string; title?: string }) => ({ type: s.type, title: s.title })),
+              colors: scanResult.colors?.slice(0, 8),
+              fonts: scanResult.fonts?.slice(0, 4),
+              designDna: scanResult.designDna,
             } : undefined,
             hasUploadedImage: !!state.uploadedImage,
             documentText: state.documentText || undefined,
@@ -252,27 +257,42 @@ const NewSitePage = () => {
     dispatch({ type: 'BUILD_PROGRESS', status: 'Team 100 is planning your site...', progress: 10 })
 
     try {
+      // Build scan payload — prefer full deep scan data over flattened legacy result
+      const scanPayload = state.deepScanData
+        ? {
+            // Full deep scan intelligence — 100% preserved
+            ...state.deepScanData,
+            // Ensure key fields are always present
+            businessType: (state.deepScanData.businessType as string) || state.scanResult?.businessType,
+            businessName: (state.deepScanData.siteName as string) || state.scanResult?.businessName,
+            _source: 'deep-scan-v2' as const,
+          }
+        : state.scanResult
+          ? {
+              colors: state.scanResult.colors,
+              fonts: state.scanResult.fonts,
+              sections: state.scanResult.sections,
+              navigation: state.scanResult.navigation,
+              headings: state.scanResult.headings,
+              paragraphs: state.scanResult.paragraphs?.slice(0, 20),
+              images: state.scanResult.images?.slice(0, 15),
+              businessType: state.scanResult.businessType,
+              businessName: state.scanResult.businessName,
+              title: state.scanResult.title,
+              description: state.scanResult.description,
+              seoMeta: state.scanResult.seoMeta,
+              motion: state.scanResult.motion,
+              designDna: state.scanResult.designDna,
+              _source: 'legacy-scan' as const,
+            }
+          : undefined
+
       const res = await fetch('/api/ai/planning', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           discoveryContext: state.discoveryContext,
-          scanResult: state.scanResult ? {
-            colors: state.scanResult.colors,
-            fonts: state.scanResult.fonts,
-            sections: state.scanResult.sections,
-            navigation: state.scanResult.navigation,
-            headings: state.scanResult.headings,
-            paragraphs: state.scanResult.paragraphs?.slice(0, 20),
-            images: state.scanResult.images?.slice(0, 15),
-            businessType: state.scanResult.businessType,
-            businessName: state.scanResult.businessName,
-            title: state.scanResult.title,
-            description: state.scanResult.description,
-            seoMeta: state.scanResult.seoMeta,
-            motion: state.scanResult.motion,
-            designDna: state.scanResult.designDna,
-          } : undefined,
+          scanResult: scanPayload,
           description: state.description,
           templateId: state.selectedTemplateId,
         }),
@@ -292,14 +312,52 @@ const NewSitePage = () => {
       dispatch({ type: 'BUILD_PROGRESS', status: 'Planning skipped — generating directly...', progress: 15 })
       return null
     }
-  }, [state.discoveryContext, state.scanResult, state.description, state.selectedTemplateId])
+  }, [state.discoveryContext, state.scanResult, state.deepScanData, state.description, state.selectedTemplateId])
 
   // ─── Build prompt from plan ────────────────────────────────────────────
 
   const buildPromptFromPlan = (plan: BuildPlan) => {
+    let userPrompt = buildUserPromptFromPlan(plan)
+
+    // Inject deep scan design context for maximum fidelity
+    if (state.deepScanData) {
+      const ds = state.deepScanData
+      const designTokens = ds.designTokens as Record<string, unknown> | undefined
+      const rebuildPlan = ds.rebuildPlan as Record<string, unknown> | undefined
+      const scanDesignDna = ds.designDna as Record<string, unknown> | undefined
+
+      const scanContext: string[] = ['\n\n## ORIGINAL SITE DNA (from deep scan — match this closely)']
+
+      if (scanDesignDna) {
+        scanContext.push(`Design DNA analysis: ${JSON.stringify(scanDesignDna)}`)
+      }
+
+      if (designTokens) {
+        const dt = designTokens as { spacing?: string[]; borderRadius?: string[]; shadows?: string[]; gradients?: string[]; cssVariables?: Record<string, string> }
+        if (dt.spacing?.length) scanContext.push(`Spacing values to match: ${dt.spacing.join(', ')}`)
+        if (dt.borderRadius?.length) scanContext.push(`Border radius to match: ${dt.borderRadius.join(', ')}`)
+        if (dt.shadows?.length) scanContext.push(`Box shadows to match: ${dt.shadows.slice(0, 5).join(' | ')}`)
+        if (dt.gradients?.length) scanContext.push(`Gradients to match: ${dt.gradients.slice(0, 5).join(' | ')}`)
+        if (dt.cssVariables && Object.keys(dt.cssVariables).length > 0) {
+          scanContext.push(`CSS custom properties from original:\n${Object.entries(dt.cssVariables).slice(0, 25).map(([k, v]) => `  ${k}: ${v}`).join('\n')}`)
+        }
+      }
+
+      if (rebuildPlan) {
+        const rp = rebuildPlan as { preserve?: string[]; improve?: string[]; upgrade?: string[] }
+        if (rp.preserve?.length) scanContext.push(`MUST PRESERVE from original: ${rp.preserve.join(', ')}`)
+        if (rp.improve?.length) scanContext.push(`IMPROVE over original: ${rp.improve.join(', ')}`)
+        if (rp.upgrade?.length) scanContext.push(`UPGRADE opportunities: ${rp.upgrade.join(', ')}`)
+      }
+
+      if (scanContext.length > 1) {
+        userPrompt += scanContext.join('\n')
+      }
+    }
+
     return {
       systemPrompt: PREMIUM_GENERATION_PROMPT,
-      userPrompt: buildUserPromptFromPlan(plan),
+      userPrompt,
     }
   }
 
@@ -410,7 +468,7 @@ const NewSitePage = () => {
                     designDna: deepResult.designDna || undefined,
                   } as ScanResult
 
-                  dispatch({ type: 'SCAN_DONE', result: scanResult })
+                  dispatch({ type: 'SCAN_DONE', result: scanResult, deepData: deepResult })
                   dispatch({
                     type: 'SYSTEM_MESSAGE',
                     message: {
@@ -509,7 +567,7 @@ const NewSitePage = () => {
         dispatch({ type: 'BUILD_PROGRESS', status: 'AI is building your site from the plan...', progress: 30 })
 
         const streamController = new AbortController()
-        const streamTimeout = setTimeout(() => streamController.abort(), 90000) // 90s client-side limit
+        const streamTimeout = setTimeout(() => streamController.abort(), 300000) // 300s — Claude needs time for 64K token generation
 
         const res = await fetch('/api/ai/generate-site-stream', {
           method: 'POST',
@@ -575,6 +633,29 @@ const NewSitePage = () => {
 
       const fallbackSystem = PREMIUM_GENERATION_PROMPT
 
+      // Build scan DNA section for fallback prompt
+      let scanDnaSection = ''
+      if (state.deepScanData) {
+        const ds = state.deepScanData
+        const dt = ds.designTokens as Record<string, unknown> | undefined
+        const dna = ds.designDna as Record<string, unknown> | undefined
+        const rp = ds.rebuildPlan as Record<string, unknown> | undefined
+        const parts: string[] = ['## ORIGINAL SITE DNA (rebuild this site, upgraded)']
+        if (dna) parts.push(`Design analysis: ${JSON.stringify(dna)}`)
+        if (dt) {
+          const tokens = dt as { colors?: { hex: string; usage: string }[]; fonts?: { family: string; usage: string }[]; cssVariables?: Record<string, string> }
+          if (tokens.colors?.length) parts.push(`Colors: ${tokens.colors.slice(0, 10).map(c => `${c.hex} (${c.usage})`).join(', ')}`)
+          if (tokens.fonts?.length) parts.push(`Fonts: ${tokens.fonts.map(f => `${f.family} (${f.usage})`).join(', ')}`)
+          if (tokens.cssVariables) parts.push(`CSS vars: ${Object.entries(tokens.cssVariables).slice(0, 15).map(([k, v]) => `${k}: ${v}`).join('; ')}`)
+        }
+        if (rp) {
+          const plan = rp as { preserve?: string[]; improve?: string[] }
+          if (plan.preserve?.length) parts.push(`Preserve: ${plan.preserve.join(', ')}`)
+          if (plan.improve?.length) parts.push(`Improve: ${plan.improve.join(', ')}`)
+        }
+        scanDnaSection = parts.join('\n') + '\n\n'
+      }
+
       const fallbackUser = `Build a PHENOMENAL website that looks like it cost $20,000+ to build.
 
 ## BRAND
@@ -585,7 +666,7 @@ const NewSitePage = () => {
 ## CONTEXT FROM DISCOVERY
 ${discoveryInfo}
 
-## REQUIREMENTS
+${scanDnaSection}## REQUIREMENTS
 1. 12-16 unique sections, each with distinct visual treatment
 2. Massive hero with gradient overlay, jaw-dropping typography
 3. Professional, realistic content specific to this business
@@ -598,7 +679,7 @@ ${discoveryInfo}
       try {
         dispatch({ type: 'BUILD_PROGRESS', status: 'Generating with AI...', progress: 30 })
         const fallbackController = new AbortController()
-        const fallbackTimeout = setTimeout(() => fallbackController.abort(), 90000)
+        const fallbackTimeout = setTimeout(() => fallbackController.abort(), 180000)
         const res = await fetch('/api/ai/generate-site-stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
