@@ -97,6 +97,18 @@ export const LandingStyles = () => (
     .animate-morph { animation: morph-blob 8s ease-in-out infinite; }
     .animate-typing-cursor { border-right: 2px solid; animation: typing-cursor 1s step-end infinite; }
 
+    /* ===== HERO ENTRANCE (CSS-only, no JS dependency) ===== */
+    @keyframes hero-enter {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .hero-enter { opacity: 0; animation: hero-enter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .hero-enter-1 { animation-delay: 0.1s; }
+    .hero-enter-2 { animation-delay: 0.2s; }
+    .hero-enter-3 { animation-delay: 0.3s; }
+    .hero-enter-4 { animation-delay: 0.4s; }
+    .hero-enter-5 { animation-delay: 0.5s; }
+
     /* ===== HOVER EFFECTS ===== */
     .hover-lift { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease; }
     .hover-lift:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(124, 58, 237, 0.15); }
@@ -117,6 +129,7 @@ export const LandingStyles = () => (
     /* Reduced motion */
     @media (prefers-reduced-motion: reduce) {
       .reveal { opacity: 1; transform: none; transition: none; }
+      .hero-enter { opacity: 1; transform: none; animation: none; }
       *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
   `}</style>

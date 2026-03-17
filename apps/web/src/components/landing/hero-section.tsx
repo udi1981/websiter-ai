@@ -513,7 +513,7 @@ export const HeroSection = ({ scrollY }: HeroSectionProps) => {
 
       <div className="relative mx-auto max-w-7xl px-6 pt-16 pb-12 md:pt-20 md:pb-16 text-center">
         {/* Badge */}
-        <div className="reveal inline-flex items-center gap-2.5 rounded-full border border-primary/30 bg-primary/10 px-5 py-2 text-sm font-medium text-primary mb-10 animate-glow-border">
+        <div className="hero-enter inline-flex items-center gap-2.5 rounded-full border border-primary/30 bg-primary/10 px-5 py-2 text-sm font-medium text-primary mb-10 animate-glow-border">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full rounded-full bg-primary animate-pulse-ring" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
@@ -522,7 +522,7 @@ export const HeroSection = ({ scrollY }: HeroSectionProps) => {
         </div>
 
         {/* Heading */}
-        <h1 className="reveal reveal-delay-1 text-5xl font-extrabold tracking-tight md:text-7xl lg:text-8xl max-w-5xl mx-auto leading-[1.05]">
+        <h1 className="hero-enter hero-enter-1 text-5xl font-extrabold tracking-tight md:text-7xl lg:text-8xl max-w-5xl mx-auto leading-[1.05]">
           <span className="text-text">Build Websites That </span>
           <span className="bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-shimmer">
             Blow Minds
@@ -531,13 +531,13 @@ export const HeroSection = ({ scrollY }: HeroSectionProps) => {
         </h1>
 
         {/* Subheading */}
-        <p className="reveal reveal-delay-2 mt-8 text-lg text-text-secondary max-w-2xl mx-auto md:text-xl leading-relaxed">
+        <p className="hero-enter hero-enter-2 mt-8 text-lg text-text-secondary max-w-2xl mx-auto md:text-xl leading-relaxed">
           Describe your vision in plain text. Our AI generates a complete, multi-page website with stunning design,
           real images, and SEO optimization — in under 60 seconds.
         </p>
 
         {/* CTAs */}
-        <div className="reveal reveal-delay-3 mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="hero-enter hero-enter-3 mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             href="/login"
             className="group relative rounded-full bg-gradient-to-r from-primary via-purple-500 to-secondary px-10 py-4 text-base font-semibold text-white shadow-2xl shadow-primary/30 hover:shadow-primary/50 transition-all duration-300 hover:scale-105"
@@ -559,7 +559,7 @@ export const HeroSection = ({ scrollY }: HeroSectionProps) => {
         </div>
 
         {/* Animated Stats Row */}
-        <div ref={statsRef} className="reveal reveal-delay-4 mt-14 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-sm">
+        <div ref={statsRef} className="hero-enter hero-enter-4 mt-14 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-sm">
           {counterTargets.map((_, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className="text-xl font-bold text-text tabular-nums">{formatCounter(counters[i], i)}</span>
@@ -570,7 +570,7 @@ export const HeroSection = ({ scrollY }: HeroSectionProps) => {
         </div>
 
         {/* Interactive Platform Mockup */}
-        <div className="reveal reveal-delay-5 mt-16 rounded-2xl border border-border/60 bg-bg-secondary/80 shadow-2xl shadow-primary/10 overflow-hidden max-w-6xl mx-auto backdrop-blur-sm hover-glow transition-all duration-700" style={{ transform: `translateY(${scrollY * -0.03}px)` }}>
+        <div className="hero-enter hero-enter-5 mt-16 rounded-2xl border border-border/60 bg-bg-secondary/80 shadow-2xl shadow-primary/10 overflow-hidden max-w-6xl mx-auto backdrop-blur-sm hover-glow transition-all duration-700" style={{ transform: `translateY(${scrollY * -0.03}px)` }}>
           {/* Browser chrome */}
           <div className="flex items-center gap-2 border-b border-border px-4 py-3 bg-bg/60">
             <div className="h-3 w-3 rounded-full bg-[#FF5F57]" />

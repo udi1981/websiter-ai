@@ -41,15 +41,23 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<{ name: string; email: string } | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [quickCreateOpen, setQuickCreateOpen] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
   const quickCreateRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const stored = localStorage.getItem('ubuilder_user')
     if (!stored) {
-      router.push('/login')
+      router.replace('/login')
       return
     }
-    setUser(JSON.parse(stored))
+    try {
+      setUser(JSON.parse(stored))
+      setAuthChecked(true)
+    } catch {
+      localStorage.removeItem('ubuilder_user')
+      localStorage.removeItem('ubuilder_token')
+      router.replace('/login')
+    }
   }, [router])
 
   // Close quick create dropdown on outside click
@@ -114,6 +122,14 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const initials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U'
+
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen bg-bg">

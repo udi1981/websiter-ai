@@ -54,23 +54,18 @@ const DashboardPage = () => {
   useEffect(() => {
     try {
       const stored = localStorage.getItem('ubuilder_user')
-      if (!stored) {
-        router.push('/login')
-        return
+      if (stored) {
+        setUser(JSON.parse(stored))
       }
-      setUser(JSON.parse(stored))
-
       const savedSites = localStorage.getItem('ubuilder_sites')
       if (savedSites) {
         setSites(JSON.parse(savedSites))
       }
     } catch {
-      // Corrupted localStorage, reset
-      router.push('/login')
-      return
+      // Corrupted localStorage — layout handles auth redirect
     }
     setLoading(false)
-  }, [router])
+  }, [])
 
   const deleteSite = (id: string) => {
     if (!confirm('Are you sure you want to delete this site?')) return

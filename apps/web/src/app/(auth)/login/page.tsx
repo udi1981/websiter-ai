@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -11,6 +11,14 @@ const LoginPage = () => {
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    const stored = localStorage.getItem('ubuilder_user')
+    if (stored) {
+      router.replace('/dashboard')
+    }
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,14 +46,20 @@ const LoginPage = () => {
       createdAt: new Date().toISOString(),
     }
 
-    localStorage.setItem('ubuilder_user', JSON.stringify(user))
-    localStorage.setItem('ubuilder_token', `token_${user.id}`)
+    try {
+      localStorage.setItem('ubuilder_user', JSON.stringify(user))
+      localStorage.setItem('ubuilder_token', `token_${user.id}`)
+    } catch {
+      setError('Could not save login state. Please check your browser settings.')
+      setLoading(false)
+      return
+    }
 
     // Small delay for UX
     await new Promise(r => setTimeout(r, 600))
     setLoading(false)
 
-    router.push('/dashboard')
+    router.replace('/dashboard')
   }
 
   const handleGoogleLogin = () => {
@@ -58,10 +72,15 @@ const LoginPage = () => {
       createdAt: new Date().toISOString(),
     }
 
-    localStorage.setItem('ubuilder_user', JSON.stringify(user))
-    localStorage.setItem('ubuilder_token', `token_${user.id}`)
+    try {
+      localStorage.setItem('ubuilder_user', JSON.stringify(user))
+      localStorage.setItem('ubuilder_token', `token_${user.id}`)
+    } catch {
+      setError('Could not save login state. Please check your browser settings.')
+      return
+    }
 
-    router.push('/dashboard')
+    router.replace('/dashboard')
   }
 
   return (
