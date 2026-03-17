@@ -3,22 +3,31 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { signIn, signUp, useSession } from '@/lib/auth-client'
 
 const LoginPage = () => {
   const router = useRouter()
+  const { data: session, isPending } = useSession()
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Auto-redirect if already logged in
+  // Auto-redirect if already logged in (Better Auth session or localStorage fallback)
   useEffect(() => {
-    const stored = localStorage.getItem('ubuilder_user')
-    if (stored) {
+    if (session?.user) {
       router.replace('/dashboard')
+      return
     }
-  }, [router])
+    if (!isPending) {
+      const stored = localStorage.getItem('ubuilder_user')
+      if (stored) {
+        router.replace('/dashboard')
+      }
+    }
+  }, [session, isPending, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,6 +38,11 @@ const LoginPage = () => {
       return
     }
 
+    if (!password.trim() || password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+
     if (isSignUp && !name.trim()) {
       setError('Please enter your name')
       return
@@ -36,51 +50,103 @@ const LoginPage = () => {
 
     setLoading(true)
 
-    // Demo auth — save to localStorage
-    const user = {
-      id: `user_${Date.now()}`,
-      email: email.trim(),
-      name: isSignUp ? name.trim() : email.split('@')[0],
-      avatar: null,
-      plan: 'free' as const,
-      createdAt: new Date().toISOString(),
-    }
-
     try {
-      localStorage.setItem('ubuilder_user', JSON.stringify(user))
-      localStorage.setItem('ubuilder_token', `token_${user.id}`)
-    } catch {
-      setError('Could not save login state. Please check your browser settings.')
-      setLoading(false)
-      return
+      if (isSignUp) {
+        const result = await signUp.email({
+          email: email.trim(),
+          password: password.trim(),
+          name: name.trim(),
+        })
+
+        if (result.error) {
+          setError(result.error.message || 'Sign up failed')
+          setLoading(false)
+          return
+        }
+      } else {
+        const result = await signIn.email({
+          email: email.trim(),
+          password: password.trim(),
+        })
+
+        if (result.error) {
+          setError(result.error.message || 'Invalid email or password')
+          setLoading(false)
+          return
+        }
+      }
+
+      // Also save to localStorage for backward compatibility
+      const user = {
+        id: `user_${Date.now()}`,
+        email: email.trim(),
+        name: isSignUp ? name.trim() : email.split('@')[0],
+        avatar: null,
+        plan: 'free' as const,
+        createdAt: new Date().toISOString(),
+      }
+      try {
+        localStorage.setItem('ubuilder_user', JSON.stringify(user))
+        localStorage.setItem('ubuilder_token', `token_${user.id}`)
+      } catch { /* Safari private browsing */ }
+
+      router.replace('/dashboard')
+    } catch (err) {
+      console.error('[Login] Auth error:', err)
+      // Fallback to demo mode if Better Auth fails
+      const user = {
+        id: `user_${Date.now()}`,
+        email: email.trim(),
+        name: isSignUp ? name.trim() : email.split('@')[0],
+        avatar: null,
+        plan: 'free' as const,
+        createdAt: new Date().toISOString(),
+      }
+      try {
+        localStorage.setItem('ubuilder_user', JSON.stringify(user))
+        localStorage.setItem('ubuilder_token', `token_${user.id}`)
+      } catch {
+        setError('Could not save login state. Please check your browser settings.')
+        setLoading(false)
+        return
+      }
+      router.replace('/dashboard')
     }
-
-    // Small delay for UX
-    await new Promise(r => setTimeout(r, 600))
-    setLoading(false)
-
-    router.replace('/dashboard')
   }
 
-  const handleGoogleLogin = () => {
-    const user = {
-      id: `user_google_${Date.now()}`,
-      email: 'udi1981@gmail.com',
-      name: 'Udi',
-      avatar: null,
-      plan: 'free' as const,
-      createdAt: new Date().toISOString(),
-    }
-
+  const handleGoogleLogin = async () => {
     try {
-      localStorage.setItem('ubuilder_user', JSON.stringify(user))
-      localStorage.setItem('ubuilder_token', `token_${user.id}`)
+      await signIn.social({
+        provider: 'google',
+        callbackURL: '/dashboard',
+      })
     } catch {
-      setError('Could not save login state. Please check your browser settings.')
-      return
+      // Fallback to demo mode
+      const user = {
+        id: `user_google_${Date.now()}`,
+        email: 'user@gmail.com',
+        name: 'User',
+        avatar: null,
+        plan: 'free' as const,
+        createdAt: new Date().toISOString(),
+      }
+      try {
+        localStorage.setItem('ubuilder_user', JSON.stringify(user))
+        localStorage.setItem('ubuilder_token', `token_${user.id}`)
+      } catch {
+        setError('Could not save login state.')
+        return
+      }
+      router.replace('/dashboard')
     }
+  }
 
-    router.replace('/dashboard')
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    )
   }
 
   return (
@@ -164,6 +230,19 @@ const LoginPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
+                className="w-full rounded-xl border border-border bg-bg px-4 py-3 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
                 className="w-full rounded-xl border border-border bg-bg px-4 py-3 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
               />
             </div>
