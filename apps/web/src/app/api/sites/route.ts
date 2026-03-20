@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createDb, sites, eq, desc } from '@ubuilder/db'
+import { createDb, sites, eq, desc, ne, and } from '@ubuilder/db'
+import { requireAuth } from '@/lib/auth-middleware'
 
 /** GET /api/sites — List all sites for a user */
 export const GET = async (req: NextRequest) => {
   try {
-    const userId = req.headers.get('x-user-id')
-    if (!userId) {
-      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
-    }
+    const authResult = await requireAuth(req)
+    if (authResult instanceof Response) return authResult
+    const { userId } = authResult
 
     const db = createDb()
     const userSites = await db
@@ -25,7 +25,7 @@ export const GET = async (req: NextRequest) => {
         updatedAt: sites.updatedAt,
       })
       .from(sites)
-      .where(eq(sites.userId, userId))
+      .where(and(eq(sites.userId, userId), ne(sites.status, 'generation_failed')))
       .orderBy(desc(sites.updatedAt))
 
     return NextResponse.json({ ok: true, data: userSites })
@@ -35,13 +35,37 @@ export const GET = async (req: NextRequest) => {
   }
 }
 
+/** Generate a unique slug, appending random suffix on collision */
+const generateUniqueSlug = async (db: ReturnType<typeof createDb>, baseSlug: string): Promise<string> => {
+  let slug = baseSlug
+  let attempts = 0
+  const maxAttempts = 5
+
+  while (attempts < maxAttempts) {
+    const [existing] = await db
+      .select({ id: sites.id })
+      .from(sites)
+      .where(eq(sites.slug, slug))
+      .limit(1)
+
+    if (!existing) return slug
+
+    // Append random 3-char suffix
+    const suffix = Math.random().toString(36).substring(2, 5)
+    slug = `${baseSlug}-${suffix}`
+    attempts++
+  }
+
+  // Last resort: append timestamp
+  return `${baseSlug}-${Date.now().toString(36)}`
+}
+
 /** POST /api/sites — Create a new site */
 export const POST = async (req: NextRequest) => {
   try {
-    const userId = req.headers.get('x-user-id')
-    if (!userId) {
-      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
-    }
+    const authResult = await requireAuth(req)
+    if (authResult instanceof Response) return authResult
+    const { userId } = authResult
 
     const body = await req.json()
     const { id, name, slug, html, buildPlan, industry, primaryColor, logoSvg, sourceUrl } = body
@@ -51,13 +75,14 @@ export const POST = async (req: NextRequest) => {
     }
 
     const db = createDb()
-    const siteSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    const baseSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    const uniqueSlug = await generateUniqueSlug(db, baseSlug)
 
     const [newSite] = await db.insert(sites).values({
       id,
       userId,
       name,
-      slug: siteSlug,
+      slug: uniqueSlug,
       html: html || null,
       buildPlan: buildPlan || null,
       industry: industry || null,

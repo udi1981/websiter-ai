@@ -1,7 +1,7 @@
 import { pgTable, text, timestamp, pgEnum, jsonb, integer } from 'drizzle-orm/pg-core'
 import { users } from './users'
 
-export const siteStatusEnum = pgEnum('site_status', ['draft', 'published', 'archived'])
+export const siteStatusEnum = pgEnum('site_status', ['draft', 'published', 'archived', 'generation_failed'])
 
 export const sites = pgTable('sites', {
   id: text('id').primaryKey(),
