@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createDb, sites, eq, and } from '@ubuilder/db'
 import { requireAuth } from '@/lib/auth-middleware'
 import { generateChatbotWidget } from '@/lib/chatbot-widget'
-import { activateTeam101 as activateTeam101Mock } from '@/lib/team101-agents'
-import { activateTeam101 as activateTeam101Real, type SiteContext } from '@/lib/agent-orchestrator'
 import { getJobBySiteId, getArtifact, saveArtifact } from '@/lib/generation-tracker'
 
 type RouteParams = { params: Promise<{ siteId: string }> }
@@ -103,27 +101,6 @@ export const POST = async (req: NextRequest, { params }: RouteParams) => {
     } catch (ctxErr) {
       console.error('[publish] Chatbot context refresh error (non-blocking):', ctxErr)
     }
-
-    // Activate Team 101 — real agents with AI calls
-    const siteContext: SiteContext = {
-      siteId,
-      siteName: (site.name as string) || 'Site',
-      businessType: ((site as Record<string, unknown>).businessType as string) || 'business',
-      locale: ((site as Record<string, unknown>).locale as 'en' | 'he') || 'en',
-      pages: [],
-    }
-
-    // Fire-and-forget: Team 101 agents run in background (don't block publish response)
-    activateTeam101Real(siteContext).catch(err => {
-      console.error('[publish] Team 101 activation error (non-blocking):', err)
-    })
-
-    // Also activate mock store for dashboard status display
-    await activateTeam101Mock(siteId, {
-      siteName: siteContext.siteName,
-      businessType: siteContext.businessType,
-      locale: siteContext.locale,
-    })
 
     const publishedUrl = `https://${updated.slug}.ubuilder.co`
 

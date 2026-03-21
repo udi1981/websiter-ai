@@ -59,7 +59,18 @@ const DashboardPage = () => {
       }
       const savedSites = localStorage.getItem('ubuilder_sites')
       if (savedSites) {
-        setSites(JSON.parse(savedSites))
+        const parsed = JSON.parse(savedSites) as Site[]
+        // Enrich sites with HTML from localStorage for thumbnails
+        const enriched = parsed.map((site) => {
+          if (!site.html) {
+            const savedHtml = localStorage.getItem(`ubuilder_html_${site.id}`)
+            if (savedHtml && savedHtml.trim().length > 50) {
+              return { ...site, html: savedHtml }
+            }
+          }
+          return site
+        })
+        setSites(enriched)
       }
     } catch {
       // Corrupted localStorage — layout handles auth redirect
@@ -67,11 +78,47 @@ const DashboardPage = () => {
     setLoading(false)
   }, [])
 
-  const deleteSite = (id: string) => {
-    if (!confirm('Are you sure you want to delete this site?')) return
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  const deleteSite = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this site? This action cannot be undone.')) return
+
+    setDeleting(id)
     const updated = sites.filter(s => s.id !== id)
     setSites(updated)
     localStorage.setItem('ubuilder_sites', JSON.stringify(updated))
+
+    // Clean up related localStorage entries
+    try {
+      localStorage.removeItem(`ubuilder_html_${id}`)
+      localStorage.removeItem(`ubuilder_version_${id}`)
+      localStorage.removeItem(`ubuilder_chat_${id}`)
+      localStorage.removeItem(`ubuilder_logo_${id}`)
+      localStorage.removeItem(`ubuilder_plan_${id}`)
+    } catch { /* ignore */ }
+
+    // Call DELETE API to archive in DB
+    try {
+      const userId = (() => {
+        try {
+          const u = JSON.parse(localStorage.getItem('ubuilder_user') || '{}')
+          return u.id || 'demo_user'
+        } catch {
+          return 'demo_user'
+        }
+      })()
+      const res = await fetch(`/api/sites/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-user-id': userId },
+      })
+      if (!res.ok) {
+        console.warn('[dashboard] DB delete returned:', res.status)
+      }
+    } catch (err) {
+      console.warn('[dashboard] Failed to archive site in DB:', err)
+      // Don't revert — localStorage delete already happened, DB is secondary
+    }
+    setDeleting(null)
   }
 
   const handleQuickStart = async (templateId: string) => {
@@ -113,13 +160,10 @@ const DashboardPage = () => {
   const totalSites = sites.length
   const publishedCount = sites.filter(s => s.status === 'published').length
   const draftCount = sites.filter(s => s.status === 'draft').length
-  const totalViews = totalSites * 1247 + 389 // fake but consistent
-
   const stats = [
     { label: 'Total Sites', value: totalSites, icon: 'M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418', color: 'text-primary', bg: 'bg-primary/10' },
     { label: 'Published', value: publishedCount, icon: 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z', color: 'text-success', bg: 'bg-success/10' },
     { label: 'Drafts', value: draftCount, icon: 'M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10', color: 'text-warning', bg: 'bg-warning/10' },
-    { label: 'Total Views', value: totalViews.toLocaleString(), icon: 'M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178zM15 12a3 3 0 11-6 0 3 3 0 016 0z', color: 'text-secondary', bg: 'bg-secondary/10' },
   ]
 
   if (loading) {
@@ -256,7 +300,7 @@ const DashboardPage = () => {
 
             {/* Site Cards */}
             {sites.map((site) => {
-              const status = statusStyles[site.status]
+              const status = statusStyles[site.status] || statusStyles.draft
               return (
                 <div
                   key={site.id}
@@ -334,12 +378,20 @@ const DashboardPage = () => {
                         </button>
                         <button
                           onClick={() => deleteSite(site.id)}
-                          className="rounded-lg p-1.5 text-text-muted hover:text-error hover:bg-error/10 transition-colors"
+                          disabled={deleting === site.id}
+                          className="rounded-lg p-1.5 text-text-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           title="Delete"
                         >
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
+                          {deleting === site.id ? (
+                            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                          ) : (
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          )}
                         </button>
                       </div>
                     </div>
