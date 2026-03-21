@@ -7,7 +7,9 @@
 
 import * as tracker from '@/lib/generation-tracker'
 import type { GenerationStepName, ArtifactType, SourceOwnership, ScanModeV1 } from '@ubuilder/types'
-import type { ScanProgress } from '../../../../packages/ai/src/scanner/pipeline'
+
+/** Scanner progress status — matches ScanProgress['status'] from scanner pipeline */
+type ScanPhaseStatus = 'running' | 'done' | 'error' | 'skipped'
 
 /** Phase name from scanner → step name for DB */
 const PHASE_TO_STEP: Record<string, GenerationStepName> = {
@@ -59,7 +61,7 @@ export const createScanJob = async (params: {
 export const trackScanPhase = async (
   jobId: string,
   phaseName: string,
-  status: ScanProgress['status'],
+  status: ScanPhaseStatus,
   data?: Record<string, unknown>,
 ): Promise<void> => {
   const stepName = PHASE_TO_STEP[phaseName]

@@ -1,10 +1,12 @@
 'use client'
 
-import { useReducer, useCallback } from 'react'
+import { useReducer, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { type ScanResult } from '@/lib/scanner'
 import { rebuildSite } from '@/lib/site-rebuilder'
 import { PREMIUM_GENERATION_PROMPT, buildUserPromptFromPlan } from '@/lib/generation-prompt'
+import { composePage, hasGenerator, resolveVariantId } from '@/lib/section-composer'
+import type { PageComposition, PageSection, SectionCategory } from '@ubuilder/types'
 import { createSite } from '@/lib/sites-api'
 import { UnifiedInput } from '@/components/create/UnifiedInput'
 import { DiscoveryChat, type DiscoveryMessage } from '@/components/create/DiscoveryChat'
@@ -26,6 +28,7 @@ type BuildPlan = {
     sections: {
       type: string
       variant?: string
+      variantId?: string
       headline?: string
       subheadline?: string
       title?: string
@@ -46,9 +49,12 @@ type BuildPlan = {
 
 type Step = 'input' | 'discovery' | 'generating'
 
+type SiteLocale = 'en' | 'he'
+
 type State = {
   step: Step
   // Step 1
+  locale: SiteLocale
   description: string
   url: string
   uploadedImage: string | null
@@ -60,6 +66,9 @@ type State = {
   scanResult: ScanResult | null
   /** Full deep scan result — preserves 100% of scanner intelligence */
   deepScanData: Record<string, unknown> | null
+  scanMode: 'copy' | 'inspiration' | null
+  sourceOwnership: 'self_owned' | 'third_party' | null
+  scanJobId: string | null
   // Step 2
   messages: DiscoveryMessage[]
   discoveryContext: Record<string, unknown>
@@ -75,6 +84,7 @@ type State = {
 }
 
 type Action =
+  | { type: 'SET_LOCALE'; value: SiteLocale }
   | { type: 'SET_DESCRIPTION'; value: string }
   | { type: 'SET_URL'; value: string }
   | { type: 'SET_IMAGE'; value: string | null }
@@ -84,8 +94,9 @@ type Action =
   | { type: 'GO_DISCOVERY' }
   | { type: 'GO_INPUT' }
   | { type: 'SCAN_START' }
-  | { type: 'SCAN_DONE'; result: ScanResult; deepData?: Record<string, unknown> }
+  | { type: 'SCAN_DONE'; result: ScanResult; deepData?: Record<string, unknown>; scanJobId?: string }
   | { type: 'SCAN_ERROR' }
+  | { type: 'SET_SOURCE_OWNERSHIP'; value: 'self_owned' | 'third_party' }
   | { type: 'AI_THINKING' }
   | { type: 'AI_RESPONSE'; message: DiscoveryMessage; context: Record<string, unknown>; progress: { current: number; total: number }; ready: boolean }
   | { type: 'USER_MESSAGE'; message: DiscoveryMessage }
@@ -95,9 +106,11 @@ type Action =
   | { type: 'BUILD_PROGRESS'; status: string; progress: number }
   | { type: 'BUILD_DONE' }
   | { type: 'BUILD_ERROR'; error: string }
+  | { type: 'SET_SCAN_MODE'; scanMode: 'copy' | 'inspiration' }
 
 const initialState: State = {
   step: 'input',
+  locale: 'he',
   description: '',
   url: '',
   uploadedImage: null,
@@ -107,6 +120,9 @@ const initialState: State = {
   scanStatus: 'idle',
   scanResult: null,
   deepScanData: null,
+  scanMode: null,
+  sourceOwnership: null,
+  scanJobId: null,
   messages: [],
   discoveryContext: {},
   progress: { current: 0, total: 6 }
@@ -122,8 +138,14 @@ const initialState: State = {
 
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
-    case 'SET_DESCRIPTION':
-      return { ...state, description: action.value }
+    case 'SET_LOCALE':
+      return { ...state, locale: action.value }
+    case 'SET_DESCRIPTION': {
+      // Auto-detect Hebrew text and switch locale accordingly
+      const hasHebrew = /[\u0590-\u05FF]/.test(action.value)
+      const autoLocale = hasHebrew ? 'he' : state.locale
+      return { ...state, description: action.value, locale: autoLocale }
+    }
     case 'SET_URL':
       return { ...state, url: action.value }
     case 'SET_IMAGE':
@@ -142,9 +164,11 @@ const reducer = (state: State, action: Action): State => {
     case 'SCAN_START':
       return { ...state, scanStatus: 'scanning' }
     case 'SCAN_DONE':
-      return { ...state, scanStatus: 'done', scanResult: action.result, deepScanData: action.deepData ?? null }
+      return { ...state, scanStatus: 'done', scanResult: action.result, deepScanData: action.deepData ?? null, scanJobId: action.scanJobId ?? null }
     case 'SCAN_ERROR':
       return { ...state, scanStatus: 'error' }
+    case 'SET_SOURCE_OWNERSHIP':
+      return { ...state, sourceOwnership: action.value }
     case 'AI_THINKING':
       return { ...state, isAiThinking: true }
     case 'AI_RESPONSE':
@@ -170,6 +194,8 @@ const reducer = (state: State, action: Action): State => {
       return { ...state, isGenerating: false, buildStatus: '', buildProgress: 0 }
     case 'BUILD_ERROR':
       return { ...state, isGenerating: false, buildStatus: '', buildProgress: 0, buildError: action.error }
+    case 'SET_SCAN_MODE':
+      return { ...state, scanMode: action.scanMode }
     default:
       return state
   }
@@ -180,6 +206,8 @@ const reducer = (state: State, action: Action): State => {
 const NewSitePage = () => {
   const router = useRouter()
   const [state, dispatch] = useReducer(reducer, initialState)
+  const discoveryFailCount = useRef(0)
+  const discoveryRetryCount = useRef(0)
 
   // ─── Discovery API call ──────────────────────────────────────────────────
 
@@ -187,6 +215,10 @@ const NewSitePage = () => {
     dispatch({ type: 'AI_THINKING' })
 
     try {
+      // Add timeout to prevent indefinite hanging
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 60000) // 60s max
+
       const res = await fetch('/api/ai/discovery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -209,14 +241,22 @@ const NewSitePage = () => {
             .filter(m => m.role !== 'system')
             .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
           context,
+          locale: state.locale,
         }),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeout)
 
       if (!res.ok) throw new Error('Discovery API failed')
 
       const data = await res.json()
 
       if (data.ok) {
+        // Reset fail/retry counters on success
+        discoveryFailCount.current = 0
+        discoveryRetryCount.current = 0
+
         const aiMessage: DiscoveryMessage = {
           id: `msg_${Date.now()}`,
           role: 'assistant',
@@ -236,21 +276,103 @@ const NewSitePage = () => {
       }
     } catch (err) {
       console.error('Discovery API call failed:', err)
+
+      // Retry once before showing fallback — the first failure is often transient
+      if (discoveryRetryCount.current < 1) {
+        discoveryRetryCount.current++
+        console.log('[Discovery] Retrying after failure...')
+        await new Promise(r => setTimeout(r, 3000))
+        try {
+          const retryRes = await fetch('/api/ai/discovery', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              initialInput: {
+                description: state.description,
+                templateId: state.selectedTemplateId,
+                scanResult: undefined,
+                hasUploadedImage: !!state.uploadedImage,
+                documentText: state.documentText || undefined,
+              },
+              messages: userMessages
+                .filter(m => m.role !== 'system')
+                .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+              context,
+              locale: state.locale,
+            }),
+          })
+          if (retryRes.ok) {
+            const retryData = await retryRes.json()
+            if (retryData.ok) {
+              discoveryRetryCount.current = 0
+              discoveryFailCount.current = 0
+              dispatch({
+                type: 'AI_RESPONSE',
+                message: {
+                  id: `msg_${Date.now()}`,
+                  role: 'assistant',
+                  content: retryData.data.question,
+                  suggestions: retryData.data.suggestions,
+                },
+                context: retryData.data.context || context,
+                progress: retryData.data.progress || { current: 0, total: 6 },
+                ready: retryData.data.readyToGenerate || false,
+              })
+              return
+            }
+          }
+        } catch { /* fall through to fallback */ }
+      }
+
+      discoveryFailCount.current++
+
+      // Pre-populate context from description so handleBuild won't have empty context
+      const fallbackContext = {
+        ...context,
+        business_name: context.business_name || state.description.slice(0, 40),
+        industry: context.industry || state.description,
+      }
+
+      // On 2nd failure — stop asking, auto-trigger build
+      if (discoveryFailCount.current >= 2) {
+        const isHe = state.locale === 'he'
+        dispatch({
+          type: 'AI_RESPONSE',
+          message: {
+            id: `msg_${Date.now()}`,
+            role: 'assistant',
+            content: isHe
+              ? 'יש לנו מספיק מידע! בונים את האתר שלך עכשיו... 🚀'
+              : 'We have enough info! Building your site now... 🚀',
+          },
+          context: fallbackContext,
+          progress: { current: 6, total: 6 },
+          ready: true,
+        })
+        return
+      }
+
+      // First failure — show locale-aware fallback question
+      const isHe = state.locale === 'he'
       const fallbackMessage: DiscoveryMessage = {
         id: `msg_${Date.now()}`,
         role: 'assistant',
-        content: 'Tell me more about your business — what do you do and who are your customers?',
-        suggestions: ['Service business', 'Online store', 'Portfolio / Creative', 'Local business'],
+        content: isHe
+          ? 'ספר/י לי עוד על העסק שלך — מה את/ה עושה ומי הלקוחות שלך?'
+          : 'Tell me more about your business — what do you do and who are your customers?',
+        suggestions: isHe
+          ? ['עסק שירותי', 'חנות אונליין', 'פורטפוליו / קריאטיב', 'עסק מקומי']
+          : ['Service business', 'Online store', 'Portfolio / Creative', 'Local business'],
       }
       dispatch({
         type: 'AI_RESPONSE',
         message: fallbackMessage,
-        context,
+        context: fallbackContext,
         progress: { current: 1, total: 6 },
         ready: false,
       })
     }
-  }, [state.description, state.selectedTemplateId, state.uploadedImage, state.documentText])
+  }, [state.description, state.selectedTemplateId, state.uploadedImage, state.documentText, state.locale])
 
   // ─── Planning API call ─────────────────────────────────────────────────
 
@@ -296,6 +418,7 @@ const NewSitePage = () => {
           scanResult: scanPayload,
           description: state.description,
           templateId: state.selectedTemplateId,
+          locale: state.locale,
         }),
       })
 
@@ -303,17 +426,139 @@ const NewSitePage = () => {
 
       const data = await res.json()
       if (data.ok && data.data?.plan) {
-        dispatch({ type: 'SET_PLAN', plan: data.data.plan })
+        const plan = data.data.plan as BuildPlan
+        const sections = plan.pages?.[0]?.sections || []
+        console.log(`[Build] Plan received: "${plan.siteName}", ${sections.length} sections, variantIds:`, sections.map((s: { variantId?: string }) => s.variantId).filter(Boolean))
+        dispatch({ type: 'SET_PLAN', plan })
         dispatch({ type: 'BUILD_PROGRESS', status: 'Build plan ready — generating site...', progress: 25 })
-        return data.data.plan as BuildPlan
+        return plan
       }
       throw new Error('No plan returned')
     } catch (err) {
-      console.error('Planning failed:', err)
+      console.error('[Build] Planning failed:', err)
       dispatch({ type: 'BUILD_PROGRESS', status: 'Planning skipped — generating directly...', progress: 15 })
       return null
     }
-  }, [state.discoveryContext, state.scanResult, state.deepScanData, state.description, state.selectedTemplateId])
+  }, [state.discoveryContext, state.scanResult, state.deepScanData, state.description, state.selectedTemplateId, state.locale])
+
+  // ─── Try section-composed generation (uses pre-built generators) ──────
+
+  /** Check if the plan has variantId fields that map to our section registry */
+  const tryComposedGeneration = (plan: BuildPlan, generatedImages: Record<string, string> = {}): string | null => {
+    const allSections = plan.pages?.[0]?.sections || []
+
+    // Build nav links from non-nav/non-footer sections
+    const navLinks = allSections
+      .filter(s => s.type !== 'navbar' && s.type !== 'footer')
+      .map(s => ({
+        label: s.title || s.headline || s.type.charAt(0).toUpperCase() + s.type.slice(1),
+        href: `#${s.type}`,
+      }))
+
+    const resolvedSections: PageSection[] = allSections
+      .filter(s => {
+        if (!s.variantId) return false
+        const resolved = resolveVariantId(s.variantId)
+        if (resolved && resolved !== s.variantId) {
+          console.log(`[Build] Resolved variantId: "${s.variantId}" → "${resolved}"`)
+          s.variantId = resolved
+        }
+        return resolved !== null
+      })
+      .map((s, i) => {
+        // Map plan fields to generator param names
+        const isNav = s.type === 'navbar'
+        const isHero = s.type === 'hero'
+        const ctaAction = s.cta?.action === 'scroll-to-contact' ? '#contact'
+          : s.cta?.action === 'link' ? '#' : `#${s.cta?.action || 'contact'}`
+
+        return {
+          id: `section-${i}`,
+          category: s.type as SectionCategory,
+          variantId: s.variantId!,
+          order: i,
+          content: {
+            // Common fields
+            businessName: plan.siteName,
+            businessType: plan.industry,
+            locale: state.locale,
+            primaryColor: plan.colorPalette?.primary,
+            secondaryColor: plan.colorPalette?.secondary,
+            // Nav-specific: brand + links
+            ...(isNav ? {
+              brand: plan.siteName,
+              links: navLinks,
+              ctaText: (plan.conversionStrategy as { mainCTA?: string })?.mainCTA || s.cta?.text || 'Get Started',
+              ctaLink: ctaAction,
+            } : {}),
+            // Hero-specific: title/subtitle/cta mapping
+            ...(isHero ? {
+              title: s.headline || s.title || `Welcome to ${plan.siteName}`,
+              subtitle: s.subheadline || s.subtitle || '',
+              ctaText: s.cta?.text || (plan.conversionStrategy as { mainCTA?: string })?.mainCTA || 'Get Started',
+              ctaLink: ctaAction,
+              secondaryCtaText: 'Learn More',
+              secondaryCtaLink: '#features',
+            } : {}),
+            // Content sections: title + subtitle + items
+            ...(!isNav && !isHero ? {
+              title: s.title || s.headline || '',
+              subtitle: s.subtitle || s.subheadline || '',
+              headline: s.headline || s.title || '',
+              subheadline: s.subheadline || s.subtitle || '',
+              items: s.items,
+              ctaText: s.cta?.text,
+              ctaLink: ctaAction,
+              notes: s.notes,
+            } : {}),
+          },
+          images: {
+            ...(s.type === 'hero' && generatedImages.hero ? { hero: generatedImages.hero, imageUrl: generatedImages.hero } : {}),
+            ...(s.type === 'about' && generatedImages.about ? { imageUrl: generatedImages.about } : {}),
+            ...(s.type === 'features' && generatedImages.features ? { imageUrl: generatedImages.features } : {}),
+            ...(s.type === 'gallery' ? { gallery_0: generatedImages.gallery_0, gallery_1: generatedImages.gallery_1, gallery_2: generatedImages.gallery_2 } : {}),
+            ...(generatedImages.logo ? { logo: generatedImages.logo } : {}),
+          },
+        }
+      })
+
+    // Log what matched
+    console.log(`[Build] Section composition: ${allSections.length} planned, ${resolvedSections.length} resolved. IDs:`, resolvedSections.map(s => s.variantId))
+    const unmatched = allSections.filter(s => s.variantId && !hasGenerator(s.variantId))
+    if (unmatched.length) console.log(`[Build] Unmatched variantIds:`, unmatched.map(s => s.variantId))
+
+    // Only use composed generation if at least 6 sections resolved
+    if (resolvedSections.length < 3) {
+      console.log(`[Build] Not enough sections for composition (${resolvedSections.length} < 3), falling back to AI generation`)
+      return null
+    }
+
+    const composition: PageComposition = {
+      id: `composed-${Date.now()}`,
+      siteName: plan.siteName,
+      locale: state.locale,
+      palette: {
+        primary: plan.colorPalette?.primary || '#7C3AED',
+        primaryHover: plan.colorPalette?.primaryHover || plan.colorPalette?.primary || '#6D28D9',
+        secondary: plan.colorPalette?.secondary || '#06B6D4',
+        accent: plan.colorPalette?.accent || '#F59E0B',
+        background: plan.colorPalette?.background || '#0B0F1A',
+        backgroundAlt: plan.colorPalette?.backgroundAlt || '#111827',
+        text: plan.colorPalette?.text || '#F9FAFB',
+        textMuted: plan.colorPalette?.textMuted || '#9CA3AF',
+        border: plan.colorPalette?.border || '#1F2937',
+      },
+      fonts: {
+        heading: plan.typography?.headingFont || 'Inter',
+        body: plan.typography?.bodyFont || 'Inter',
+        headingWeight: plan.typography?.headingWeight || '700',
+        bodyWeight: plan.typography?.bodyWeight || '400',
+      },
+      sections: resolvedSections,
+    }
+
+    return composePage(composition)
+  }
 
   // ─── Build prompt from plan ────────────────────────────────────────────
 
@@ -367,9 +612,30 @@ const NewSitePage = () => {
   const handleContinue = useCallback(async () => {
     dispatch({ type: 'GO_DISCOVERY' })
 
-    // Start deep URL scan in background if URL provided
-    let scanResult: ScanResult | null = null
+    // Start first discovery question IMMEDIATELY — scan waits until this completes
+    // This ensures discovery gets the Claude API call without competition from scan
+    const discoveryPromise = callDiscovery([], {}, null)
+
+    // Wait for discovery to complete BEFORE starting scan
+    // Root cause fix: firing both simultaneously overloads the dev server
+    await discoveryPromise
+
+    // Start deep URL scan in BACKGROUND if URL provided (after discovery succeeded)
     if (state.url.trim()) {
+      if (!state.scanMode) {
+        dispatch({
+          type: 'SYSTEM_MESSAGE',
+          message: {
+            id: `msg_scan_intent_${Date.now()}`,
+            role: 'system',
+            content: state.locale === 'he'
+              ? '🔍 מצאנו URL! סורקים את האתר ברקע בזמן שנמשיך לשוחח...'
+              : '🔍 URL detected! Scanning in the background while we chat...',
+          },
+        })
+        dispatch({ type: 'SET_SCAN_MODE', scanMode: 'inspiration' })
+      }
+
       dispatch({ type: 'SCAN_START' })
       dispatch({
         type: 'SYSTEM_MESSAGE',
@@ -380,130 +646,151 @@ const NewSitePage = () => {
         },
       })
 
-      try {
-        const url = state.url.trim().startsWith('http') ? state.url.trim() : `https://${state.url.trim()}`
+      // Run scan in background — don't await, don't block discovery
+      const scanInBackground = async () => {
+        try {
+          const url = state.url.trim().startsWith('http') ? state.url.trim() : `https://${state.url.trim()}`
 
-        // Use deep scanner with SSE progress
-        const res = await fetch('/api/scan/deep', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url }),
-        })
+          // Add timeout to scan to prevent indefinite hanging
+          const scanController = new AbortController()
+          const scanTimeout = setTimeout(() => scanController.abort(), 120000) // 2 min max
 
-        if (res.ok && res.body) {
-          const reader = res.body.getReader()
-          const decoder = new TextDecoder()
-          let buffer = ''
+          const ownership = state.sourceOwnership || 'third_party'
+          const mode = state.scanMode || 'inspiration'
 
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-            buffer += decoder.decode(value, { stream: true })
-            const lines = buffer.split('\n\n')
-            buffer = lines.pop() || ''
+          const res = await fetch('/api/scan/v2/deep', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              url,
+              sourceOwnership: ownership,
+              scanMode: mode,
+            }),
+            signal: scanController.signal,
+          })
 
-            for (const block of lines) {
-              const eventMatch = block.match(/^event: (\w+)\ndata: ([\s\S]+)$/)
-              if (!eventMatch) continue
-              const [, eventType, dataStr] = eventMatch
-              try {
-                const data = JSON.parse(dataStr)
+          clearTimeout(scanTimeout)
 
-                if (eventType === 'progress') {
-                  dispatch({
-                    type: 'SYSTEM_MESSAGE',
-                    message: {
-                      id: `msg_scan_progress_${Date.now()}`,
-                      role: 'system',
-                      content: `📊 ${data.message} (${data.percent}%)`,
-                    },
-                  })
-                } else if (eventType === 'phase') {
-                  if (data.status === 'running') {
+          if (res.ok && res.body) {
+            const reader = res.body.getReader()
+            const decoder = new TextDecoder()
+            let buffer = ''
+            let capturedScanJobId: string | undefined
+
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              buffer += decoder.decode(value, { stream: true })
+              const lines = buffer.split('\n\n')
+              buffer = lines.pop() || ''
+
+              for (const block of lines) {
+                const eventMatch = block.match(/^event: (\w+)\ndata: ([\s\S]+)$/)
+                if (!eventMatch) continue
+                const [, eventType, dataStr] = eventMatch
+                try {
+                  const data = JSON.parse(dataStr)
+
+                  // Capture scanJobId from init event
+                  if (eventType === 'phase' && data.phase === 'init' && data.scanJobId) {
+                    capturedScanJobId = data.scanJobId as string
+                  }
+
+                  if (eventType === 'progress') {
                     dispatch({
                       type: 'SYSTEM_MESSAGE',
                       message: {
-                        id: `msg_phase_${Date.now()}`,
+                        id: `msg_scan_progress_${Date.now()}`,
                         role: 'system',
-                        content: `⚡ ${data.description}`,
+                        content: `📊 ${data.message} (${data.percent}%)`,
                       },
                     })
+                  } else if (eventType === 'phase') {
+                    if (data.status === 'running') {
+                      dispatch({
+                        type: 'SYSTEM_MESSAGE',
+                        message: {
+                          id: `msg_phase_${Date.now()}`,
+                          role: 'system',
+                          content: `⚡ ${data.description}`,
+                        },
+                      })
+                    }
+                  } else if (eventType === 'result' && data.ok) {
+                    const deepResult = data.data
+                    const scanResultFromDeep = {
+                      url: deepResult.url,
+                      domain: deepResult.domain,
+                      title: deepResult.seoMeta?.title || '',
+                      description: deepResult.seoMeta?.description || '',
+                      favicon: '',
+                      ogImage: deepResult.seoMeta?.ogTags?.['og:image'] || '',
+                      colors: (deepResult.designTokens?.colors || []).map((c: { hex: string; usage: string; frequency: number }) => ({
+                        hex: c.hex,
+                        usage: c.usage as 'primary' | 'secondary' | 'background' | 'text' | 'accent' | 'border',
+                        frequency: c.frequency,
+                      })),
+                      fonts: (deepResult.designTokens?.fonts || []).map((f: { family: string; usage: string; weight: string; source: string }) => ({
+                        family: f.family,
+                        usage: f.usage as 'heading' | 'body' | 'accent',
+                        weight: f.weight,
+                        source: f.source as 'google-fonts' | 'system' | 'custom',
+                      })),
+                      sections: deepResult.contentMap?.[0]?.sections || [],
+                      navigation: deepResult.navigation || [],
+                      headings: deepResult.contentMap?.[0]?.headings || [],
+                      paragraphs: [],
+                      images: (deepResult.images || []).slice(0, 20),
+                      ctaButtons: deepResult.contentMap?.[0]?.ctaButtons || [],
+                      seoMeta: deepResult.seoMeta || { title: '', description: '', keywords: '', canonical: '', ogTags: {} },
+                      businessType: deepResult.businessType || '',
+                      businessName: deepResult.siteName || '',
+                      motion: deepResult.motion ? {
+                        hasAnimationLibrary: deepResult.motion.hasAnimationLibrary,
+                        hasScrollAnimations: deepResult.motion.hasScrollAnimations,
+                        hasParallax: deepResult.motion.hasParallax,
+                        hasStickyHeader: deepResult.motion.hasStickyHeader,
+                        suggestedPreset: 'moderate' as const,
+                      } : undefined,
+                      designDna: deepResult.designDna || undefined,
+                    } as ScanResult
+
+                    dispatch({ type: 'SCAN_DONE', result: scanResultFromDeep, deepData: deepResult, scanJobId: capturedScanJobId || data.scanJobId as string })
+                    dispatch({
+                      type: 'SYSTEM_MESSAGE',
+                      message: {
+                        id: `msg_scan_done_${Date.now()}`,
+                        role: 'system',
+                        content: `✅ Deep scan complete — analyzed ${deepResult.pageCount} pages, found ${deepResult.designTokens?.colors?.length || 0} colors, ${deepResult.designTokens?.fonts?.length || 0} fonts, ${deepResult.contentMap?.reduce((s: number, p: { sections: unknown[] }) => s + p.sections.length, 0) || 0} sections. Design DNA captured in ${Math.round(deepResult.scanDuration / 1000)}s.`,
+                      },
+                    })
+                  } else if (eventType === 'error') {
+                    throw new Error(data.error)
                   }
-                } else if (eventType === 'result' && data.ok) {
-                  // Convert deep scan result to ScanResult format for compatibility
-                  const deepResult = data.data
-                  scanResult = {
-                    url: deepResult.url,
-                    domain: deepResult.domain,
-                    title: deepResult.seoMeta?.title || '',
-                    description: deepResult.seoMeta?.description || '',
-                    favicon: '',
-                    ogImage: deepResult.seoMeta?.ogTags?.['og:image'] || '',
-                    colors: (deepResult.designTokens?.colors || []).map((c: { hex: string; usage: string; frequency: number }) => ({
-                      hex: c.hex,
-                      usage: c.usage as 'primary' | 'secondary' | 'background' | 'text' | 'accent' | 'border',
-                      frequency: c.frequency,
-                    })),
-                    fonts: (deepResult.designTokens?.fonts || []).map((f: { family: string; usage: string; weight: string; source: string }) => ({
-                      family: f.family,
-                      usage: f.usage as 'heading' | 'body' | 'accent',
-                      weight: f.weight,
-                      source: f.source as 'google-fonts' | 'system' | 'custom',
-                    })),
-                    sections: deepResult.contentMap?.[0]?.sections || [],
-                    navigation: deepResult.navigation || [],
-                    headings: deepResult.contentMap?.[0]?.headings || [],
-                    paragraphs: [],
-                    images: (deepResult.images || []).slice(0, 20),
-                    ctaButtons: deepResult.contentMap?.[0]?.ctaButtons || [],
-                    seoMeta: deepResult.seoMeta || { title: '', description: '', keywords: '', canonical: '', ogTags: {} },
-                    businessType: deepResult.businessType || '',
-                    businessName: deepResult.siteName || '',
-                    motion: deepResult.motion ? {
-                      hasAnimationLibrary: deepResult.motion.hasAnimationLibrary,
-                      hasScrollAnimations: deepResult.motion.hasScrollAnimations,
-                      hasParallax: deepResult.motion.hasParallax,
-                      hasStickyHeader: deepResult.motion.hasStickyHeader,
-                      suggestedPreset: 'moderate' as const,
-                    } : undefined,
-                    designDna: deepResult.designDna || undefined,
-                  } as ScanResult
-
-                  dispatch({ type: 'SCAN_DONE', result: scanResult, deepData: deepResult })
-                  dispatch({
-                    type: 'SYSTEM_MESSAGE',
-                    message: {
-                      id: `msg_scan_done_${Date.now()}`,
-                      role: 'system',
-                      content: `✅ Deep scan complete — analyzed ${deepResult.pageCount} pages, found ${deepResult.designTokens?.colors?.length || 0} colors, ${deepResult.designTokens?.fonts?.length || 0} fonts, ${deepResult.contentMap?.reduce((s: number, p: { sections: unknown[] }) => s + p.sections.length, 0) || 0} sections. Design DNA captured in ${Math.round(deepResult.scanDuration / 1000)}s.`,
-                    },
-                  })
-                } else if (eventType === 'error') {
-                  throw new Error(data.error)
-                }
-              } catch { /* skip malformed events */ }
+                } catch { /* skip malformed events */ }
+              }
             }
+          } else {
+            throw new Error('Deep scan request failed')
           }
-        } else {
-          throw new Error('Deep scan request failed')
+        } catch (err) {
+          console.error('Deep scan failed:', err)
+          dispatch({ type: 'SCAN_ERROR' })
+          dispatch({
+            type: 'SYSTEM_MESSAGE',
+            message: {
+              id: `msg_scan_err_${Date.now()}`,
+              role: 'system',
+              content: `⚠️ Scan encountered an issue. Continuing with discovery questions...`,
+            },
+          })
         }
-      } catch (err) {
-        console.error('Deep scan failed:', err)
-        dispatch({ type: 'SCAN_ERROR' })
-        dispatch({
-          type: 'SYSTEM_MESSAGE',
-          message: {
-            id: `msg_scan_err_${Date.now()}`,
-            role: 'system',
-            content: `⚠️ Scan encountered an issue. Continuing with discovery questions...`,
-          },
-        })
       }
-    }
 
-    // Start first discovery question
-    await callDiscovery([], {}, scanResult)
-  }, [state.url, callDiscovery])
+      // Fire and forget — scan runs in background while user answers questions
+      scanInBackground()
+    }
+  }, [state.url, state.locale, state.scanMode, state.sourceOwnership, callDiscovery])
 
   const handleTemplateSelect = useCallback((template: TemplateItem) => {
     if (state.selectedTemplateId === template.id) {
@@ -548,214 +835,336 @@ const NewSitePage = () => {
     if (state.isGenerating) return
     dispatch({ type: 'START_BUILD' })
 
-    try {
-    // ─── Phase 1: Planning ──────────────────────────────────────────────
-    const plan = await callPlanning()
+    // Ensure minimum context — never build with empty context
+    const effectiveContext = Object.keys(state.discoveryContext).filter(k => state.discoveryContext[k]).length > 0
+      ? state.discoveryContext
+      : { business_name: state.description.slice(0, 40), industry: state.description }
 
-    const siteName = plan?.siteName
-      || (state.discoveryContext.business_name as string)
+    try {
+    const siteName = (effectiveContext.business_name as string)
       || state.description.slice(0, 40)
       || 'My Website'
 
     let html = ''
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let plan: any = null
 
-    // ─── Phase 2: Generation (from plan or direct) ─────────────────────
-    if (plan) {
-      // Generate from the structured build plan
-      const { systemPrompt, userPrompt } = buildPromptFromPlan(plan)
+    // ─── PRIMARY: Team 100 Pipeline (agents + cross-checks + CPO) ──────
+    try {
+      dispatch({ type: 'BUILD_PROGRESS', status: '🚀 Team 100 activated — @strategist analyzing...', progress: 5 })
 
-      try {
-        dispatch({ type: 'BUILD_PROGRESS', status: 'AI is building your site from the plan...', progress: 30 })
+      const pipelineController = new AbortController()
+      const pipelineTimeout = setTimeout(() => pipelineController.abort(), 300000) // 5 min max
 
-        const streamController = new AbortController()
-        const streamTimeout = setTimeout(() => streamController.abort(), 300000) // 300s — Claude needs time for 64K token generation
+      const pipelineRes = await fetch('/api/ai/pipeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: state.description,
+          locale: state.locale,
+          discoveryContext: effectiveContext,
+          deepScanData: state.deepScanData || null,
+          scanJobId: state.scanJobId || undefined,
+          scanMode: state.scanMode || undefined,
+          sourceOwnership: state.sourceOwnership || undefined,
+        }),
+        signal: pipelineController.signal,
+      })
 
-        const res = await fetch('/api/ai/generate-site-stream', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ systemPrompt, userPrompt, siteName }),
-          signal: streamController.signal,
-        })
+      // Bug #3: Explicitly handle non-OK responses
+      if (!pipelineRes.ok) {
+        const errText = await pipelineRes.text().catch(() => 'Unknown error')
+        throw new Error(`Pipeline returned ${pipelineRes.status}: ${errText.slice(0, 200)}`)
+      }
 
-        if (res.ok && res.body) {
-          const reader = res.body.getReader()
-          const decoder = new TextDecoder()
-          let buffer = ''
+      if (pipelineRes.body) {
+        const reader = pipelineRes.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+        let currentPhase = 'initializing' // Bug #4: Track current phase for error context
 
-          try {
-            while (true) {
-              const { done, value } = await reader.read()
-              if (done) break
-              buffer += decoder.decode(value, { stream: true })
-              const lines = buffer.split('\n')
-              buffer = lines.pop() || ''
+        const phaseProgress: Record<string, number> = {
+          strategy: 15, design: 35, content: 50, images: 65, build: 75, qa: 85, cpo: 92, complete: 100,
+        }
 
-              for (const line of lines) {
-                if (!line.startsWith('data: ')) continue
-                try {
-                  const event = JSON.parse(line.slice(6))
-                  if (event.type === 'chunk' && event.text) {
-                    html += event.text
-                    const progress = Math.min(95, 30 + Math.round((html.length / 20000) * 65))
-                    dispatch({ type: 'BUILD_PROGRESS', status: `Building... ${progress}%`, progress })
-                  } else if (event.type === 'done') {
-                    dispatch({ type: 'BUILD_PROGRESS', status: 'Finalizing...', progress: 98 })
-                  } else if (event.type === 'error') {
-                    throw new Error(event.error)
-                  }
-                } catch { /* skip malformed */ }
+        const phaseLabels: Record<string, string> = {
+          strategy: '🧠 @strategist analyzing business...',
+          design: '🎨 @designer choosing sections & effects...',
+          content: '✍️ @content generating copy...',
+          images: '🖼️ @media generating custom images...',
+          build: '🏗️ @frontend composing HTML...',
+          qa: '🔍 @qa checking quality...',
+          cpo: '⭐ @cpo scoring design...',
+          complete: '✅ Site ready!',
+        }
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            buffer += decoder.decode(value, { stream: true })
+            const lines = buffer.split('\n')
+            buffer = lines.pop() || ''
+
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue
+              try {
+                const event = JSON.parse(line.slice(6))
+                const phase = event.phase as string
+                const status = event.status as string
+                currentPhase = phase // Bug #4: Track for error messages
+
+                // Update progress
+                const progress = phaseProgress[phase] || 50
+                let label = phaseLabels[phase] || `${phase}...`
+
+                if (status === 'cross-check') label = `🔄 Cross-checking ${phase}...`
+                if (status === 'retry') label = `🔧 @designer revising based on feedback...`
+                if (status === 'needs-improvement') label = `⚠️ CPO scored ${event.overall}/10 — requesting improvements...`
+
+                dispatch({ type: 'BUILD_PROGRESS', status: label, progress })
+
+                // Capture HTML from build phase or complete
+                if (phase === 'complete' && event.html) {
+                  html = event.html as string
+                  console.log(`[Pipeline] Complete! HTML: ${html.length} chars, CPO: ${event.cpoScore}/10`)
+                }
+                if (phase === 'build' && status === 'complete' && event.html) {
+                  html = event.html as string
+                }
+                if (phase === 'error') {
+                  console.error('[Pipeline] Error:', event.error)
+                  throw new Error(event.error as string)
+                }
+              } catch (parseErr) {
+                if (parseErr instanceof Error && parseErr.message.startsWith('[Pipeline]')) throw parseErr
+                /* skip malformed SSE lines */
               }
             }
-          } finally {
-            reader.releaseLock()
           }
-          // Strip markdown fences robustly (handles whitespace, newlines, various fence formats)
-          html = html.trim()
-          html = html.replace(/^\s*```(?:html|HTML)?\s*\n?/, '')
-          html = html.replace(/\n?\s*```\s*$/, '')
-          html = html.trim()
-          console.log(`[Build] Stream generation complete: ${html.length} chars, starts with: "${html.substring(0, 50)}"`)
+        } finally {
+          reader.releaseLock()
         }
-        clearTimeout(streamTimeout)
-      } catch (err) {
-        console.error('Streaming generation failed:', err)
       }
+      clearTimeout(pipelineTimeout)
+    } catch (pipelineErr) {
+      const errMsg = pipelineErr instanceof Error ? pipelineErr.message : 'Unknown error'
+      console.warn(`[Build] Pipeline failed during phase: ${errMsg}`)
+      // Bug #6: Show descriptive error with phase info
+      const isHe = state.locale === 'he'
+      dispatch({
+        type: 'BUILD_PROGRESS',
+        status: isHe
+          ? `⚠️ שגיאה בשלב הבנייה — מנסה שיטה חלופית...`
+          : `⚠️ Build error — trying backup method...`,
+        progress: 20,
+      })
     }
 
-    // ─── Fallback: generate without plan ────────────────────────────────
+    // ─── FALLBACK: Old inline flow (if pipeline produced no HTML) ──────
     if (!html || html.length < 500) {
-      const businessType = (state.discoveryContext.industry as string) || state.selectedTemplateId || 'business'
+      console.log('[Build] Pipeline produced no HTML, using old planning flow')
+      dispatch({ type: 'BUILD_PROGRESS', status: 'Using backup generation...', progress: 20 })
 
-      // Build a basic prompt from discovery context
-      const discoveryInfo = Object.entries(state.discoveryContext)
-        .filter(([, v]) => v !== null && v !== undefined)
-        .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
-        .join('\n')
-
-      const fallbackSystem = PREMIUM_GENERATION_PROMPT
-
-      // Build scan DNA section for fallback prompt
-      let scanDnaSection = ''
-      if (state.deepScanData) {
-        const ds = state.deepScanData
-        const dt = ds.designTokens as Record<string, unknown> | undefined
-        const dna = ds.designDna as Record<string, unknown> | undefined
-        const rp = ds.rebuildPlan as Record<string, unknown> | undefined
-        const parts: string[] = ['## ORIGINAL SITE DNA (rebuild this site, upgraded)']
-        if (dna) parts.push(`Design analysis: ${JSON.stringify(dna)}`)
-        if (dt) {
-          const tokens = dt as { colors?: { hex: string; usage: string }[]; fonts?: { family: string; usage: string }[]; cssVariables?: Record<string, string> }
-          if (tokens.colors?.length) parts.push(`Colors: ${tokens.colors.slice(0, 10).map(c => `${c.hex} (${c.usage})`).join(', ')}`)
-          if (tokens.fonts?.length) parts.push(`Fonts: ${tokens.fonts.map(f => `${f.family} (${f.usage})`).join(', ')}`)
-          if (tokens.cssVariables) parts.push(`CSS vars: ${Object.entries(tokens.cssVariables).slice(0, 15).map(([k, v]) => `${k}: ${v}`).join('; ')}`)
-        }
-        if (rp) {
-          const plan = rp as { preserve?: string[]; improve?: string[] }
-          if (plan.preserve?.length) parts.push(`Preserve: ${plan.preserve.join(', ')}`)
-          if (plan.improve?.length) parts.push(`Improve: ${plan.improve.join(', ')}`)
-        }
-        scanDnaSection = parts.join('\n') + '\n\n'
-      }
-
-      const fallbackUser = `Build a PHENOMENAL website that looks like it cost $20,000+ to build.
-
-## BRAND
-- **Name:** ${siteName}
-- **Industry:** ${businessType}
-- **Description:** "${state.description}"
-
-## CONTEXT FROM DISCOVERY
-${discoveryInfo}
-
-${scanDnaSection}## REQUIREMENTS
-1. 12-16 unique sections, each with distinct visual treatment
-2. Massive hero with gradient overlay, jaw-dropping typography
-3. Professional, realistic content specific to this business
-4. Full CSS design system with custom properties
-5. Scroll animations, mobile menu, smooth scroll, parallax
-6. Schema.org structured data + SEO meta tags
-7. 1200+ lines of premium code
-8. Every section must have a DIFFERENT layout — no repetitive patterns`
-
-      try {
-        dispatch({ type: 'BUILD_PROGRESS', status: 'Generating with AI...', progress: 30 })
-        const fallbackController = new AbortController()
-        const fallbackTimeout = setTimeout(() => fallbackController.abort(), 180000)
-        const res = await fetch('/api/ai/generate-site-stream', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ systemPrompt: fallbackSystem, userPrompt: fallbackUser, siteName }),
-          signal: fallbackController.signal,
-        })
-        if (res.ok && res.body) {
-          const reader = res.body.getReader()
-          const decoder = new TextDecoder()
-          let buffer = ''
-          try {
-            while (true) {
-              const { done, value } = await reader.read()
-              if (done) break
-              buffer += decoder.decode(value, { stream: true })
-              const lines = buffer.split('\n')
-              buffer = lines.pop() || ''
-              for (const line of lines) {
-                if (!line.startsWith('data: ')) continue
-                try {
-                  const event = JSON.parse(line.slice(6))
-                  if (event.type === 'chunk' && event.text) {
-                    html += event.text
-                    const progress = Math.min(95, 30 + Math.round((html.length / 20000) * 65))
-                    dispatch({ type: 'BUILD_PROGRESS', status: `Building... ${progress}%`, progress })
-                  }
-                } catch { /* skip */ }
-              }
-            }
-          } finally {
-            reader.releaseLock()
-          }
-          html = html.trim()
-          html = html.replace(/^\s*```(?:html|HTML)?\s*\n?/, '')
-          html = html.replace(/\n?\s*```\s*$/, '')
-          html = html.trim()
-          console.log(`[Build] Fallback generation complete: ${html.length} chars`)
-        }
-        clearTimeout(fallbackTimeout)
-      } catch {
-        // Try non-streaming with timeout
+      plan = await callPlanning()
+      if (plan) {
+        // Generate images
+        let generatedImages: Record<string, string> = {}
         try {
-          const nsController = new AbortController()
-          const nsTimeout = setTimeout(() => nsController.abort(), 60000)
-          const res = await fetch('/api/ai/generate-site', {
+          dispatch({ type: 'BUILD_PROGRESS', status: 'Creating visuals...', progress: 30 })
+          const imgRes = await fetch('/api/ai/generate-images', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              designDna: state.scanResult?.designDna || { designStyle: 'modern-premium' },
-              siteName,
-              businessType,
+              businessName: plan.siteName,
+              businessType: plan.industry,
+              locale: state.locale,
+              colorPalette: plan.colorPalette,
+              sections: plan.pages?.[0]?.sections || [],
             }),
-            signal: nsController.signal,
           })
-          clearTimeout(nsTimeout)
-          if (res.ok) {
-            const data = await res.json()
-            if (data.ok && data.data?.html) html = data.data.html
+          if (imgRes.ok) {
+            const imgData = await imgRes.json()
+            if (imgData.ok && imgData.images) generatedImages = imgData.images
           }
-        } catch { /* fall through to template */ }
+        } catch { /* use fallbacks */ }
+
+        // Try composed generation
+        const composedHtml = tryComposedGeneration(plan, generatedImages)
+        if (composedHtml) {
+          html = composedHtml
+          dispatch({ type: 'BUILD_PROGRESS', status: 'Site composed!', progress: 95 })
+        } else {
+          // Streaming fallback
+          const { systemPrompt, userPrompt } = buildPromptFromPlan(plan)
+          try {
+            dispatch({ type: 'BUILD_PROGRESS', status: 'AI generating...', progress: 40 })
+            const res = await fetch('/api/ai/generate-site-stream', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ systemPrompt, userPrompt, siteName: plan.siteName || siteName, locale: state.locale }),
+            })
+            if (res.ok && res.body) {
+              const reader = res.body.getReader()
+              const decoder = new TextDecoder()
+              let buf = ''
+              try {
+                while (true) {
+                  const { done, value } = await reader.read()
+                  if (done) break
+                  buf += decoder.decode(value, { stream: true })
+                  const lines = buf.split('\n')
+                  buf = lines.pop() || ''
+                  for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue
+                    try {
+                      const ev = JSON.parse(line.slice(6))
+                      if (ev.type === 'chunk' && ev.text) html += ev.text
+                    } catch { /* skip */ }
+                  }
+                }
+              } finally { reader.releaseLock() }
+              html = html.trim().replace(/^\s*```(?:html|HTML)?\s*\n?/, '').replace(/\n?\s*```\s*$/, '').trim()
+            }
+          } catch { /* fall through */ }
+        }
       }
     }
 
-    // ─── Fallback: template ─────────────────────────────────────────────
+    // ─── Fallback: compose from default plan (no API needed) ───────────
     if (!html || html.length < 500) {
-      dispatch({ type: 'BUILD_PROGRESS', status: 'Building from templates...', progress: 60 })
+      dispatch({ type: 'BUILD_PROGRESS', status: state.locale === 'he' ? 'בונה אתר מתבנית...' : 'Building from template...', progress: 60 })
 
       if (state.scanResult) {
         html = rebuildSite(state.scanResult)
       } else {
-        const templateId = state.selectedTemplateId || 'business'
-        try {
-          const res = await fetch(`/templates/${templateId}/index.html`)
-          html = await res.text()
-        } catch { /* empty */ }
+        // Create an industry-tailored plan — varies sections, colors, and variants per business type
+        const isHeFallback = state.locale === 'he'
+        const industry = ((effectiveContext.industry as string) || state.description || 'business').toLowerCase()
+
+        // Industry-specific color palettes
+        const industryPalettes: Record<string, Record<string, string>> = {
+          restaurant: { primary: '#D97706', secondary: '#991B1B', accent: '#F59E0B', background: '#1C1412', text: '#FEF3C7' },
+          food: { primary: '#D97706', secondary: '#991B1B', accent: '#F59E0B', background: '#1C1412', text: '#FEF3C7' },
+          beauty: { primary: '#EC4899', secondary: '#A855F7', accent: '#F9A8D4', background: '#1A0E17', text: '#FDF2F8' },
+          salon: { primary: '#EC4899', secondary: '#A855F7', accent: '#F9A8D4', background: '#1A0E17', text: '#FDF2F8' },
+          spa: { primary: '#EC4899', secondary: '#A855F7', accent: '#F9A8D4', background: '#1A0E17', text: '#FDF2F8' },
+          law: { primary: '#1E3A5F', secondary: '#92400E', accent: '#D4A574', background: '#0F1419', text: '#E2E8F0' },
+          finance: { primary: '#1E3A5F', secondary: '#0D9488', accent: '#D4A574', background: '#0F1419', text: '#E2E8F0' },
+          tech: { primary: '#3B82F6', secondary: '#06B6D4', accent: '#8B5CF6', background: '#0B0F1A', text: '#F1F5F9' },
+          saas: { primary: '#3B82F6', secondary: '#06B6D4', accent: '#8B5CF6', background: '#0B0F1A', text: '#F1F5F9' },
+          realestate: { primary: '#0D9488', secondary: '#1E3A5F', accent: '#D97706', background: '#0F1419', text: '#F0FDFA' },
+          fitness: { primary: '#EF4444', secondary: '#F97316', accent: '#FBBF24', background: '#1A0A0A', text: '#FEF2F2' },
+          ecommerce: { primary: '#8B5CF6', secondary: '#EC4899', accent: '#F59E0B', background: '#0F0B1A', text: '#F5F3FF' },
+          watches: { primary: '#D4A574', secondary: '#1E293B', accent: '#F59E0B', background: '#0A0A0F', text: '#E2E8F0' },
+          interior: { primary: '#A3886D', secondary: '#2D3748', accent: '#D69E2E', background: '#121210', text: '#F7FAFC' },
+          design: { primary: '#A3886D', secondary: '#2D3748', accent: '#D69E2E', background: '#121210', text: '#F7FAFC' },
+        }
+
+        // Industry-specific section+variant combos
+        const industryVariants: Record<string, { hero: string; features: string; extra: { type: string; variantId: string; title: string }[] }> = {
+          restaurant: { hero: 'hero-split-image', features: 'features-zigzag', extra: [
+            { type: 'gallery', variantId: 'gallery-masonry', title: isHeFallback ? 'התפריט שלנו' : 'Our Menu' },
+            { type: 'about', variantId: 'about-story', title: isHeFallback ? 'הסיפור שלנו' : 'Our Story' },
+          ]},
+          food: { hero: 'hero-split-image', features: 'features-zigzag', extra: [
+            { type: 'gallery', variantId: 'gallery-masonry', title: isHeFallback ? 'התפריט שלנו' : 'Our Menu' },
+          ]},
+          beauty: { hero: 'hero-parallax-layers', features: 'features-hoverable-cards', extra: [
+            { type: 'pricing', variantId: 'pricing-animated-cards', title: isHeFallback ? 'המחירון שלנו' : 'Our Pricing' },
+            { type: 'gallery', variantId: 'gallery-before-after', title: isHeFallback ? 'לפני ואחרי' : 'Before & After' },
+          ]},
+          salon: { hero: 'hero-parallax-layers', features: 'features-hoverable-cards', extra: [
+            { type: 'pricing', variantId: 'pricing-animated-cards', title: isHeFallback ? 'המחירון שלנו' : 'Our Pricing' },
+          ]},
+          law: { hero: 'hero-minimal-text', features: 'features-icon-grid', extra: [
+            { type: 'team', variantId: 'team-grid', title: isHeFallback ? 'הצוות שלנו' : 'Our Team' },
+            { type: 'faq', variantId: 'faq-accordion', title: isHeFallback ? 'שאלות נפוצות' : 'FAQ' },
+          ]},
+          finance: { hero: 'hero-minimal-text', features: 'features-tabs', extra: [
+            { type: 'stats', variantId: 'stats-counter', title: isHeFallback ? 'המספרים שלנו' : 'Our Numbers' },
+          ]},
+          tech: { hero: 'hero-aurora', features: 'features-bento-grid', extra: [
+            { type: 'how-it-works', variantId: 'how-it-works-steps', title: isHeFallback ? 'איך זה עובד' : 'How It Works' },
+            { type: 'pricing', variantId: 'pricing-toggle', title: isHeFallback ? 'תוכניות מחירים' : 'Pricing Plans' },
+          ]},
+          saas: { hero: 'hero-gradient-mesh', features: 'features-bento-grid', extra: [
+            { type: 'how-it-works', variantId: 'how-it-works-steps', title: isHeFallback ? 'איך זה עובד' : 'How It Works' },
+            { type: 'comparison', variantId: 'comparison-table', title: isHeFallback ? 'למה אנחנו' : 'Why Us' },
+          ]},
+          realestate: { hero: 'hero-fullscreen-video', features: 'features-carousel', extra: [
+            { type: 'gallery', variantId: 'gallery-lightbox', title: isHeFallback ? 'הנכסים שלנו' : 'Our Properties' },
+            { type: 'stats', variantId: 'stats-icon-cards', title: isHeFallback ? 'בנתונים' : 'By the Numbers' },
+          ]},
+          fitness: { hero: 'hero-particles', features: 'features-tabs', extra: [
+            { type: 'pricing', variantId: 'pricing-gradient', title: isHeFallback ? 'מסלולים' : 'Plans' },
+            { type: 'team', variantId: 'team-carousel', title: isHeFallback ? 'המאמנים שלנו' : 'Our Trainers' },
+          ]},
+          ecommerce: { hero: 'hero-product-showcase', features: 'features-carousel', extra: [
+            { type: 'gallery', variantId: 'gallery-filterable', title: isHeFallback ? 'המוצרים שלנו' : 'Our Products' },
+            { type: 'partners', variantId: 'partners-logo-marquee', title: isHeFallback ? 'מותגים' : 'Brands' },
+          ]},
+          watches: { hero: 'hero-product-showcase', features: 'features-hoverable-cards', extra: [
+            { type: 'gallery', variantId: 'gallery-lightbox', title: isHeFallback ? 'הקולקציה' : 'The Collection' },
+            { type: 'about', variantId: 'about-story', title: isHeFallback ? 'הסיפור שלנו' : 'Our Story' },
+          ]},
+          interior: { hero: 'hero-magazine', features: 'features-zigzag', extra: [
+            { type: 'portfolio', variantId: 'portfolio-case-study', title: isHeFallback ? 'הפרויקטים שלנו' : 'Our Projects' },
+            { type: 'gallery', variantId: 'gallery-masonry', title: isHeFallback ? 'גלריה' : 'Gallery' },
+          ]},
+          design: { hero: 'hero-magazine', features: 'features-zigzag', extra: [
+            { type: 'portfolio', variantId: 'portfolio-grid', title: isHeFallback ? 'עבודות' : 'Portfolio' },
+          ]},
+        }
+
+        // Find matching industry key from description
+        const matchedKey = Object.keys(industryPalettes).find(k => industry.includes(k)) || ''
+        const palette = industryPalettes[matchedKey] || { primary: '#7C3AED', secondary: '#06B6D4', accent: '#F59E0B', background: '#0B0F1A', text: '#F1F5F9' }
+        const variants = industryVariants[matchedKey] || { hero: 'hero-gradient-mesh', features: 'features-bento-grid', extra: [] }
+
+        // Pick font pair based on industry mood
+        const fontPairs: Record<string, { heading: string; body: string }> = {
+          restaurant: { heading: isHeFallback ? 'Frank Ruhl Libre' : 'Playfair Display', body: isHeFallback ? 'Assistant' : 'Inter' },
+          beauty: { heading: isHeFallback ? 'Bellefair' : 'Cormorant Garamond', body: isHeFallback ? 'Heebo' : 'Inter' },
+          law: { heading: isHeFallback ? 'David Libre' : 'Lora', body: isHeFallback ? 'Heebo' : 'Inter' },
+          tech: { heading: isHeFallback ? 'Heebo' : 'Space Grotesk', body: isHeFallback ? 'Assistant' : 'Inter' },
+          fitness: { heading: isHeFallback ? 'Secular One' : 'Oswald', body: isHeFallback ? 'Heebo' : 'Inter' },
+          watches: { heading: isHeFallback ? 'Suez One' : 'Cormorant Garamond', body: isHeFallback ? 'Heebo' : 'Inter' },
+          interior: { heading: isHeFallback ? 'Frank Ruhl Libre' : 'Playfair Display', body: isHeFallback ? 'Assistant' : 'Inter' },
+        }
+        const fonts = fontPairs[matchedKey] || { heading: isHeFallback ? 'Heebo' : 'Inter', body: isHeFallback ? 'Assistant' : 'Inter' }
+
+        // Build sections list — varies per industry
+        const sections: BuildPlan['pages'][0]['sections'] = [
+          { type: 'navbar', variantId: matchedKey === 'law' ? 'navbar-minimal' : matchedKey === 'ecommerce' ? 'navbar-mega-menu' : 'navbar-floating', title: siteName },
+          { type: 'hero', variantId: variants.hero, headline: siteName, subheadline: state.description, cta: { text: isHeFallback ? 'צור קשר' : 'Get Started', action: 'scroll-to-contact' } },
+          { type: 'features', variantId: variants.features, title: isHeFallback ? 'השירותים שלנו' : 'Our Services' },
+          ...variants.extra,
+          { type: 'testimonials', variantId: matchedKey === 'law' ? 'testimonials-featured' : matchedKey === 'beauty' ? 'testimonials-before-after' : 'testimonials-carousel', title: isHeFallback ? 'מה הלקוחות אומרים' : 'What Our Clients Say' },
+          { type: 'cta', variantId: matchedKey === 'tech' ? 'cta-glassmorphism' : matchedKey === 'fitness' ? 'cta-video-background' : 'cta-gradient-banner', title: isHeFallback ? 'מוכנים להתחיל?' : 'Ready to Get Started?', cta: { text: isHeFallback ? 'דברו איתנו' : 'Contact Us', action: 'scroll-to-contact' } },
+          { type: 'contact', variantId: 'contact-form-map', title: isHeFallback ? 'צור קשר' : 'Contact Us' },
+          { type: 'footer', variantId: matchedKey === 'tech' ? 'footer-mega' : 'footer-multi-column', title: siteName },
+        ]
+
+        const defaultPlan: BuildPlan = {
+          siteName: siteName,
+          industry: (effectiveContext.industry as string) || state.description || 'business',
+          designStyle: matchedKey === 'law' ? 'classic' : matchedKey === 'tech' ? 'futuristic' : matchedKey === 'beauty' ? 'elegant' : 'modern',
+          colorPalette: palette,
+          typography: { headingFont: fonts.heading, bodyFont: fonts.body },
+          layout: { maxWidth: '1200px' },
+          contentTone: 'professional',
+          conversionStrategy: { mainCTA: isHeFallback ? 'צור קשר' : 'Contact Us' },
+          seoStrategy: {},
+          motionPreset: { scrollReveal: true },
+          pages: [{ name: 'Home', slug: '/', purpose: 'homepage', sections }],
+        }
+        const composedFallback = tryComposedGeneration(defaultPlan, {})
+        if (composedFallback) {
+          html = composedFallback
+          plan = defaultPlan
+          dispatch({ type: 'BUILD_PROGRESS', status: state.locale === 'he' ? 'האתר מוכן!' : 'Site ready!', progress: 95 })
+        }
       }
     }
 
@@ -829,7 +1238,37 @@ ${scanDnaSection}## REQUIREMENTS
   // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-[100dvh] bg-bg px-0 py-0 sm:px-4 sm:py-8 md:py-12">
+    <div className={`min-h-[100dvh] bg-bg px-0 py-0 sm:px-4 sm:py-8 md:py-12${state.locale === 'he' ? ' rtl' : ''}`} dir={state.locale === 'he' ? 'rtl' : 'ltr'}>
+      {/* Language selector — shown at top of input step */}
+      {state.step === 'input' && (
+        <div className="flex justify-center pt-4 pb-2 sm:pt-0 sm:pb-4">
+          <div className="inline-flex items-center rounded-xl border border-border bg-bg-secondary p-1 gap-1">
+            <button
+              onClick={() => dispatch({ type: 'SET_LOCALE', value: 'en' })}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                state.locale === 'en'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-text-muted hover:text-text hover:bg-bg-tertiary'
+              }`}
+              aria-label="English language"
+            >
+              English
+            </button>
+            <button
+              onClick={() => dispatch({ type: 'SET_LOCALE', value: 'he' })}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                state.locale === 'he'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-text-muted hover:text-text hover:bg-bg-tertiary'
+              }`}
+              aria-label="Hebrew language"
+            >
+              עברית
+            </button>
+          </div>
+        </div>
+      )}
+
       {state.step === 'input' && (
         <UnifiedInput
           description={state.description}
