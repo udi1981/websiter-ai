@@ -90,45 +90,48 @@ export const transformScanToGenerationContext = (
     sectionPlan: buildSectionPlan(scan),
     contentGuidelines: extractContentGuidelines(scan),
     rebuildPlan: extractRebuildPlan(scan),
-    siteName: scan.siteName,
-    businessType: scan.businessType,
-    industry: scan.brandIntelligence.industry.primary || scan.businessType,
+    siteName: scan.siteName || '',
+    businessType: scan.businessType || '',
+    industry: scan.brandIntelligence?.industry?.primary || scan.businessType || 'business',
   }
 }
 
 // ── Design DNA extraction ───────────────────────────────────────────────────
 
 const extractDesignDna = (scan: ScanResult): ScanBasedGenerationContext['designDna'] => {
-  const cs = scan.visualDna.colorSystem
-  const ts = scan.visualDna.typographySystem
-  const bs = scan.visualDna.borderSystem
-  const ss = scan.visualDna.spacingSystem
+  const cs = scan.visualDna?.colorSystem
+  const ts = scan.visualDna?.typographySystem
+  const bs = scan.visualDna?.borderSystem
+  const ss = scan.visualDna?.spacingSystem
 
-  // Find heading and body fonts
-  const headingFont = ts.fonts.find((f) => f.usage === 'heading')?.family
-    ?? ts.fonts[0]?.family
+  // Find heading and body fonts (null-safe)
+  const fonts = ts?.fonts ?? []
+  const headingFont = fonts.find((f) => f.usage === 'heading')?.family
+    ?? fonts[0]?.family
     ?? 'Inter'
-  const bodyFont = ts.fonts.find((f) => f.usage === 'body')?.family
-    ?? ts.fonts[1]?.family
-    ?? ts.fonts[0]?.family
+  const bodyFont = fonts.find((f) => f.usage === 'body')?.family
+    ?? fonts[1]?.family
+    ?? fonts[0]?.family
     ?? 'Inter'
 
-  // Derive design style from brand personality
-  const personality = scan.brandIntelligence.personality
-  const designStyle = personality.designLanguage
-    || deriveDesignStyle(personality.mood, personality.traits)
+  // Derive design style from brand personality (null-safe)
+  const personality = scan.brandIntelligence?.personality
+  const designStyle = personality?.designLanguage
+    || deriveDesignStyle(personality?.mood ?? '', personality?.traits ?? [])
+
+  const palette = cs?.palette ?? []
 
   return {
     designStyle,
-    primaryColor: cs.primary || cs.palette[0]?.hex || '#7C3AED',
-    secondaryColor: cs.secondary || cs.palette[1]?.hex || '#06B6D4',
-    accentColor: cs.accent || cs.palette[2]?.hex || '#F59E0B',
-    backgroundColor: cs.background || '#ffffff',
-    textColor: cs.text || '#111827',
+    primaryColor: cs?.primary || palette[0]?.hex || '#7C3AED',
+    secondaryColor: cs?.secondary || palette[1]?.hex || '#06B6D4',
+    accentColor: cs?.accent || palette[2]?.hex || '#F59E0B',
+    backgroundColor: cs?.background || '#ffffff',
+    textColor: cs?.text || '#111827',
     headingFont,
     bodyFont,
-    borderRadius: bs.primaryRadius || '8px',
-    spacing: ss.baseUnit || '4px',
+    borderRadius: bs?.primaryRadius || '8px',
+    spacing: ss?.baseUnit || '4px',
   }
 }
 
@@ -147,12 +150,13 @@ const deriveDesignStyle = (mood: string, traits: string[]): string => {
 
 const buildSectionPlan = (scan: ScanResult): ScanBasedGenerationContext['sectionPlan'] => {
   // Collect section types from the scanned site (preserving order from homepage)
-  const homepageSections = scan.contentArchitecture.pages
+  const pages = scan.contentArchitecture?.pages ?? []
+  const homepageSections = pages
     .find((p) => p.path === '/' || p.path === '')
     ?.sectionOrder ?? []
 
   // Merge with industry defaults to fill gaps
-  const industry = scan.brandIntelligence.industry.primary || scan.businessType
+  const industry = scan.brandIntelligence?.industry?.primary || scan.businessType || 'business'
   const defaults = INDUSTRY_SECTION_ORDER[industry] ?? INDUSTRY_SECTION_ORDER['business']!
 
   // Use scanned sections if available, otherwise fall back to industry defaults
@@ -160,15 +164,14 @@ const buildSectionPlan = (scan: ScanResult): ScanBasedGenerationContext['section
     ? homepageSections
     : defaults
 
-  // Add missing recommended sections from strategic insights
-  const missing = scan.strategicInsights.missingSections
+  // Add missing recommended sections from strategic insights (null-safe)
+  const missing = (scan.strategicInsights?.missingSections ?? [])
     .filter((m) => m.priority === 'high')
     .map((m) => m.sectionType)
 
   const allSections = [...sectionOrder]
   for (const ms of missing) {
     if (!allSections.includes(ms)) {
-      // Insert before footer if present, otherwise append
       const footerIdx = allSections.indexOf('footer')
       if (footerIdx >= 0) {
         allSections.splice(footerIdx, 0, ms)
@@ -178,9 +181,9 @@ const buildSectionPlan = (scan: ScanResult): ScanBasedGenerationContext['section
     }
   }
 
-  // Map section templates to find variant names
+  // Map section templates to find variant names (null-safe)
   const templateMap = new Map<string, string>()
-  for (const sec of scan.componentLibrary.sections) {
+  for (const sec of scan.componentLibrary?.sections ?? []) {
     if (!templateMap.has(sec.type)) {
       templateMap.set(sec.type, sec.variant)
     }
@@ -196,23 +199,23 @@ const buildSectionPlan = (scan: ScanResult): ScanBasedGenerationContext['section
 // ── Content guidelines extraction ───────────────────────────────────────────
 
 const extractContentGuidelines = (scan: ScanResult): ScanBasedGenerationContext['contentGuidelines'] => {
-  const tone = scan.contentArchitecture.contentTone
-  const cta = scan.contentArchitecture.ctaStrategy
-  const trust = scan.contentArchitecture.trustElements
+  const tone = scan.contentArchitecture?.contentTone
+  const cta = scan.contentArchitecture?.ctaStrategy
+  const trust = scan.contentArchitecture?.trustElements
 
-  // Build trust elements summary
+  // Build trust elements summary (null-safe)
   const trustElements: string[] = []
-  if (trust.testimonials.length > 0) trustElements.push(`${trust.testimonials.length} testimonials`)
-  if (trust.clientLogos.length > 0) trustElements.push(`${trust.clientLogos.length} client logos`)
-  if (trust.stats.length > 0) trustElements.push(`${trust.stats.length} stats/proof points`)
-  if (trust.certifications.length > 0) trustElements.push(`${trust.certifications.length} certifications`)
-  if (trust.awards.length > 0) trustElements.push(`${trust.awards.length} awards`)
+  if (trust?.testimonials?.length) trustElements.push(`${trust.testimonials.length} testimonials`)
+  if (trust?.clientLogos?.length) trustElements.push(`${trust.clientLogos.length} client logos`)
+  if (trust?.stats?.length) trustElements.push(`${trust.stats.length} stats/proof points`)
+  if (trust?.certifications?.length) trustElements.push(`${trust.certifications.length} certifications`)
+  if (trust?.awards?.length) trustElements.push(`${trust.awards.length} awards`)
 
   return {
-    tone: tone.voice.join(', ') || 'professional',
-    formality: formalityLabel(tone.formality),
-    ctaPrimary: cta.primaryCta?.text || 'Get Started',
-    ctaSecondary: cta.secondaryCtas.map((c) => c.text),
+    tone: tone?.voice?.join(', ') || 'professional',
+    formality: formalityLabel(tone?.formality ?? 3),
+    ctaPrimary: cta?.primaryCta?.text || 'Get Started',
+    ctaSecondary: cta?.secondaryCtas?.map((c) => c.text) ?? [],
     trustElements,
   }
 }
@@ -220,12 +223,12 @@ const extractContentGuidelines = (scan: ScanResult): ScanBasedGenerationContext[
 // ── Rebuild plan extraction ─────────────────────────────────────────────────
 
 const extractRebuildPlan = (scan: ScanResult): ScanBasedGenerationContext['rebuildPlan'] => {
-  const plan = scan.strategicInsights.rebuildPlan
+  const plan = scan.strategicInsights?.rebuildPlan
 
   return {
-    preserve: plan.preserve.map((p) => p.element),
-    improve: plan.improve.map((p) => p.element),
-    add: plan.add.map((p) => p.element),
-    remove: plan.remove.map((p) => p.element),
+    preserve: plan?.preserve?.map((p) => p.element) ?? [],
+    improve: plan?.improve?.map((p) => p.element) ?? [],
+    add: plan?.add?.map((p) => p.element) ?? [],
+    remove: plan?.remove?.map((p) => p.element) ?? [],
   }
 }

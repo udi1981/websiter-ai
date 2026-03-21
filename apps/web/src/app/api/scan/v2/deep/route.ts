@@ -160,9 +160,7 @@ export async function POST(request: Request) {
           }
 
           // Transform scan result to generation context
-          const { transformScanToGenerationContext } = await import(
-            '../../../../../../packages/ai/src/scanner/transforms/scan-to-design-dna'
-          )
+          const { transformScanToGenerationContext } = await import('@/lib/scanner-v2')
           const generationCtx = transformScanToGenerationContext(result)
 
           // Complete scan job with final artifacts

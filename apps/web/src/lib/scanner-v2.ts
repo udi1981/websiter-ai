@@ -7,3 +7,5 @@
 
 export { runScanPipeline } from '../../../../packages/ai/src/scanner/pipeline'
 export type { ScanProgress, ScanPipelineOptions } from '../../../../packages/ai/src/scanner/pipeline'
+export { transformScanToGenerationContext } from '../../../../packages/ai/src/scanner/transforms/scan-to-design-dna'
+export type { ScanBasedGenerationContext } from '../../../../packages/ai/src/scanner/transforms/scan-to-design-dna'
