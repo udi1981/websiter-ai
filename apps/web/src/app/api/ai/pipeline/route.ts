@@ -428,9 +428,14 @@ export async function POST(req: NextRequest) {
   // Load scan context if scanJobId is provided
   let scanGenerationCtx: Record<string, unknown> | null = null
   let scanSourceUrl: string | null = null
+  let scanCatalog: Record<string, unknown> | null = null
+  let scanContentModel: Record<string, unknown> | null = null
   if (scanJobId) {
     try {
       scanGenerationCtx = await tracker.getArtifact(scanJobId, 'scan_generation_ctx')
+      // Load migration artifacts for content injection (V1.2)
+      scanCatalog = await tracker.getArtifact(scanJobId, 'content_catalog').catch(() => null)
+      scanContentModel = await tracker.getArtifact(scanJobId, 'source_content_model').catch(() => null)
       // Get sourceUrl from scan job
       const scanJobStatus = await tracker.getJobStatus(scanJobId)
       if (scanJobStatus) {
@@ -563,8 +568,11 @@ Business description: ${description}
 Locale: ${locale}
 Discovery context: ${JSON.stringify(discoveryContext || {})}
 ${deepScanData ? `Scan data available: ${JSON.stringify(deepScanData).slice(0, 3000)}` : ''}
+${scanCatalog && (scanCatalog.products as unknown[])?.length > 0 ? `\nREAL PRODUCTS from scanned site: ${JSON.stringify((scanCatalog.products as Record<string, unknown>[]).slice(0, 8).map(p => (p.name as Record<string, unknown>)?.value)).slice(0, 500)}` : ''}
+${scanContentModel?.faqs ? `\nREAL FAQ questions found: ${((scanContentModel.faqs as Record<string, unknown>[]) || []).slice(0, 5).map(f => (f as Record<string, unknown>).value).join('; ').slice(0, 300)}` : ''}
 
 IMPORTANT: The "businessName" field MUST be the actual name from the description or discovery context. Do NOT invent a new name.
+${scanCatalog && (scanCatalog.products as unknown[])?.length > 0 ? 'IMPORTANT: Include product-related sections (productOverview, comparisonTable, productGrid) because real product data is available.' : ''}
 
 Return JSON with: { businessName, industry, targetAudience, brandPersonality, conversionGoals, contentTone, uniqueSellingPoints }`
 
@@ -714,6 +722,86 @@ Please revise and return improved JSON.`
           ? (contentDesignPages[0].sections || [])
           : designSections.slice(0, 12)
 
+        // V1.2: Build scan data injection block for content step
+        let scanDataBlock = ''
+        if (scanCatalog || scanContentModel) {
+          const parts: string[] = []
+
+          // Inject real product names
+          const products = (scanCatalog?.products as Record<string, unknown>[]) || []
+          if (products.length > 0) {
+            const productNames = products
+              .map(p => (p.name as Record<string, unknown>)?.value as string)
+              .filter(Boolean)
+              .slice(0, 12)
+            if (productNames.length > 0) {
+              parts.push(`REAL PRODUCTS (use these exact names): ${productNames.join(', ')}`)
+            }
+
+            // Product categories
+            const categories = (scanCatalog?.categories as Record<string, unknown>[]) || []
+            if (categories.length > 0) {
+              const catNames = categories
+                .map(c => (c.name as Record<string, unknown>)?.value as string)
+                .filter(Boolean)
+              parts.push(`PRODUCT CATEGORIES: ${catNames.join(', ')}`)
+            }
+
+            // Product images
+            const productsWithImages = products
+              .filter(p => (p.image as Record<string, unknown>)?.value)
+              .slice(0, 6)
+            if (productsWithImages.length > 0) {
+              parts.push(`PRODUCT IMAGES AVAILABLE: ${productsWithImages.map(p =>
+                `${(p.name as Record<string,unknown>)?.value}: ${(p.image as Record<string,unknown>)?.value}`
+              ).join(' | ')}`)
+            }
+          }
+
+          // Inject real FAQ questions
+          const faqs = (scanContentModel?.faqs as Record<string, unknown>[]) || []
+          if (faqs.length > 0) {
+            const faqTexts = faqs
+              .map(f => (f as Record<string, unknown>).value as string)
+              .filter(Boolean)
+              .slice(0, 10)
+            if (faqTexts.length > 0) {
+              parts.push(`REAL FAQ QUESTIONS (use these exact questions for the FAQ section):\n${faqTexts.map((q, i) => `${i + 1}. ${q}`).join('\n')}`)
+            }
+          }
+
+          // Inject real CTAs
+          const allCtas = (scanContentModel?.allCtas as Record<string, unknown>[]) || []
+          if (allCtas.length > 0) {
+            const ctaTexts = allCtas
+              .map(c => (c as Record<string, unknown>).value as string)
+              .filter(Boolean)
+              .slice(0, 5)
+            if (ctaTexts.length > 0) {
+              parts.push(`REAL CTA TEXTS (prefer these for buttons): ${ctaTexts.join(', ')}`)
+            }
+          }
+
+          // Inject navigation structure for reference
+          const nav = (scanContentModel?.navigation as Record<string, unknown>[]) || []
+          if (nav.length > 0) {
+            const navTexts = nav
+              .map(n => {
+                const val = (n as Record<string, unknown>).value as Record<string, unknown>
+                return val?.text as string
+              })
+              .filter(Boolean)
+              .slice(0, 10)
+            if (navTexts.length > 0) {
+              parts.push(`NAVIGATION STRUCTURE: ${navTexts.join(' | ')}`)
+            }
+          }
+
+          if (parts.length > 0) {
+            scanDataBlock = `\n\n=== SCANNED SOURCE DATA (MUST USE) ===\nThis site is being rebuilt from a real scanned website. Use the following REAL business data:\n${parts.join('\n\n')}\n=== END SCANNED DATA ===\n`
+          }
+        }
+
         const contentInput = `Generate compelling content for these homepage sections ONLY (max ${homepageSections.length} sections):
 Business name: ${siteContext.siteName}
 Business description: ${description}
@@ -721,13 +809,15 @@ Strategy summary: industry=${(strategyOutput.industry as string)||''}, audience=
 Discovery context: ${JSON.stringify(discoveryContext || {})}
 Sections: ${JSON.stringify(homepageSections.map(s => ({ type: (s as Record<string,unknown>).type, variantId: (s as Record<string,unknown>).variantId, title: (s as Record<string,unknown>).title })))}
 Locale: ${locale}
-
+${scanDataBlock}
 CRITICAL: All content MUST be specifically about "${siteContext.siteName}" (${description}). Do NOT use generic placeholder content or invent a different business name.
+${scanCatalog && (scanCatalog.products as unknown[])?.length > 0 ? `CRITICAL: This is a COPY MODE rebuild. You MUST use the REAL product names listed above. Do NOT invent product names.` : ''}
+${scanContentModel?.faqs ? `CRITICAL: For the FAQ section, use the REAL FAQ questions listed above. Generate plausible answers based on the business context.` : ''}
 
 For each section generate:
 - headline + subheadline (compelling, specific to THIS business — ${siteContext.siteName})
 - items array with real content about this specific business
-- CTA text
+- CTA text${scanCatalog ? ' (prefer real CTA texts from scanned data)' : ''}
 - All text in ${locale === 'he' ? 'Hebrew' : 'English'}
 
 Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": "...", "subheadline": "...", "items": [...], "cta": {...} } ] }`
@@ -812,6 +902,22 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
           } else {
             send({ phase: 'images', status: 'skipped', reason: 'no image-eligible sections' })
           }
+          // V1.2-3: Inject scan product images as supplements to generated images
+          if (scanCatalog) {
+            const scanProducts = (scanCatalog.products as Record<string, unknown>[]) || []
+            for (const product of scanProducts) {
+              const imgUrl = (product.image as Record<string, unknown>)?.value as string | null
+              const name = (product.name as Record<string, unknown>)?.value as string | null
+              if (imgUrl && name) {
+                // Add scan images keyed by product name for section-composer to use
+                const key = `scan_product_${name.toLowerCase().replace(/\s+/g, '_').slice(0, 30)}`
+                if (!generatedImages[key]) {
+                  generatedImages[key] = imgUrl
+                }
+              }
+            }
+          }
+
           await tracker.completeStep(imageStepId)
 
           // Save asset_manifest artifact
