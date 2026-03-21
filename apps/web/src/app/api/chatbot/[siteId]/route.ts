@@ -59,7 +59,19 @@ const buildSystemPrompt = (
       if (contactParts.length > 0) parts.push(`Contact: ${contactParts.join(', ')}`)
     }
     if (context.faqs && (context.faqs as unknown[]).length > 0) {
-      parts.push(`FAQs: ${JSON.stringify(context.faqs)}`)
+      parts.push(`FAQs the business answers:\n${(context.faqs as string[]).map((q, i) => `${i + 1}. ${q}`).join('\n')}`)
+    }
+    // V1.3.1: Product catalog for price/model questions
+    if (context.products && (context.products as unknown[]).length > 0) {
+      const productLines = (context.products as Record<string, unknown>[]).map(p => {
+        const lineParts = [p.name as string]
+        if (p.price) lineParts.push(`מחיר: ${p.price}`)
+        if (p.originalPrice) lineParts.push(`(מחיר מקורי: ${p.originalPrice})`)
+        if (p.category) lineParts.push(`[${p.category}]`)
+        if (p.description) lineParts.push(`— ${(p.description as string).slice(0, 80)}`)
+        return lineParts.join(' ')
+      })
+      parts.push(`Products and pricing:\n${productLines.join('\n')}`)
     }
     businessInfo = parts.join('\n')
   } else if (htmlFallback) {

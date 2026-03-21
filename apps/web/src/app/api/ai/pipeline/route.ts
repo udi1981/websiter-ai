@@ -976,6 +976,86 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
           { businessName: businessNameResolved, businessType: businessTypeResolved, locale, generatedImages },
         )
 
+        // V1.3.1: Inject missing catalog-critical sections when scan data exists
+        if (scanCatalog || scanContentModel) {
+          const sectionTypes = new Set(mergedSections.map(s => s.type as string))
+          const footerIdx = mergedSections.findIndex(s => s.type === 'footer')
+          const insertIdx = footerIdx >= 0 ? footerIdx : mergedSections.length
+
+          // Inject pricing section with real products if missing
+          const products = (scanCatalog?.products as Record<string, unknown>[]) || []
+          const enrichedProducts = products.filter(p =>
+            (p.price as Record<string, unknown>)?.value &&
+            (p.price as Record<string, unknown>).confidence as number > 0,
+          )
+          if (!sectionTypes.has('pricing') && enrichedProducts.length >= 2) {
+            const pricingItems = enrichedProducts.slice(0, 4).map((p, i) => ({
+              name: (p.name as Record<string, unknown>)?.value as string,
+              price: `${(p.price as Record<string, unknown>)?.value}`,
+              currency: '₪',
+              originalPrice: (p.originalPrice as Record<string, unknown>)?.value ? `${(p.originalPrice as Record<string, unknown>)?.value}` : undefined,
+              description: (p.description as Record<string, unknown>)?.value as string || '',
+              features: [],
+              cta: 'לרכישה',
+              popular: i === 1,
+            }))
+            mergedSections.splice(insertIdx, 0, {
+              type: 'pricing',
+              variantId: 'pricing-animated-cards',
+              headline: locale === 'he' ? 'בחרו את המוצר המתאים לכם' : 'Choose Your Product',
+              subheadline: locale === 'he' ? 'מגוון דגמים במחירים משתלמים' : 'Multiple models at great prices',
+              items: pricingItems,
+              businessName: businessNameResolved,
+              locale,
+            })
+          }
+
+          // Inject FAQ section with real questions if missing
+          const faqs = (scanContentModel?.faqs as Record<string, unknown>[]) || []
+          if (!sectionTypes.has('faq') && faqs.length >= 3) {
+            const faqItems = faqs.slice(0, 8).map(f => ({
+              question: (f as Record<string, unknown>).value as string,
+              answer: '',  // AI will fill these or section-composer generates defaults
+              title: (f as Record<string, unknown>).value as string,
+              description: '',
+            }))
+            const newFooterIdx = mergedSections.findIndex(s => s.type === 'footer')
+            const faqInsertIdx = newFooterIdx >= 0 ? newFooterIdx : mergedSections.length
+            mergedSections.splice(faqInsertIdx, 0, {
+              type: 'faq',
+              variantId: 'faq-accordion',
+              headline: locale === 'he' ? 'שאלות נפוצות' : 'Frequently Asked Questions',
+              subheadline: '',
+              items: faqItems,
+              businessName: businessNameResolved,
+              locale,
+            })
+          }
+
+          // Inject gallery section with real product images if missing
+          const productsWithImages = products.filter(p =>
+            (p.image as Record<string, unknown>)?.value,
+          )
+          if (!sectionTypes.has('gallery') && productsWithImages.length >= 3) {
+            const galleryItems = productsWithImages.slice(0, 6).map(p => ({
+              title: (p.name as Record<string, unknown>)?.value as string || '',
+              description: (p.category as Record<string, unknown>)?.value as string || '',
+              image: (p.image as Record<string, unknown>)?.value as string || '',
+            }))
+            const ctaIdx = mergedSections.findIndex(s => s.type === 'cta')
+            const galInsertIdx = ctaIdx >= 0 ? ctaIdx : (mergedSections.findIndex(s => s.type === 'footer') >= 0 ? mergedSections.findIndex(s => s.type === 'footer') : mergedSections.length)
+            mergedSections.splice(galInsertIdx, 0, {
+              type: 'gallery',
+              variantId: 'gallery-masonry',
+              headline: locale === 'he' ? 'המוצרים שלנו' : 'Our Products',
+              subheadline: '',
+              items: galleryItems,
+              businessName: businessNameResolved,
+              locale,
+            })
+          }
+        }
+
         const palette = (finalDesign.colorPalette || {}) as Record<string, string>
         const typo = (finalDesign.typography || {}) as Record<string, string>
 
@@ -1036,6 +1116,24 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
             }
           }
 
+          // V1.3.1: Build catalog-aware chatbot context
+          const chatbotProducts = ((scanCatalog?.products as Record<string, unknown>[]) || [])
+            .filter(p => (p.name as Record<string, unknown>)?.value)
+            .slice(0, 10)
+            .map(p => {
+              const name = (p.name as Record<string, unknown>)?.value as string
+              const price = (p.price as Record<string, unknown>)?.value
+              const originalPrice = (p.originalPrice as Record<string, unknown>)?.value
+              const desc = (p.description as Record<string, unknown>)?.value as string || ''
+              const category = (p.category as Record<string, unknown>)?.value as string || ''
+              return { name, price: price ? `${price} ₪` : null, originalPrice: originalPrice ? `${originalPrice} ₪` : null, description: desc.slice(0, 150), category }
+            })
+
+          const chatbotFaqs = ((scanContentModel?.faqs as Record<string, unknown>[]) || [])
+            .map(f => (f as Record<string, unknown>).value as string)
+            .filter(Boolean)
+            .slice(0, 15)
+
           // Save chatbot_context artifact
           await tracker.saveArtifact({
             jobId: jobId!,
@@ -1049,7 +1147,8 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
               services: (strategyOutput.uniqueSellingPoints as string[]) || [],
               uniqueSellingPoints: (strategyOutput.uniqueSellingPoints as string[]) || [],
               contactInfo: { phone: null, email: null, address: null },
-              faqs: [],
+              faqs: chatbotFaqs,
+              products: chatbotProducts,
               leadCaptureGoals: (strategyOutput.conversionGoals as string[]) || ['contact'],
             },
           })

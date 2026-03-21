@@ -80,6 +80,36 @@ export const POST = async (req: NextRequest, { params }: RouteParams) => {
           .trim()
           .slice(0, 2000)
 
+        // V1.3.1: Load catalog data from scan job (not from chatbot_context which gets overwritten)
+        const scanJobId = (job as Record<string, unknown>).scanJobId as string | null
+        let catalogProducts: unknown[] = []
+        let catalogFaqs: string[] = []
+        if (scanJobId) {
+          try {
+            const catalog = await getArtifact(scanJobId, 'content_catalog')
+            const contentModel = await getArtifact(scanJobId, 'source_content_model')
+            if (catalog?.products) {
+              catalogProducts = ((catalog.products as Record<string, unknown>[]) || [])
+                .filter(p => (p.name as Record<string, unknown>)?.value)
+                .slice(0, 10)
+                .map(p => {
+                  const name = (p.name as Record<string, unknown>)?.value as string
+                  const price = (p.price as Record<string, unknown>)?.value
+                  const originalPrice = (p.originalPrice as Record<string, unknown>)?.value
+                  const desc = (p.description as Record<string, unknown>)?.value as string || ''
+                  const category = (p.category as Record<string, unknown>)?.value as string || ''
+                  return { name, price: price ? `${price} ₪` : null, originalPrice: originalPrice ? `${originalPrice} ₪` : null, description: desc.slice(0, 150), category }
+                })
+            }
+            if (contentModel?.faqs) {
+              catalogFaqs = ((contentModel.faqs as Record<string, unknown>[]) || [])
+                .map(f => (f as Record<string, unknown>).value as string)
+                .filter(Boolean)
+                .slice(0, 15)
+            }
+          } catch { /* scan artifacts may not exist */ }
+        }
+
         const chatbotCtx: Record<string, unknown> = {
           businessName: site.name || '',
           industry: (site as Record<string, unknown>).industry || (sitePlan?.industry as string) || '',
@@ -88,7 +118,8 @@ export const POST = async (req: NextRequest, { params }: RouteParams) => {
           services: (sitePlan?.uniqueSellingPoints as string[]) || [],
           uniqueSellingPoints: (sitePlan?.uniqueSellingPoints as string[]) || [],
           contactInfo: { phone: null, email: null, address: null },
-          faqs: [],
+          faqs: catalogFaqs,
+          products: catalogProducts.length > 0 ? catalogProducts : undefined,
           leadCaptureGoals: (sitePlan?.conversionGoals as string[]) || [],
         }
 
