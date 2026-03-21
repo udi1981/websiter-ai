@@ -252,7 +252,7 @@ export const getJobStatus = async (jobId: string) => {
   return {
     job,
     steps,
-    artifactSummary: artifacts.map((a) => ({
+    artifacts: artifacts.map((a) => ({
       type: a.artifactType as ArtifactType,
       valid: a.valid,
       version: a.version,

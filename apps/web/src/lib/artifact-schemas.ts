@@ -87,7 +87,9 @@ export const validateSectionContent = (data: unknown): Result<SectionContent> =>
   for (const s of d.sections as Record<string, unknown>[]) {
     if (!isNonEmpty(s.type)) return err('each section must have a type')
     if (!isNonEmpty(s.variantId)) return err('each section must have a variantId')
-    if (!isNonEmpty(s.headline)) return err('each section must have a non-empty headline')
+    // navbar and footer sections legitimately have no headline
+    const headlineOptional = s.type === 'navbar' || s.type === 'footer'
+    if (!headlineOptional && !isNonEmpty(s.headline)) return err(`section ${s.type} must have a non-empty headline`)
   }
   return ok(d as unknown as SectionContent)
 }

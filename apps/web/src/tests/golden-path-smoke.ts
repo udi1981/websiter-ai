@@ -201,7 +201,7 @@ const runChecks = async (biz: BusinessType): Promise<CheckResult[]> => {
     const status = await getJobStatus(jobId) as { ok: boolean; data: Record<string, unknown> }
     const job = status.data?.job as Record<string, unknown> | undefined
     const steps = status.data?.steps as Record<string, unknown>[] | undefined
-    const artifacts = (status.data?.artifactSummary || status.data?.artifacts) as Record<string, unknown>[] | undefined
+    const artifacts = status.data?.artifacts as Record<string, unknown>[] | undefined
 
     // Check 1: Job completed
     if (job?.status === 'completed') {
