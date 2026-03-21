@@ -75,23 +75,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     // If session check is still pending, wait (don't redirect yet)
     if (sessionPending) return
 
-    // Session check done, no active session — detect expired session
-    if (!session?.user && stored) {
-      // localStorage has user but Better Auth session expired
-      // Clear stale localStorage and redirect to re-login
-      console.warn('[auth] Session expired — clearing stale localStorage, redirecting to login')
-      localStorage.removeItem('ubuilder_user')
-      localStorage.removeItem('ubuilder_token')
-      setUser(null)
-      router.replace('/login')
-      return
-    }
-
-    // If no localStorage AND no session, wait briefly for OAuth callback session
-    // then redirect to login if still nothing
-    if (!stored && !session?.user) {
+    // No session yet — wait briefly for session hydration, then check
+    // (Better Auth useSession may return null briefly before resolving)
+    if (!session?.user && !stored) {
+      // No localStorage AND no session — likely truly unauthenticated
       const timer = setTimeout(() => {
-        // Re-check after delay — OAuth callback may have set session
         if (!localStorage.getItem('ubuilder_user')) {
           router.replace('/login')
         }
