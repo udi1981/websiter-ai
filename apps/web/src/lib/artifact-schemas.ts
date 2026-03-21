@@ -134,15 +134,22 @@ export const validateRenderResult = (data: unknown): Result<RenderResult> => {
 
 // ─── Scan Artifact Validators ────────────────────────────────────────
 
-/** Validate a scan_site_map artifact */
+/** Validate a scan_site_map artifact — accepts both full shape and incremental summary */
 export const validateScanSiteMap = (data: unknown): Result<Record<string, unknown>> => {
   const d = data as Record<string, unknown>
   if (!d || typeof d !== 'object') return err('scan_site_map must be an object')
-  if (!isArray(d.pages) || d.pages.length === 0) return err('pages must be a non-empty array')
-  for (const p of d.pages as Record<string, unknown>[]) {
-    if (!isNonEmpty(p.url)) return err('each page must have a url')
+  // Full shape: { pages: [{ url }] }
+  if (isArray(d.pages) && d.pages.length > 0) {
+    for (const p of d.pages as Record<string, unknown>[]) {
+      if (!isNonEmpty(p.url)) return err('each page must have a url')
+    }
+    return ok(d)
   }
-  return ok(d)
+  // Incremental summary shape: { pagesFound: N, pagesFetched: N }
+  if (typeof d.pagesFound === 'number' || typeof d.pagesFetched === 'number') {
+    return ok(d)
+  }
+  return err('scan_site_map must have pages array or pagesFound/pagesFetched summary')
 }
 
 /** Validate a scan_visual_dna artifact */

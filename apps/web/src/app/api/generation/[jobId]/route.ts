@@ -31,7 +31,29 @@ export async function GET(
       return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
     }
 
-    return NextResponse.json({ ok: true, data: status })
+    // V1.3.1: Include scan artifacts when scan_job_id is set
+    const scanJobId = (status.job as Record<string, unknown>).scanJobId as string | null
+    let scanArtifacts: typeof status.artifacts = []
+    if (scanJobId) {
+      try {
+        const scanStatus = await getJobStatus(scanJobId)
+        if (scanStatus) {
+          scanArtifacts = scanStatus.artifacts
+        }
+      } catch { /* scan job may not exist */ }
+    }
+
+    return NextResponse.json({
+      ok: true,
+      data: {
+        ...status,
+        // Canonical: all artifacts (generation + scan) in one array
+        artifacts: [...status.artifacts, ...scanArtifacts],
+        // Backward compat: separate keys for clarity
+        generationArtifacts: status.artifacts,
+        scanArtifacts,
+      },
+    })
   } catch (err) {
     console.error('[generation] GET error:', err)
     return NextResponse.json({ ok: false, error: 'Failed to fetch job status' }, { status: 500 })
