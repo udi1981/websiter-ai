@@ -405,11 +405,41 @@ export const maxDuration = 300
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { description, locale = 'he', discoveryContext, deepScanData } = body
+  const { description, locale = 'he', discoveryContext, deepScanData, scanJobId, scanMode, sourceOwnership } = body
 
   // Auth — get userId (fallback to x-user-id header)
   const authUser = await getAuthUser(req)
   const userId = authUser?.userId || req.headers.get('x-user-id') || 'anonymous'
+
+  // V1 validation: reject recreation mode and third_party + copy
+  if (scanMode === 'recreation') {
+    return new Response(
+      JSON.stringify({ ok: false, error: 'recreation mode is not available yet (V2)' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+  if (sourceOwnership === 'third_party' && scanMode === 'copy') {
+    return new Response(
+      JSON.stringify({ ok: false, error: 'copy mode requires self_owned source ownership' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+
+  // Load scan context if scanJobId is provided
+  let scanGenerationCtx: Record<string, unknown> | null = null
+  let scanSourceUrl: string | null = null
+  if (scanJobId) {
+    try {
+      scanGenerationCtx = await tracker.getArtifact(scanJobId, 'scan_generation_ctx')
+      // Get sourceUrl from scan job
+      const scanJobStatus = await tracker.getJobStatus(scanJobId)
+      if (scanJobStatus) {
+        scanSourceUrl = (scanJobStatus.job as Record<string, unknown>).sourceUrl as string | null
+      }
+    } catch (scanErr) {
+      console.error('[pipeline] Failed to load scan context:', scanErr)
+    }
+  }
 
   const encoder = new TextEncoder()
   const stream = new ReadableStream({
@@ -459,28 +489,54 @@ export async function POST(req: NextRequest) {
           status: 'draft',
           industry: businessType,
           locale,
+          sourceUrl: scanSourceUrl || deepScanData?.url as string || undefined,
         })
 
         // Link site to job
         await tracker.linkSiteToJob(jobId, siteId)
         await tracker.startJob(jobId)
 
+        // Set scanner fields on job if scan-based
+        if (scanJobId || scanMode) {
+          const { db: rawDb, sql } = await import('@ubuilder/db')
+          await rawDb.execute(sql`
+            UPDATE generation_jobs
+            SET scan_job_id = ${scanJobId || null},
+                scan_mode = ${scanMode || null},
+                source_ownership = ${sourceOwnership || null}
+            WHERE id = ${jobId}
+          `)
+        }
+
         // Send job + site IDs as first event
         send({ phase: 'init', jobId, siteId, siteName })
 
-        // Save project_brief artifact
-        await tracker.saveArtifact({
-          jobId,
-          artifactType: 'project_brief',
-          data: {
-            businessName: siteName,
-            description: description || '',
-            locale,
-            industry: businessType,
-            discoveryAnswers: discoveryContext || {},
-            sourceUrl: deepScanData?.url || null,
-          },
-        })
+        // Save project_brief artifact — synthesized from scan in copy mode, or from description
+        if (scanMode === 'copy' && scanGenerationCtx) {
+          // Copy mode: synthesize canonical artifacts from scan context
+          const { synthesizeScanArtifacts } = await import('@/lib/scan-to-composition')
+          const synthetic = synthesizeScanArtifacts(
+            scanGenerationCtx as import('@/lib/scan-to-composition').ScanBasedGenerationContext,
+            { sourceUrl: scanSourceUrl || '', locale },
+          )
+          await tracker.saveArtifact({ jobId, artifactType: 'project_brief', data: synthetic.projectBrief as unknown as Record<string, unknown> })
+          await tracker.saveArtifact({ jobId, artifactType: 'site_plan', data: synthetic.sitePlan as unknown as Record<string, unknown> })
+          send({ phase: 'strategy', step: 'Scan-derived strategy (copy mode)', scanMode: 'copy' })
+        } else {
+          // Normal flow: save project_brief from description
+          await tracker.saveArtifact({
+            jobId,
+            artifactType: 'project_brief',
+            data: {
+              businessName: siteName,
+              description: description || '',
+              locale,
+              industry: businessType,
+              discoveryAnswers: discoveryContext || {},
+              sourceUrl: scanSourceUrl || deepScanData?.url || null,
+            },
+          })
+        }
       } catch (initErr) {
         console.error('[pipeline] Init failed:', initErr)
         send({ phase: 'error', error: 'Failed to initialize generation job' })
@@ -841,6 +897,29 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
               byteSize: new TextEncoder().encode(composedHtml).length,
             },
           })
+
+          // Populate designDna on sites table after build step
+          if (siteId && palette) {
+            try {
+              const dbForDna = createDb()
+              await dbForDna.update(sites).set({
+                designDna: {
+                  primaryColor: palette.primary,
+                  secondaryColor: palette.secondary || palette.accent,
+                  backgroundColor: palette.background,
+                  textColor: palette.text,
+                  headingFont: typo?.headingFont || 'Inter',
+                  bodyFont: typo?.bodyFont || 'Inter',
+                  sectionCount: mergedSections.length,
+                  scanMode: scanMode || null,
+                  sourceUrl: scanSourceUrl || null,
+                },
+                updatedAt: new Date(),
+              }).where(eq(sites.id, siteId))
+            } catch (dnaErr) {
+              console.error('[pipeline] designDna population error (non-blocking):', dnaErr)
+            }
+          }
 
           // Save chatbot_context artifact
           await tracker.saveArtifact({

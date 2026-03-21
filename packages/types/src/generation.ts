@@ -26,6 +26,19 @@ export type GenerationStepName =
   | 'build'
   | 'qa'
   | 'cpo'
+  // Scan phases
+  | 'scan_discovery'
+  | 'scan_visual_dna'
+  | 'scan_components'
+  | 'scan_content'
+  | 'scan_brand'
+  | 'scan_technical'
+  | 'scan_strategic'
+  | 'scan_transform'
+  // Migration steps (self_owned only)
+  | 'scan_content_extract'
+  | 'scan_catalog_extract'
+  | 'scan_migration_map'
 
 export type ArtifactType =
   | 'project_brief'
@@ -35,6 +48,37 @@ export type ArtifactType =
   | 'asset_manifest'
   | 'chatbot_context'
   | 'render_result'
+  // Scan artifacts
+  | 'scan_site_map'
+  | 'scan_visual_dna'
+  | 'scan_full_result'
+  | 'scan_generation_ctx'
+  // Migration artifacts (self_owned only)
+  | 'source_content_model'
+  | 'content_catalog'
+  | 'content_migration_manifest'
+
+// ─── Source Ownership + Scan Mode ────────────────────────────────────
+
+export type SourceOwnership = 'self_owned' | 'third_party'
+
+export type ScanMode = 'copy' | 'inspiration' | 'recreation'
+
+/** V1 only allows copy + inspiration; recreation is deferred to V2 */
+export type ScanModeV1 = 'copy' | 'inspiration'
+
+export type JobType = 'generation' | 'scan'
+
+// ─── Provenance for Migration Fields ─────────────────────────────────
+
+/** Wraps an extracted value with source provenance and confidence */
+export type ExtractedField<T> = {
+  value: T
+  sourceType: 'dom' | 'json_ld' | 'inline_script' | 'api_response' | 'visual_inference' | 'unknown'
+  sourceLocator?: string
+  confidence: number  // 0-100
+  normalizationNotes?: string
+}
 
 // ─── Generation Job ──────────────────────────────────────────────────
 
@@ -55,6 +99,12 @@ export type GenerationJob = {
   completedAt: Date | null
   createdAt: Date
   updatedAt: Date
+  // Scanner fields
+  jobType: JobType
+  sourceOwnership: SourceOwnership | null
+  scanMode: ScanMode | null
+  sourceUrl: string | null
+  scanJobId: string | null
 }
 
 // ─── Generation Step ─────────────────────────────────────────────────
@@ -234,7 +284,7 @@ export type RenderResult = {
 export type GenerationJobStatusResponse = {
   job: GenerationJob
   steps: GenerationStep[]
-  artifactSummary: {
+  artifacts: {
     type: ArtifactType
     valid: boolean
     version: number

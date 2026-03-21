@@ -132,6 +132,101 @@ export const validateRenderResult = (data: unknown): Result<RenderResult> => {
   return ok(d as unknown as RenderResult)
 }
 
+// ─── Scan Artifact Validators ────────────────────────────────────────
+
+/** Validate a scan_site_map artifact */
+export const validateScanSiteMap = (data: unknown): Result<Record<string, unknown>> => {
+  const d = data as Record<string, unknown>
+  if (!d || typeof d !== 'object') return err('scan_site_map must be an object')
+  if (!isArray(d.pages) || d.pages.length === 0) return err('pages must be a non-empty array')
+  for (const p of d.pages as Record<string, unknown>[]) {
+    if (!isNonEmpty(p.url)) return err('each page must have a url')
+  }
+  return ok(d)
+}
+
+/** Validate a scan_visual_dna artifact */
+export const validateScanVisualDna = (data: unknown): Result<Record<string, unknown>> => {
+  const d = data as Record<string, unknown>
+  if (!d || typeof d !== 'object') return err('scan_visual_dna must be an object')
+  const colorSystem = d.colorSystem as Record<string, unknown> | undefined
+  if (colorSystem && isArray(colorSystem.palette) && colorSystem.palette.length === 0)
+    return err('colorSystem.palette must not be empty if present')
+  return ok(d)
+}
+
+/** Validate a scan_full_result artifact */
+export const validateScanFullResult = (data: unknown): Result<Record<string, unknown>> => {
+  const d = data as Record<string, unknown>
+  if (!d || typeof d !== 'object') return err('scan_full_result must be an object')
+  if (!isNonEmpty(d.url)) return err('url is required')
+  return ok(d)
+}
+
+/** Validate a scan_generation_ctx artifact */
+export const validateScanGenerationCtx = (data: unknown): Result<Record<string, unknown>> => {
+  const d = data as Record<string, unknown>
+  if (!d || typeof d !== 'object') return err('scan_generation_ctx must be an object')
+  if (!isNonEmpty(d.siteName)) return err('siteName is required')
+  const designDna = d.designDna as Record<string, unknown> | undefined
+  if (!designDna || typeof designDna !== 'object') return err('designDna is required')
+  if (!isNonEmpty(designDna.primaryColor)) return err('designDna.primaryColor is required')
+  if (!isArray(d.sectionPlan) || d.sectionPlan.length === 0)
+    return err('sectionPlan must be a non-empty array')
+  return ok(d)
+}
+
+// ─── Migration Artifact Validators (self_owned only) ────────────────
+
+/** Validate extracted field provenance */
+const hasProvenance = (field: unknown): boolean => {
+  if (!field || typeof field !== 'object') return false
+  const f = field as Record<string, unknown>
+  return 'value' in f && 'sourceType' in f && typeof f.confidence === 'number'
+}
+
+/** Validate a source_content_model artifact */
+export const validateSourceContentModel = (data: unknown): Result<Record<string, unknown>> => {
+  const d = data as Record<string, unknown>
+  if (!d || typeof d !== 'object') return err('source_content_model must be an object')
+  // Must have at least one content section with provenance
+  const sections = ['hero', 'navigation', 'footer', 'faqs', 'contact', 'about', 'policies']
+  let hasContent = false
+  for (const key of sections) {
+    if (d[key] !== undefined && d[key] !== null) {
+      hasContent = true
+      break
+    }
+  }
+  if (!hasContent && !isArray(d.pages)) return err('source_content_model must have at least one content section or pages array')
+  return ok(d)
+}
+
+/** Validate a content_catalog artifact */
+export const validateContentCatalog = (data: unknown): Result<Record<string, unknown>> => {
+  const d = data as Record<string, unknown>
+  if (!d || typeof d !== 'object') return err('content_catalog must be an object')
+  if (!isArray(d.products)) return err('products must be an array')
+  for (const p of d.products as Record<string, unknown>[]) {
+    if (!p.name || !hasProvenance(p.name)) return err('each product.name must have provenance (value, sourceType, confidence)')
+  }
+  return ok(d)
+}
+
+/** Validate a content_migration_manifest artifact */
+export const validateContentMigrationManifest = (data: unknown): Result<Record<string, unknown>> => {
+  const d = data as Record<string, unknown>
+  if (!d || typeof d !== 'object') return err('content_migration_manifest must be an object')
+  if (!isArray(d.mappings)) return err('mappings must be an array')
+  for (const m of d.mappings as Record<string, unknown>[]) {
+    if (!isNonEmpty(m.sourceField)) return err('each mapping must have a sourceField')
+    if (!isNonEmpty(m.targetSlot)) return err('each mapping must have a targetSlot')
+    if (!isNonEmpty(m.action)) return err('each mapping must have an action')
+    if (typeof m.confidence !== 'number') return err('each mapping must have a numeric confidence')
+  }
+  return ok(d)
+}
+
 // ─── Dispatch by artifact type ───────────────────────────────────────
 
 /** Validate any artifact by its type key */
@@ -144,6 +239,15 @@ export const validateArtifact = (type: string, data: unknown): Result<unknown> =
     case 'asset_manifest': return validateAssetManifest(data)
     case 'chatbot_context': return validateChatbotContext(data)
     case 'render_result': return validateRenderResult(data)
+    // Scan artifacts
+    case 'scan_site_map': return validateScanSiteMap(data)
+    case 'scan_visual_dna': return validateScanVisualDna(data)
+    case 'scan_full_result': return validateScanFullResult(data)
+    case 'scan_generation_ctx': return validateScanGenerationCtx(data)
+    // Migration artifacts
+    case 'source_content_model': return validateSourceContentModel(data)
+    case 'content_catalog': return validateContentCatalog(data)
+    case 'content_migration_manifest': return validateContentMigrationManifest(data)
     default: return err(`Unknown artifact type: ${type}`)
   }
 }

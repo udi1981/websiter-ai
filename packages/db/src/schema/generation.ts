@@ -22,6 +22,12 @@ export const generationJobs = pgTable('generation_jobs', {
   completedAt: timestamp('completed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  // Scanner fields
+  jobType: text('job_type').notNull().default('generation'),
+  sourceOwnership: text('source_ownership'),
+  scanMode: text('scan_mode'),
+  sourceUrl: text('source_url'),
+  scanJobId: text('scan_job_id'),
 })
 
 // ─── generation_steps ────────────────────────────────────────────────
