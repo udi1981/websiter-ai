@@ -41,7 +41,7 @@ const callPipelineAgent = async (
   const claudeKey = process.env.CLAUDE_API_KEY
   const geminiKey = process.env.GEMINI_API_KEY
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 90000)
+  const timeout = setTimeout(() => controller.abort(), 150000) // 2.5 min per agent call
   const promptSize = systemPrompt.length + userMessage.length
 
   try {
