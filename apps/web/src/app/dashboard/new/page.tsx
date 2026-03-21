@@ -1282,6 +1282,10 @@ const NewSitePage = () => {
           onContinue={handleContinue}
           isDisabled={state.isAiThinking}
           onDocumentText={(v) => dispatch({ type: 'SET_DOCUMENT_TEXT', value: v })}
+          sourceOwnership={state.sourceOwnership}
+          onSourceOwnershipChange={(v) => dispatch({ type: 'SET_SOURCE_OWNERSHIP', value: v })}
+          scanMode={state.scanMode}
+          onScanModeChange={(v) => dispatch({ type: 'SET_SCAN_MODE', scanMode: v })}
         />
       )}
 

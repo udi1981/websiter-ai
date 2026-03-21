@@ -157,11 +157,31 @@ export const extractAndPersistContent = async (
     await tracker.failStep(extractStepId, `Content extraction failed: ${err}`)
   }
 
-  // Step: catalog extraction
+  // Step: catalog extraction + V1.3 product page enrichment
   const catalogStepId = await tracker.startStep(jobId, 'scan_catalog_extract', '@scanner/catalog-extract')
 
   try {
     const catalog = extractContentCatalog(scanResult)
+
+    // V1.3: Enrich products with prices/descriptions from product pages
+    const products = (catalog.products as Record<string, unknown>[]) || []
+    if (products.length > 0) {
+      try {
+        await enrichProductsFromPages(products, 6)
+        // Update extraction source if we got prices
+        const enrichedCount = products.filter(p =>
+          (p.price as Record<string, unknown>)?.value &&
+          (p.price as Record<string, unknown>).confidence as number > 0,
+        ).length
+        if (enrichedCount > 0) {
+          catalog.extractedFrom = `${catalog.extractedFrom}+product_pages`
+          catalog.enrichedProducts = enrichedCount
+        }
+      } catch (enrichErr) {
+        console.error('[scan-tracker] Product enrichment error (non-blocking):', enrichErr)
+      }
+    }
+
     await tracker.saveArtifact({
       jobId,
       stepId: catalogStepId,
@@ -448,6 +468,213 @@ const extractContentCatalog = (scanResult: Record<string, unknown>): Record<stri
     extractedFrom,
     productCount: products.length,
   }
+}
+
+// ─── V1.3: Product Page Enrichment ──────────────────────────────────
+
+/** Fetch product pages and extract prices, descriptions, images (bounded) */
+const enrichProductsFromPages = async (
+  products: Record<string, unknown>[],
+  maxFetches: number = 6,
+): Promise<void> => {
+  const fetchableProducts = products
+    .filter(p => {
+      const url = (p.productUrl as Record<string, unknown>)?.value as string | undefined
+      return url && url.startsWith('http')
+    })
+    .slice(0, maxFetches)
+
+  const enrichPromises = fetchableProducts.map(async (product) => {
+    const url = (product.productUrl as Record<string, unknown>)?.value as string
+    try {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 12000)
+
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; UBuilder/1.0)' },
+        signal: controller.signal,
+        redirect: 'follow',
+      })
+      clearTimeout(timer)
+
+      if (!res.ok) return
+
+      const html = await res.text()
+
+      // Extract price from multiple sources
+      const price = extractPriceFromHtml(html)
+      if (price) {
+        product.price = field(price.amount, price.source, price.confidence, price.locator)
+        product.currency = field(price.currency, price.source, price.confidence)
+        if (price.originalAmount && price.originalAmount !== price.amount) {
+          product.originalPrice = field(price.originalAmount, price.source, price.confidence - 5)
+          product.onSale = field(true, price.source, price.confidence)
+        }
+      }
+
+      // Extract description from product page
+      const desc = extractProductDescription(html)
+      if (desc) {
+        product.description = field(desc, 'dom', 70, 'product page text')
+      }
+
+      // Extract product-specific images (better than homepage nav images)
+      const productImages = extractProductPageImages(html, url)
+      if (productImages.length > 0) {
+        product.image = field(productImages[0], 'dom', 80, 'product page img')
+        if (productImages.length > 1) {
+          product.additionalImages = productImages.slice(1, 4).map(img =>
+            field(img, 'dom', 75, 'product page img'),
+          )
+        }
+      }
+    } catch {
+      // Non-blocking — product remains with nav-level data
+    }
+  })
+
+  await Promise.allSettled(enrichPromises)
+}
+
+/** Extract price from HTML using multiple strategies */
+const extractPriceFromHtml = (html: string): {
+  amount: number
+  originalAmount?: number
+  currency: string
+  source: string
+  confidence: number
+  locator: string
+} | null => {
+  // Strategy 1: Wix data attributes (highest confidence for Wix sites)
+  const wixPrice = html.match(/data-wix-price="([0-9,.]+)\s*(₪|ILS|NIS)?"/i)
+  const wixOriginal = html.match(/data-wix-original-price="([0-9,.]+)\s*(₪|ILS|NIS)?"/i)
+  if (wixPrice) {
+    return {
+      amount: parseFloat(wixPrice[1].replace(',', '')),
+      originalAmount: wixOriginal ? parseFloat(wixOriginal[1].replace(',', '')) : undefined,
+      currency: '₪',
+      source: 'wix_data_attr',
+      confidence: 90,
+      locator: 'data-wix-price',
+    }
+  }
+
+  // Strategy 2: JSON price in script tags (Wix/Shopify store data)
+  const jsonPrice = html.match(/"price"\s*:\s*([0-9.]+)/i)
+  const jsonCurrency = html.match(/"currency"\s*:\s*"([A-Z]{3})"/i)
+  if (jsonPrice) {
+    return {
+      amount: parseFloat(jsonPrice[1]),
+      currency: jsonCurrency ? jsonCurrency[1] : '₪',
+      source: 'json_script',
+      confidence: 85,
+      locator: 'script JSON',
+    }
+  }
+
+  // Strategy 3: OpenGraph / meta price tags
+  const ogPrice = html.match(/<meta[^>]*property="product:price:amount"[^>]*content="([^"]+)"/i)
+    || html.match(/<meta[^>]*content="([^"]+)"[^>]*property="product:price:amount"/i)
+  const ogCurrency = html.match(/<meta[^>]*property="product:price:currency"[^>]*content="([^"]+)"/i)
+  if (ogPrice) {
+    return {
+      amount: parseFloat(ogPrice[1]),
+      currency: ogCurrency ? ogCurrency[1] : '₪',
+      source: 'og_meta',
+      confidence: 88,
+      locator: 'product:price:amount',
+    }
+  }
+
+  // Strategy 4: Visible text price patterns (₪ NNN or NNN ₪)
+  const textPrices = html.match(/(\d{2,5}(?:[.,]\d{2})?)\s*₪/g)
+  if (textPrices && textPrices.length > 0) {
+    // Take the most common price (likely the current/sale price)
+    const prices = textPrices.map(p => parseFloat(p.replace(/[₪\s,]/g, '')))
+    const priceFreq = new Map<number, number>()
+    for (const p of prices) {
+      priceFreq.set(p, (priceFreq.get(p) || 0) + 1)
+    }
+    const sorted = [...priceFreq.entries()].sort((a, b) => b[1] - a[1])
+    const mostCommon = sorted[0][0]
+    const secondMostCommon = sorted.length > 1 ? sorted[1][0] : undefined
+
+    return {
+      amount: mostCommon,
+      originalAmount: secondMostCommon && secondMostCommon > mostCommon ? secondMostCommon : undefined,
+      currency: '₪',
+      source: 'dom_text',
+      confidence: 70,
+      locator: 'NNN ₪ pattern',
+    }
+  }
+
+  return null
+}
+
+/** Extract product description from page HTML */
+const extractProductDescription = (html: string): string | null => {
+  // Look for meta description first
+  const metaDesc = html.match(/<meta[^>]*name="description"[^>]*content="([^"]{20,200})"/i)
+  if (metaDesc) return metaDesc[1].replace(/&[^;]+;/g, ' ').trim()
+
+  // Look for og:description
+  const ogDesc = html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]{20,200})"/i)
+  if (ogDesc) return ogDesc[1].replace(/&[^;]+;/g, ' ').trim()
+
+  // Look for first substantial paragraph after an H1/H2
+  const afterHeading = html.match(/<h[12][^>]*>[^<]+<\/h[12]>\s*(?:<[^p][^>]*>)*\s*<p[^>]*>([^<]{30,200})<\/p>/i)
+  if (afterHeading) return afterHeading[1].replace(/&[^;]+;/g, ' ').trim()
+
+  return null
+}
+
+/** Extract product-specific images from a product page */
+const extractProductPageImages = (html: string, pageUrl: string): string[] => {
+  const images: string[] = []
+  const seen = new Set<string>()
+
+  // Wix image pattern — high-res product images from wixstatic
+  const wixImgRegex = /src="(https:\/\/static\.wixstatic\.com\/media\/[^"]+)"/g
+  let match: RegExpExecArray | null
+  while ((match = wixImgRegex.exec(html)) !== null) {
+    const src = match[1]
+    // Skip tiny icons (< 100px), CSS sprites, and duplicate variants
+    if (src.includes('/w_') || src.includes('/fill/')) {
+      const sizeMatch = src.match(/w_(\d+)/)
+      if (sizeMatch && parseInt(sizeMatch[1]) < 100) continue
+    }
+    const baseKey = src.split('~mv2')[0] // Dedupe by base image
+    if (!seen.has(baseKey) && images.length < 6) {
+      seen.add(baseKey)
+      images.push(src)
+    }
+  }
+
+  // Shopify image pattern
+  const shopifyImgRegex = /src="(https:\/\/cdn\.shopify\.com\/s\/files\/[^"]+)"/g
+  while ((match = shopifyImgRegex.exec(html)) !== null) {
+    const src = match[1]
+    if (!seen.has(src) && images.length < 6) {
+      seen.add(src)
+      images.push(src)
+    }
+  }
+
+  // General high-res images (> 300px)
+  const imgRegex = /src="(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp|avif)[^"]*)"/gi
+  while ((match = imgRegex.exec(html)) !== null) {
+    const src = match[1]
+    const sizeMatch = src.match(/[wW]_?(\d+)/)
+    if (sizeMatch && parseInt(sizeMatch[1]) >= 300) {
+      if (!seen.has(src) && images.length < 6) {
+        seen.add(src)
+        images.push(src)
+      }
+    }
+  }
+
+  return images
 }
 
 /** Detect product category from name heuristics */

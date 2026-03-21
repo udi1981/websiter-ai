@@ -727,15 +727,24 @@ Please revise and return improved JSON.`
         if (scanCatalog || scanContentModel) {
           const parts: string[] = []
 
-          // Inject real product names
+          // V1.3: Inject enriched product data (names, prices, descriptions)
           const products = (scanCatalog?.products as Record<string, unknown>[]) || []
           if (products.length > 0) {
-            const productNames = products
-              .map(p => (p.name as Record<string, unknown>)?.value as string)
-              .filter(Boolean)
-              .slice(0, 12)
-            if (productNames.length > 0) {
-              parts.push(`REAL PRODUCTS (use these exact names): ${productNames.join(', ')}`)
+            const productLines = products.slice(0, 8).map(p => {
+              const name = (p.name as Record<string, unknown>)?.value as string || ''
+              const price = (p.price as Record<string, unknown>)?.value
+              const originalPrice = (p.originalPrice as Record<string, unknown>)?.value
+              const desc = (p.description as Record<string, unknown>)?.value as string || ''
+              const category = (p.category as Record<string, unknown>)?.value as string || ''
+              const parts: string[] = [name]
+              if (price) parts.push(`${price} ₪`)
+              if (originalPrice && originalPrice !== price) parts.push(`(was ${originalPrice} ₪)`)
+              if (category) parts.push(`[${category}]`)
+              if (desc && desc.length > 10) parts.push(`— ${desc.slice(0, 100)}`)
+              return parts.join(' ')
+            }).filter(Boolean)
+            if (productLines.length > 0) {
+              parts.push(`REAL PRODUCTS WITH DETAILS (use these exact names and prices):\n${productLines.map((l, i) => `${i + 1}. ${l}`).join('\n')}`)
             }
 
             // Product categories

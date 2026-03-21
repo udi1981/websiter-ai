@@ -26,6 +26,10 @@ type UnifiedInputProps = {
   onContinue: () => void
   isDisabled: boolean
   onDocumentText?: (text: string | null) => void
+  sourceOwnership?: 'self_owned' | 'third_party' | null
+  onSourceOwnershipChange?: (value: 'self_owned' | 'third_party') => void
+  scanMode?: 'copy' | 'inspiration' | null
+  onScanModeChange?: (value: 'copy' | 'inspiration') => void
 }
 
 const ACCEPTED_DOC_EXTENSIONS = '.pdf,.docx,.doc,.txt,.csv,.html'
@@ -105,6 +109,10 @@ export const UnifiedInput = ({
   onContinue,
   isDisabled,
   onDocumentText,
+  sourceOwnership,
+  onSourceOwnershipChange,
+  scanMode,
+  onScanModeChange,
 }: UnifiedInputProps) => {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const docInputRef = useRef<HTMLInputElement>(null)
@@ -251,6 +259,35 @@ export const UnifiedInput = ({
             />
           </div>
         </div>
+
+        {/* Scan Mode Selection — visible only when URL is entered */}
+        {url.trim().length > 5 && onSourceOwnershipChange && onScanModeChange && (
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-xs text-text-muted">סוג סריקה:</span>
+            <button
+              type="button"
+              onClick={() => { onSourceOwnershipChange('self_owned'); onScanModeChange('copy') }}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                sourceOwnership === 'self_owned'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-bg-alt text-text-muted hover:bg-bg-alt/80 border border-border'
+              }`}
+            >
+              🔄 שיבוט האתר שלי
+            </button>
+            <button
+              type="button"
+              onClick={() => { onSourceOwnershipChange('third_party'); onScanModeChange('inspiration') }}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                sourceOwnership === 'third_party' || !sourceOwnership
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-bg-alt text-text-muted hover:bg-bg-alt/80 border border-border'
+              }`}
+            >
+              ✨ השראה מאתר אחר
+            </button>
+          </div>
+        )}
 
         {/* Upload Section — Images + Documents */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
