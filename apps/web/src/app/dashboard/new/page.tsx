@@ -182,8 +182,16 @@ const reducer = (state: State, action: Action): State => {
       }
     case 'USER_MESSAGE':
       return { ...state, messages: [...state.messages, action.message] }
-    case 'SYSTEM_MESSAGE':
+    case 'SYSTEM_MESSAGE': {
+      // Replace existing message with same id (for live-updating progress), otherwise append
+      const existingIdx = state.messages.findIndex(m => m.id === action.message.id)
+      if (existingIdx >= 0) {
+        const updated = [...state.messages]
+        updated[existingIdx] = action.message
+        return { ...state, messages: updated }
+      }
       return { ...state, messages: [...state.messages, action.message] }
+    }
     case 'START_BUILD':
       return { ...state, isGenerating: true, buildStatus: 'Preparing...', buildProgress: 0, buildError: null }
     case 'SET_PLAN':
@@ -710,12 +718,15 @@ const NewSitePage = () => {
                   }
 
                   if (eventType === 'progress') {
+                    // Use stable id so progress updates replace each other (not flood chat)
                     dispatch({
                       type: 'SYSTEM_MESSAGE',
                       message: {
-                        id: `msg_scan_progress_${Date.now()}`,
+                        id: 'msg_scan_live_progress',
                         role: 'system',
-                        content: `📊 ${data.message} (${data.percent}%)`,
+                        content: data.percent > 0
+                          ? `🔍 סריקה: ${data.message} (${data.percent}%)`
+                          : `🔍 סריקה בתהליך... עמודים נטענים (עלול לקחת 1-2 דקות)`,
                       },
                     })
                   } else if (eventType === 'phase') {
@@ -723,9 +734,18 @@ const NewSitePage = () => {
                       dispatch({
                         type: 'SYSTEM_MESSAGE',
                         message: {
-                          id: `msg_phase_${Date.now()}`,
+                          id: 'msg_scan_live_progress',
                           role: 'system',
-                          content: `⚡ ${data.description}`,
+                          content: `⚡ ${data.description || data.phase}...`,
+                        },
+                      })
+                    } else if (data.status === 'done') {
+                      dispatch({
+                        type: 'SYSTEM_MESSAGE',
+                        message: {
+                          id: 'msg_scan_live_progress',
+                          role: 'system',
+                          content: `✅ ${data.phase} הושלם`,
                         },
                       })
                     }

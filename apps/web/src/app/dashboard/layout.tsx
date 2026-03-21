@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSession, signOut } from '@/lib/auth-client'
+import { useLocale } from '@/lib/locale-context'
 
 const navItems = [
   {
@@ -40,6 +41,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname()
   const router = useRouter()
   const { data: session, isPending: sessionPending } = useSession()
+  const { locale, setLocale } = useLocale()
   const [user, setUser] = useState<{ name: string; email: string } | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [quickCreateOpen, setQuickCreateOpen] = useState(false)
@@ -47,29 +49,54 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const quickCreateRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // If Better Auth session exists, use it
+    // Check localStorage FIRST for instant auth (primary auth path)
+    const stored = localStorage.getItem('ubuilder_user')
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        setUser(parsed)
+        setAuthChecked(true)
+      } catch {
+        localStorage.removeItem('ubuilder_user')
+        localStorage.removeItem('ubuilder_token')
+      }
+    }
+
+    // If Better Auth session exists, update with richer data (including real id)
     if (session?.user) {
-      setUser({ name: session.user.name || 'User', email: session.user.email || '' })
+      const sessionUser = { id: session.user.id, name: session.user.name || 'User', email: session.user.email || '' }
+      setUser(sessionUser)
+      // Sync session data to localStorage — include id for API auth resilience
+      localStorage.setItem('ubuilder_user', JSON.stringify(sessionUser))
       setAuthChecked(true)
       return
     }
 
-    // If session check is still pending, wait
+    // If session check is still pending, wait (don't redirect yet)
     if (sessionPending) return
 
-    // Fallback: check localStorage
-    const stored = localStorage.getItem('ubuilder_user')
-    if (!stored) {
+    // Session check done, no active session — detect expired session
+    if (!session?.user && stored) {
+      // localStorage has user but Better Auth session expired
+      // Clear stale localStorage and redirect to re-login
+      console.warn('[auth] Session expired — clearing stale localStorage, redirecting to login')
+      localStorage.removeItem('ubuilder_user')
+      localStorage.removeItem('ubuilder_token')
+      setUser(null)
       router.replace('/login')
       return
     }
-    try {
-      setUser(JSON.parse(stored))
-      setAuthChecked(true)
-    } catch {
-      localStorage.removeItem('ubuilder_user')
-      localStorage.removeItem('ubuilder_token')
-      router.replace('/login')
+
+    // If no localStorage AND no session, wait briefly for OAuth callback session
+    // then redirect to login if still nothing
+    if (!stored && !session?.user) {
+      const timer = setTimeout(() => {
+        // Re-check after delay — OAuth callback may have set session
+        if (!localStorage.getItem('ubuilder_user')) {
+          router.replace('/login')
+        }
+      }, 2500)
+      return () => clearTimeout(timer)
     }
   }, [session, sessionPending, router])
 
@@ -277,6 +304,22 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </p>
           <button className="w-full rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary-hover transition-colors">
             Upgrade
+          </button>
+        </div>
+
+        {/* Language toggle */}
+        <div className="mx-3 mb-2">
+          <button
+            onClick={() => setLocale(locale === 'en' ? 'he' : 'en')}
+            className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-text-muted hover:bg-bg-tertiary hover:text-text transition-all"
+            aria-label={locale === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
+          >
+            <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
+            </svg>
+            <span>{locale === 'en' ? 'EN' : 'עב'}</span>
+            <span className="text-text-muted/50">|</span>
+            <span className="text-text-muted/60">{locale === 'en' ? 'עב' : 'EN'}</span>
           </button>
         </div>
 
