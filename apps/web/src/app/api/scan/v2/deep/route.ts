@@ -36,14 +36,9 @@ export async function POST(request: Request) {
       options?: { maxPages?: number; skipAi?: boolean }
     }
 
-    // Auth required for persisted scans
+    // Auth — match pipeline pattern: session → x-user-id header → anonymous fallback
     const authUser = await getAuthUser(request)
-    if (!authUser) {
-      return new Response(
-        JSON.stringify({ ok: false, error: 'Authentication required for deep scan' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } },
-      )
-    }
+    const userId = authUser?.userId || request.headers.get('x-user-id') || 'anonymous'
 
     if (!url || typeof url !== 'string') {
       return new Response(
@@ -99,7 +94,7 @@ export async function POST(request: Request) {
             await import('@/lib/scan-tracker')
 
           scanJobId = await createScanJob({
-            userId: authUser.userId,
+            userId,
             sourceUrl: normalizedUrl,
             scanMode: scanMode as ScanModeV1,
             sourceOwnership: sourceOwnership as SourceOwnership,

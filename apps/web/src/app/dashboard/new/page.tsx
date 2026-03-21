@@ -203,6 +203,19 @@ const reducer = (state: State, action: Action): State => {
 
 // ─── Page Component ──────────────────────────────────────────────────────────
 
+/** Build auth headers — includes x-user-id from localStorage for session resilience */
+const getAuthHeaders = (): Record<string, string> => {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  try {
+    const stored = localStorage.getItem('ubuilder_user')
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (parsed?.id) headers['x-user-id'] = parsed.id
+    }
+  } catch { /* ignore */ }
+  return headers
+}
+
 const NewSitePage = () => {
   const router = useRouter()
   const [state, dispatch] = useReducer(reducer, initialState)
@@ -221,7 +234,7 @@ const NewSitePage = () => {
 
       const res = await fetch('/api/ai/discovery', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           initialInput: {
             description: state.description,
@@ -412,7 +425,7 @@ const NewSitePage = () => {
 
       const res = await fetch('/api/ai/planning', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           discoveryContext: state.discoveryContext,
           scanResult: scanPayload,
@@ -660,7 +673,7 @@ const NewSitePage = () => {
 
           const res = await fetch('/api/scan/v2/deep', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify({
               url,
               sourceOwnership: ownership,
@@ -858,7 +871,7 @@ const NewSitePage = () => {
 
       const pipelineRes = await fetch('/api/ai/pipeline', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           description: state.description,
           locale: state.locale,
