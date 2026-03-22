@@ -627,15 +627,30 @@ Return JSON with: { businessName, industry, targetAudience, brandPersonality, co
         send({ phase: 'design', agent: '@designer', status: 'running' })
         const designStepId = await tracker.startStep(jobId!, 'design', '@designer'); lastStepName = 'design'
 
-        const designerPrompt = getAgentSystemPrompt('designer', siteContext) + `\n\nDESIGN RESOURCES — You MUST use these:\n` + DESIGNER_VARIANT_KNOWLEDGE
+        // Select art direction based on business context
+        const { selectArtDirection, buildArtDirectionPrompt } = await import('@/lib/art-direction')
+        const artDirection = selectArtDirection({
+          industry: (strategyOutput.industry as string) || businessType,
+          businessType,
+          designDirection: (discoveryContext?.designDirection as string) || undefined,
+          targetAudience: (strategyOutput.targetAudience as string) || (discoveryContext?.targetAudience as string) || undefined,
+        })
+        const artDirectionBlock = buildArtDirectionPrompt(artDirection)
+        console.log(`[pipeline] Art direction selected: ${artDirection.id} (${artDirection.name})`)
+
+        const designerPrompt = getAgentSystemPrompt('designer', siteContext) + `\n\nDESIGN RESOURCES — You MUST use these:\n` + DESIGNER_VARIANT_KNOWLEDGE + artDirectionBlock
         const designInput = `Design a premium website for:
 ${description}
 Strategy: ${JSON.stringify(strategyOutput)}
 Locale: ${locale}
 Business name: ${siteContext.siteName}
+Art Direction: ${artDirection.name} — ${artDirection.description}
+Dark Mode: ${artDirection.preferDark ? 'YES' : 'NO'}
+Typography: Hebrew=${artDirection.typography.hebrewFont}, English=${artDirection.typography.englishFont}
 
 CRITICAL: "siteName" MUST be "${siteContext.siteName}" — the actual business name. Do NOT invent a different name.
 All headlines, subheadlines, and content MUST be about this specific business (${description}), in ${locale === 'he' ? 'Hebrew' : 'English'}.
+CRITICAL: Follow the "${artDirection.name}" art direction precisely. Every section must align with its visual system.
 
 Return JSON with:
 {
@@ -871,6 +886,12 @@ ${scanDataBlock}
 CRITICAL: All content MUST be specifically about "${siteContext.siteName}" (${description}). Do NOT use generic placeholder content or invent a different business name.
 ${scanCatalog && (scanCatalog.products as unknown[])?.length > 0 ? `CRITICAL: This is a COPY MODE rebuild. You MUST use the REAL product names listed above. Do NOT invent product names.` : ''}
 ${scanContentModel?.faqs ? `CRITICAL: For the FAQ section, use the REAL FAQ questions listed above. Generate plausible answers based on the business context.` : ''}
+
+ART DIRECTION: ${artDirection.name} — ${artDirection.description}
+Content tone: ${artDirection.emotionalTone.join(', ')}
+CTA style: ${artDirection.ctaStyle}
+Trust tone: ${artDirection.trustTone}
+Product presentation: ${artDirection.productPresentation}
 
 PREMIUM CONTENT QUALITY STANDARDS:
 - Headlines must be emotionally compelling and specific to THIS business — never generic marketing speak
@@ -1196,6 +1217,8 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
                   headingFont: typo?.headingFont || 'Inter',
                   bodyFont: typo?.bodyFont || 'Inter',
                   sectionCount: mergedSections.length,
+                  artDirection: artDirection.id,
+                  artDirectionName: artDirection.name,
                   scanMode: scanMode || null,
                   sourceUrl: scanSourceUrl || null,
                 },
