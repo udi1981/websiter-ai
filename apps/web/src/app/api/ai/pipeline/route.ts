@@ -414,7 +414,7 @@ export const maxDuration = 300
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { description, locale = 'he', discoveryContext, deepScanData, scanJobId, scanMode, sourceOwnership } = body
+  const { description, locale = 'he', discoveryContext, deepScanData, scanJobId, scanMode, sourceOwnership, uploadedLogo, documentText } = body
 
   // Auth — get userId (fallback to x-user-id header)
   const authUser = await getAuthUser(req)
@@ -548,6 +548,11 @@ export async function POST(req: NextRequest) {
               industry: businessType,
               discoveryAnswers: discoveryContext || {},
               sourceUrl: scanSourceUrl || deepScanData?.url || null,
+              hasUploadedLogo: !!uploadedLogo,
+              uploadedLogoSize: uploadedLogo ? uploadedLogo.length : 0,
+              hasDocumentText: !!documentText,
+              documentTextLength: documentText ? documentText.length : 0,
+              documentTextPreview: documentText ? documentText.slice(0, 200) : null,
             },
           })
         }
@@ -572,6 +577,11 @@ export async function POST(req: NextRequest) {
         const strategyStepId = await tracker.startStep(jobId!, 'strategy', '@strategist'); lastStepName = 'strategy'
 
         const strategyPrompt = getAgentSystemPrompt('strategy', siteContext)
+        // Build document context block if user uploaded documents
+        const documentBlock = documentText && documentText.trim().length > 20
+          ? `\n\n=== UPLOADED BUSINESS DOCUMENT ===\nThe user uploaded a document with the following content. Use this as PRIMARY source for business details, products, services, pricing, and branding:\n${documentText.slice(0, 6000)}\n=== END DOCUMENT ===\n`
+          : ''
+
         const strategyInput = `Analyze this business and create a website strategy:
 Business description: ${description}
 Locale: ${locale}
@@ -579,9 +589,10 @@ Discovery context: ${JSON.stringify(discoveryContext || {})}
 ${deepScanData ? `Scan data available: ${JSON.stringify(deepScanData).slice(0, 3000)}` : ''}
 ${scanCatalog && (scanCatalog.products as unknown[])?.length > 0 ? `\nREAL PRODUCTS from scanned site: ${JSON.stringify((scanCatalog.products as Record<string, unknown>[]).slice(0, 8).map(p => (p.name as Record<string, unknown>)?.value)).slice(0, 500)}` : ''}
 ${scanContentModel?.faqs ? `\nREAL FAQ questions found: ${((scanContentModel.faqs as Record<string, unknown>[]) || []).slice(0, 5).map(f => (f as Record<string, unknown>).value).join('; ').slice(0, 300)}` : ''}
-
+${documentBlock}
 IMPORTANT: The "businessName" field MUST be the actual name from the description or discovery context. Do NOT invent a new name.
 ${scanCatalog && (scanCatalog.products as unknown[])?.length > 0 ? 'IMPORTANT: Include product-related sections (productOverview, comparisonTable, productGrid) because real product data is available.' : ''}
+${documentText ? 'IMPORTANT: Use the uploaded document content as a primary source for business details, products, services, and unique selling points.' : ''}
 
 Return JSON with: { businessName, industry, targetAudience, brandPersonality, conversionGoals, contentTone, uniqueSellingPoints }`
 
@@ -837,6 +848,7 @@ For each section generate:
 - items array with real content about this specific business
 - CTA text${scanCatalog ? ' (prefer real CTA texts from scanned data)' : ''}
 - All text in ${locale === 'he' ? 'Hebrew' : 'English'}
+${documentText ? `\n=== UPLOADED BUSINESS DOCUMENT ===\nUse this document as a PRIMARY source for real product names, services, pricing, and business details:\n${documentText.slice(0, 4000)}\n=== END DOCUMENT ===\nCRITICAL: Prefer real information from the uploaded document over generic placeholders.` : ''}
 
 Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": "...", "subheadline": "...", "items": [...], "cta": {...} } ] }`
 
@@ -884,6 +896,12 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
 
         // ── PHASE 3.5: IMAGE GENERATION ──
         let generatedImages: Record<string, string> = {}
+
+        // Inject uploaded logo into generatedImages so it flows to navbar/footer
+        if (uploadedLogo && typeof uploadedLogo === 'string' && uploadedLogo.startsWith('data:image')) {
+          generatedImages.logo = uploadedLogo
+          console.log(`[pipeline] Uploaded logo injected (${uploadedLogo.length} chars)`)
+        }
         const imageStepId = await tracker.startStep(jobId!, 'images', '@media'); lastStepName = 'images'
         try {
           send({ phase: 'images', status: 'generating' })

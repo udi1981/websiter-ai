@@ -51,8 +51,17 @@ type NavParams = {
   links: { label: string; href: string }[]
   ctaText?: string
   ctaLink?: string
+  logoUrl?: string
   palette: ColorPalette
   fonts: FontCombo
+}
+
+/** Render brand as logo image or text fallback */
+const brandElement = (p: NavParams): string => {
+  if (p.logoUrl) {
+    return `<a href="/" ${s(`display:flex;align-items:center;gap:8px;text-decoration:none`)}><img src="${p.logoUrl}" alt="${p.brand}" ${s(`height:36px;width:auto;object-fit:contain`)} /><span ${s(`${fontStyle(p.fonts, 'heading')};font-size:1.1rem;color:${p.palette.text}`)}>${p.brand}</span></a>`
+  }
+  return `<a href="/" ${s(`${fontStyle(p.fonts, 'heading')};font-size:1.5rem;color:${p.palette.text};text-decoration:none;letter-spacing:-0.02em`)}>${p.brand}</a>`
 }
 
 /* ------------------------------------------------------------------ */
@@ -60,9 +69,9 @@ type NavParams = {
 /* ------------------------------------------------------------------ */
 
 export const generateNavbarTransparent = (p: NavParams): string => {
-  const { brand, links, ctaText, ctaLink, palette: c, fonts: f } = p
+  const { links, ctaText, ctaLink, palette: c, fonts: f } = p
   return `<nav class="motion-reveal" ${s(`position:fixed;top:0;left:0;right:0;z-index:1000;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;transition:background 0.4s,box-shadow 0.4s,backdrop-filter 0.4s;background:transparent`)} id="nav-transparent" aria-label="Main navigation">
-  <a href="/" ${s(`${fontStyle(f, 'heading')};font-size:1.5rem;color:${c.text};text-decoration:none;letter-spacing:-0.02em`)}>${brand}</a>
+  ${brandElement(p)}
   <div ${s(`display:flex;align-items:center;gap:2rem`)} class="nav-links-desktop">
     ${links.map(l => `<a href="${l.href}" ${s(`${fontStyle(f, 'body')};font-size:0.925rem;color:${c.textMuted};text-decoration:none;position:relative;padding-bottom:2px;transition:color 0.3s`)} onmouseenter="this.style.color='${c.primary}'" onmouseleave="this.style.color='${c.textMuted}'">${l.label}<span ${s(`position:absolute;bottom:0;left:0;width:0;height:2px;background:${c.primary};transition:width 0.3s ease`)} class="nav-underline"></span></a>`).join('\n    ')}
     ${ctaText ? `<a href="${ctaLink || '#'}" class="shimmer-btn" ${s(`${fontStyle(f, 'body')};font-size:0.875rem;padding:0.6rem 1.5rem;background:${c.primary};color:#fff;border-radius:8px;text-decoration:none;transition:background 0.3s`)}>${ctaText}</a>` : ''}
@@ -108,7 +117,7 @@ export const generateNavbarFloating = (p: NavParams): string => {
   <div ${s(`display:flex;align-items:center;gap:1.25rem`)}>
     ${left.map(l => `<a href="${l.href}" ${s(`${fontStyle(f, 'body')};font-size:0.85rem;color:${c.textMuted};text-decoration:none;transition:color 0.3s;white-space:nowrap`)} onmouseenter="this.style.color='${c.primary}'" onmouseleave="this.style.color='${c.textMuted}'">${l.label}</a>`).join('')}
   </div>
-  <a href="/" ${s(`${fontStyle(f, 'heading')};font-size:1.25rem;color:${c.text};text-decoration:none;letter-spacing:-0.02em;padding:0 0.75rem;white-space:nowrap`)}>${brand}</a>
+  ${p.logoUrl ? `<a href="/" ${s(`display:flex;align-items:center;gap:6px;text-decoration:none;padding:0 0.75rem`)}><img src="${p.logoUrl}" alt="${p.brand}" ${s(`height:28px;width:auto;object-fit:contain`)} /><span ${s(`${fontStyle(f, 'heading')};font-size:1rem;color:${c.text}`)}>${p.brand}</span></a>` : `<a href="/" ${s(`${fontStyle(f, 'heading')};font-size:1.25rem;color:${c.text};text-decoration:none;letter-spacing:-0.02em;padding:0 0.75rem;white-space:nowrap`)}>${p.brand}</a>`}
   <div ${s(`display:flex;align-items:center;gap:1.25rem`)}>
     ${right.map(l => `<a href="${l.href}" ${s(`${fontStyle(f, 'body')};font-size:0.85rem;color:${c.textMuted};text-decoration:none;transition:color 0.3s;white-space:nowrap`)} onmouseenter="this.style.color='${c.primary}'" onmouseleave="this.style.color='${c.textMuted}'">${l.label}</a>`).join('')}
     ${ctaText ? `<a href="${ctaLink || '#'}" class="shimmer-btn" ${s(`${fontStyle(f, 'body')};font-size:0.8rem;padding:0.45rem 1.2rem;background:${c.primary};color:#fff;border-radius:9999px;text-decoration:none`)}>${ctaText}</a>` : ''}

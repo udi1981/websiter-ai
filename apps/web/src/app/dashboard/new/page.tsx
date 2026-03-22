@@ -902,6 +902,8 @@ const NewSitePage = () => {
           scanJobId: state.scanJobId || undefined,
           scanMode: state.scanMode || undefined,
           sourceOwnership: state.sourceOwnership || undefined,
+          uploadedLogo: state.uploadedImage || undefined,
+          documentText: state.documentText || undefined,
         }),
         signal: pipelineController.signal,
       })
