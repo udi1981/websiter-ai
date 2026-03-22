@@ -1027,13 +1027,26 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
           { businessName: businessNameResolved, businessType: businessTypeResolved, locale, generatedImages },
         )
 
-        // V1.3.1: Inject missing catalog-critical sections when scan data exists
+        // ── MIGRATION FIDELITY: Deterministic content bridge ──
+        // Replaces scattered scan injection logic with single clean bridge
         if (scanCatalog || scanContentModel) {
+          const { bridgeScanContentToSections } = await import('@/lib/scan-content-bridge')
+          bridgeScanContentToSections(
+            mergedSections,
+            scanCatalog,
+            scanContentModel,
+            generatedImages,
+            locale,
+            businessNameResolved,
+          )
+          console.log(`[pipeline] Content bridge applied: ${mergedSections.length} sections`)
+        }
+
+        // Legacy placeholder — replaced by bridge above
+        if (false && scanCatalog) {
           const sectionTypes = new Set(mergedSections.map(s => s.type as string))
           const footerIdx = mergedSections.findIndex(s => s.type === 'footer')
           const insertIdx = footerIdx >= 0 ? footerIdx : mergedSections.length
-
-          // Inject pricing section with real products if missing
           const products = (scanCatalog?.products as Record<string, unknown>[]) || []
           const enrichedProducts = products.filter(p =>
             (p.price as Record<string, unknown>)?.value &&
@@ -1110,30 +1123,7 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
         const palette = (finalDesign.colorPalette || {}) as Record<string, string>
         const typo = (finalDesign.typography || {}) as Record<string, string>
 
-        // Post-merge: force scan catalog product names into pricing/features items
-        if (scanCatalog) {
-          const catalogProducts = (scanCatalog.products as Record<string, unknown>[]) || []
-          const realNames = catalogProducts
-            .map(p => (p.name as Record<string, unknown>)?.value as string)
-            .filter(Boolean)
-            .slice(0, 6)
-
-          if (realNames.length >= 2) {
-            for (const section of mergedSections) {
-              const type = section.type as string
-              if (type === 'pricing' || type === 'features' || type === 'comparison') {
-                const items = section.items as Record<string, unknown>[] | undefined
-                if (items && items.length > 0) {
-                  // Overlay real product names onto items (keep rest of item content)
-                  for (let i = 0; i < Math.min(items.length, realNames.length); i++) {
-                    if (items[i].name) items[i].name = realNames[i]
-                    if (items[i].title && type !== 'features') items[i].title = realNames[i]
-                  }
-                }
-              }
-            }
-          }
-        }
+        // Post-merge product name forcing moved to bridgeScanContentToSections()
 
         send({ phase: 'build', status: 'composing', plan: { sections: mergedSections.length } })
 
