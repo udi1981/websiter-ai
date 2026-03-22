@@ -686,6 +686,19 @@ Please revise and return improved JSON.`
           } catch {
             console.warn('[pipeline] Section validation failed, using empty sections')
           }
+          // Deduplicate design sections — AI may return multiple pages or duplicate types
+          const seenTypes = new Set<string>()
+          const uniqueSections: Array<Record<string, unknown>> = []
+          for (const s of designSections) {
+            const type = s.type as string
+            if (type && !seenTypes.has(type)) {
+              seenTypes.add(type)
+              uniqueSections.push(s)
+            }
+          }
+          // Cap at 12 sections max for a single homepage
+          designSections = uniqueSections.slice(0, 12)
+
           validateAndFixVariantIds(designSections)
           finalDesign.sections = designSections
 
