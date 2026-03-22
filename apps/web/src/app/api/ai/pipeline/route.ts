@@ -859,9 +859,20 @@ CRITICAL: All content MUST be specifically about "${siteContext.siteName}" (${de
 ${scanCatalog && (scanCatalog.products as unknown[])?.length > 0 ? `CRITICAL: This is a COPY MODE rebuild. You MUST use the REAL product names listed above. Do NOT invent product names.` : ''}
 ${scanContentModel?.faqs ? `CRITICAL: For the FAQ section, use the REAL FAQ questions listed above. Generate plausible answers based on the business context.` : ''}
 
+PREMIUM CONTENT QUALITY STANDARDS:
+- Headlines must be emotionally compelling and specific to THIS business — never generic marketing speak
+- Subheadlines must add real value, not just repeat the headline differently
+- Product/pricing items MUST include: name, real price if available, 4-6 specific features, compelling CTA
+- FAQ items must have thorough, helpful answers (not one-liners) — minimum 2 sentences per answer
+- Testimonial items must feel authentic with specific details, not generic praise
+- CTA text must be action-oriented and specific: "בחרו דגם" not "לחצו כאן", "Get Started Free" not "Click Here"
+- Every section headline should stand alone as compelling — if someone only reads headlines, they should understand the value proposition
+- Content tone must match the business personality: family-safe businesses should feel warm and reassuring, tech should feel innovative and precise
+- For pricing sections with real product data: include originalPrice for sale items, highlight the most popular option, list genuinely differentiating features per tier
+
 For each section generate:
 - headline + subheadline (compelling, specific to THIS business — ${siteContext.siteName})
-- items array with real content about this specific business
+- items array with rich, specific content about this specific business
 - CTA text${scanCatalog ? ' (prefer real CTA texts from scanned data)' : ''}
 - All text in ${locale === 'he' ? 'Hebrew' : 'English'}
 ${documentText ? `\n=== UPLOADED BUSINESS DOCUMENT ===\nUse this document as a PRIMARY source for real product names, services, pricing, and business details:\n${documentText.slice(0, 4000)}\n=== END DOCUMENT ===\nCRITICAL: Prefer real information from the uploaded document over generic placeholders.` : ''}

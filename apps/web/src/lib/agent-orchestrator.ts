@@ -318,15 +318,39 @@ HERO SELECTION BY INDUSTRY:
 - portfolio → hero-fullscreen-image
 - agency/creative → hero-animated-text
 
+PREMIUM OUTPUT QUALITY STANDARDS:
+- Hero must feel cinematic — large typography, generous whitespace, strong visual anchor
+- Product/pricing sections must feel like premium product showcases, not generic tier cards
+- Trust sections must feel authoritative, not template-like
+- FAQ must feel clean and scannable with smooth accordion interaction
+- CTA must feel confident and action-oriented, not desperate
+- Every section must breathe — generous padding (py-24 to py-32 equivalent), clear visual hierarchy
+- Section transitions must feel cohesive — consistent spacing rhythm throughout
+- Typography hierarchy must be intentional: display-size headings, readable body, clear contrast
+- Color usage must be restrained — 1 primary accent max, neutral backgrounds, let content breathe
+- Avoid visual clutter: fewer effects is better than many mediocre ones
+- The overall feel must be: premium, modern, intentional, custom to THIS business
+- Quality target: Apple.com product page level of visual polish
+
+INDUSTRY-ADAPTED DESIGN DIRECTION:
+- For consumer electronics / e-commerce: showcase products prominently, minimal backgrounds, strong product photography areas
+- For restaurants / food: warm tones, serif headings, appetizing imagery areas, menu-focused layout
+- For SaaS / tech: dark theme option, gradient accents, feature-focused bento grids, social proof stats
+- For professional services (law, accounting): light clean backgrounds, serif typography, trust-first hierarchy
+- For wellness / beauty: soft palette, rounded elements, calming whitespace, lifestyle imagery
+- For real estate: hero with property showcase, search-forward UX, trust badges
+
 RULES:
 1. Never use the same design for two different businesses
 2. Typography must create emotion — not just Inter/Heebo
 3. Color palette must feel intentional — derive from industry psychology
-4. Every section needs at least one visual effect
-5. Quality target: $50K agency site
+4. Use effects sparingly — only where they genuinely enhance the experience
+5. Quality target: $50K agency site, Apple-level visual polish
 6. Consider the business personality when choosing fonts
-7. Dark themes for tech/creative, light for medical/legal/food
+7. Dark themes for tech/creative, light for medical/legal/food/family
 8. ${locale === 'Hebrew (RTL)' ? 'Use Hebrew fonts, RTL layout, logical CSS properties only' : 'LTR layout with Inter/Plus Jakarta Sans as defaults'}
+9. Prefer whitespace and typography over heavy decoration
+10. Each section should feel like a premium standalone component
 
 OUTPUT: JSON with colorPalette, typography, heroVariant, sectionVariants (ordered), effectsPerSection, backgroundEffect, darkMode (boolean).`,
 
