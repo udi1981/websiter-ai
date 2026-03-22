@@ -920,12 +920,20 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
         }
         const imageStepId = await tracker.startStep(jobId!, 'images', '@media'); lastStepName = 'images'
         try {
-          send({ phase: 'images', status: 'generating' })
+          // Skip AI image generation for scan-based sites (they have real product images)
+          // This avoids 1MB+ base64 bloat and keeps the page light
+          const skipAiImages = !!(scanCatalog || scanJobId)
+          if (skipAiImages) {
+            console.log('[pipeline] Skipping AI image generation — scan-based site has real images')
+            send({ phase: 'images', status: 'skipped', reason: 'scan-based site uses real product images' })
+          } else {
+            send({ phase: 'images', status: 'generating' })
+          }
           const imageSections = designSections
             .filter(s => ['hero', 'about', 'gallery', 'portfolio', 'team', 'blog', 'features'].includes(s.type as string))
             .map(s => ({ type: s.type as string, title: (s.headline || s.title || '') as string, imagePrompt: (s.imagePrompt || '') as string }))
 
-          if (imageSections.length > 0) {
+          if (imageSections.length > 0 && !skipAiImages) {
             const origin = req.nextUrl.origin
             const imageRes = await fetch(`${origin}/api/ai/generate-images`, {
               method: 'POST',
@@ -1101,6 +1109,31 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
 
         const palette = (finalDesign.colorPalette || {}) as Record<string, string>
         const typo = (finalDesign.typography || {}) as Record<string, string>
+
+        // Post-merge: force scan catalog product names into pricing/features items
+        if (scanCatalog) {
+          const catalogProducts = (scanCatalog.products as Record<string, unknown>[]) || []
+          const realNames = catalogProducts
+            .map(p => (p.name as Record<string, unknown>)?.value as string)
+            .filter(Boolean)
+            .slice(0, 6)
+
+          if (realNames.length >= 2) {
+            for (const section of mergedSections) {
+              const type = section.type as string
+              if (type === 'pricing' || type === 'features' || type === 'comparison') {
+                const items = section.items as Record<string, unknown>[] | undefined
+                if (items && items.length > 0) {
+                  // Overlay real product names onto items (keep rest of item content)
+                  for (let i = 0; i < Math.min(items.length, realNames.length); i++) {
+                    if (items[i].name) items[i].name = realNames[i]
+                    if (items[i].title && type !== 'features') items[i].title = realNames[i]
+                  }
+                }
+              }
+            }
+          }
+        }
 
         send({ phase: 'build', status: 'composing', plan: { sections: mergedSections.length } })
 

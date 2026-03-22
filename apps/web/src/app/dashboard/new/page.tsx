@@ -1055,9 +1055,29 @@ const NewSitePage = () => {
       })
     }
 
-    // ─── FALLBACK: Old inline flow (if pipeline produced no HTML) ──────
+    // ─── RECOVERY: If SSE stream ended before HTML arrived, fetch from DB ──────
+    if ((!html || html.length < 500) && realSiteId) {
+      console.log('[Build] SSE stream ended before HTML — fetching from DB for site:', realSiteId)
+      dispatch({ type: 'BUILD_PROGRESS', status: '⏳ Retrieving generated site...', progress: 95 })
+      try {
+        // Wait a few seconds for server-side build to finish
+        await new Promise(r => setTimeout(r, 5000))
+        const siteRes = await fetch(`/api/sites/${realSiteId}`, { headers: getAuthHeaders() })
+        if (siteRes.ok) {
+          const siteData = await siteRes.json()
+          if (siteData.ok && siteData.data?.html && siteData.data.html.length > 1000) {
+            html = siteData.data.html
+            console.log(`[Build] Recovered HTML from DB: ${html.length} chars`)
+          }
+        }
+      } catch (fetchErr) {
+        console.warn('[Build] DB fetch failed:', fetchErr)
+      }
+    }
+
+    // ─── FALLBACK: Old inline flow (only if pipeline AND DB recovery both failed) ──────
     if (!html || html.length < 500) {
-      console.log('[Build] Pipeline produced no HTML, using old planning flow')
+      console.log('[Build] No HTML from pipeline or DB, using old planning flow')
       dispatch({ type: 'BUILD_PROGRESS', status: 'Using backup generation...', progress: 20 })
 
       plan = await callPlanning()
