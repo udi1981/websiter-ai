@@ -331,7 +331,7 @@ const mergeSections = (
       subtitle: cs.subtitle || cs.subheadline || ds.subtitle || ds.description,
       description: cs.description || ds.description,
       cta: cs.cta || ds.cta,
-      ctaText: cs.ctaText || cs.cta || ds.ctaText || ds.cta,
+      ctaText: cs.ctaText || (typeof cs.cta === 'object' && cs.cta ? (cs.cta as Record<string,unknown>).text : cs.cta) || ds.ctaText || (typeof ds.cta === 'object' && ds.cta ? (ds.cta as Record<string,unknown>).text : ds.cta) || '',
       ctaSecondary: cs.ctaSecondary || ds.ctaSecondary,
       items: mergedItems,
       variantId: ds.variantId,
