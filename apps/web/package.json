@@ -9,12 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@better-auth/kysely-adapter": "^1.5.5",
     "@ubuilder/db": "workspace:*",
     "@ubuilder/types": "workspace:*",
     "@ubuilder/ui": "workspace:*",
     "@ubuilder/utils": "workspace:*",
     "better-auth": "^1.5.5",
+    "kysely": "^0.28.12",
     "next": "^15.2.3",
+    "pg": "^8.20.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

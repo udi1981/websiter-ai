@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/auth-middleware'
 import type { Campaign, CampaignStatus, CampaignType, CampaignStats } from '@ubuilder/types'
 
 // TODO: Replace with Drizzle ORM query when DB connected
@@ -54,6 +55,9 @@ const calculateAudienceSize = (
  */
 export const GET = async (request: Request) => {
   try {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof Response) return authResult
+
     const { searchParams } = new URL(request.url)
     const siteId = searchParams.get('siteId')
 
@@ -108,6 +112,9 @@ export const GET = async (request: Request) => {
  */
 export const POST = async (request: Request) => {
   try {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof Response) return authResult
+
     const body = await request.json()
     const { siteId, name, subject, type } = body
 
@@ -178,6 +185,9 @@ export const POST = async (request: Request) => {
  */
 export const PUT = async (request: Request) => {
   try {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof Response) return authResult
+
     const body = await request.json()
     const { siteId, campaignId } = body
 
@@ -242,6 +252,9 @@ export const PUT = async (request: Request) => {
  */
 export const PATCH = async (request: Request) => {
   try {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof Response) return authResult
+
     const body = await request.json()
     const { siteId, campaignId, status } = body
 
@@ -321,6 +334,9 @@ export const PATCH = async (request: Request) => {
  */
 export const DELETE = async (request: Request) => {
   try {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof Response) return authResult
+
     const body = await request.json()
     const { siteId, campaignId } = body
 

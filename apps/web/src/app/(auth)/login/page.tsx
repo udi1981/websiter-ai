@@ -93,52 +93,16 @@ const LoginPage = () => {
       router.replace('/dashboard')
     } catch (err) {
       console.error('[Login] Auth error:', err)
-      // Fallback to demo mode if Better Auth fails
-      const user = {
-        id: `user_${Date.now()}`,
-        email: email.trim(),
-        name: isSignUp ? name.trim() : email.split('@')[0],
-        avatar: null,
-        plan: 'free' as const,
-        createdAt: new Date().toISOString(),
-      }
-      try {
-        localStorage.setItem('ubuilder_user', JSON.stringify(user))
-        localStorage.setItem('ubuilder_token', `token_${user.id}`)
-      } catch {
-        setError('Could not save login state. Please check your browser settings.')
-        setLoading(false)
-        return
-      }
-      router.replace('/dashboard')
+      setError('Authentication service unavailable. Please try again later.')
+      setLoading(false)
     }
   }
 
-  const handleGoogleLogin = async () => {
-    try {
-      await signIn.social({
-        provider: 'google',
-        callbackURL: '/dashboard',
-      })
-    } catch {
-      // Fallback to demo mode
-      const user = {
-        id: `user_google_${Date.now()}`,
-        email: 'user@gmail.com',
-        name: 'User',
-        avatar: null,
-        plan: 'free' as const,
-        createdAt: new Date().toISOString(),
-      }
-      try {
-        localStorage.setItem('ubuilder_user', JSON.stringify(user))
-        localStorage.setItem('ubuilder_token', `token_${user.id}`)
-      } catch {
-        setError('Could not save login state.')
-        return
-      }
-      router.replace('/dashboard')
-    }
+  const handleGoogleLogin = () => {
+    setError('')
+    // Navigate to our GET endpoint which handles the OAuth flow server-side
+    // This ensures cookies are set by browser navigation, not fetch
+    window.location.href = '/api/auth/google'
   }
 
   if (isPending) {

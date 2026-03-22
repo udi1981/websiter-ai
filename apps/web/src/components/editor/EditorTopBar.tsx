@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react'
 
 type PreviewMode = 'desktop' | 'tablet' | 'mobile'
 
+type SaveStatus = 'saved' | 'saving' | 'error'
+
 type EditorTopBarProps = {
   siteName: string
   previewMode: PreviewMode
@@ -21,6 +23,8 @@ type EditorTopBarProps = {
   chatOpen: boolean
   onToggleSidebar: () => void
   sidebarExpanded: boolean
+  saveStatus?: SaveStatus
+  onRetrySave?: () => void
 }
 
 export const EditorTopBar = ({
@@ -39,6 +43,8 @@ export const EditorTopBar = ({
   chatOpen,
   onToggleSidebar,
   sidebarExpanded,
+  saveStatus = 'saved',
+  onRetrySave,
 }: EditorTopBarProps) => {
   const [editingName, setEditingName] = useState(false)
   const [name, setName] = useState(siteName)
@@ -77,6 +83,7 @@ export const EditorTopBar = ({
               : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
           }`}
           title={sidebarExpanded ? 'Hide sidebar' : 'Show sidebar'}
+          aria-label={sidebarExpanded ? 'Hide sidebar' : 'Show sidebar'}
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
@@ -115,6 +122,39 @@ export const EditorTopBar = ({
         <span className="rounded-md bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-white/30 font-mono tabular-nums">
           v{version}
         </span>
+
+        {/* Save Status Indicator */}
+        <div className="flex items-center gap-1 ms-1">
+          {saveStatus === 'saved' && (
+            <span className="flex items-center gap-1 text-[10px] text-emerald-400/60">
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Saved
+            </span>
+          )}
+          {saveStatus === 'saving' && (
+            <span className="flex items-center gap-1 text-[10px] text-amber-400/60">
+              <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Saving...
+            </span>
+          )}
+          {saveStatus === 'error' && (
+            <button
+              onClick={onRetrySave}
+              className="flex items-center gap-1 text-[10px] text-red-400/80 hover:text-red-400 transition-colors"
+              title="Save failed — click to retry"
+            >
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+              Save failed — retry
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Center: Undo/Redo + Preview Mode */}
@@ -125,6 +165,7 @@ export const EditorTopBar = ({
             disabled={!canUndo}
             className="rounded-md p-1.5 text-white/50 hover:text-white hover:bg-white/[0.08] transition-all disabled:opacity-20 disabled:cursor-not-allowed"
             title="Undo (Ctrl+Z)"
+            aria-label="Undo"
           >
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
@@ -135,6 +176,7 @@ export const EditorTopBar = ({
             disabled={!canRedo}
             className="rounded-md p-1.5 text-white/50 hover:text-white hover:bg-white/[0.08] transition-all disabled:opacity-20 disabled:cursor-not-allowed"
             title="Redo (Ctrl+Shift+Z)"
+            aria-label="Redo"
           >
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" />
@@ -160,6 +202,7 @@ export const EditorTopBar = ({
                   : 'text-white/40 hover:text-white/70'
               }`}
               title={label}
+              aria-label={`${label} preview`}
             >
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
@@ -178,6 +221,7 @@ export const EditorTopBar = ({
               ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
               : 'text-white/60 hover:text-white/80 border border-white/[0.08] hover:border-white/[0.15] hover:bg-white/[0.04]'
           }`}
+          aria-label={chatOpen ? 'Close AI chat' : 'Open AI chat'}
         >
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
@@ -190,12 +234,14 @@ export const EditorTopBar = ({
         <button
           onClick={onPreview}
           className="rounded-lg px-3 py-1.5 text-xs font-medium text-white/60 border border-white/[0.08] hover:text-white/80 hover:border-white/[0.15] hover:bg-white/[0.04] transition-all"
+          aria-label="Preview site"
         >
           Preview
         </button>
         <button
           onClick={onPublish}
           className="rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 hover:from-violet-500 hover:to-indigo-500 transition-all"
+          aria-label="Publish site"
         >
           Publish
         </button>

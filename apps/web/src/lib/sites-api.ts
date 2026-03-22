@@ -20,7 +20,33 @@ type SiteData = {
   updatedAt?: string
 }
 
+type SaveStatus = 'saved' | 'saving' | 'error'
+
 const STORAGE_KEY = 'ubuilder_sites'
+
+/** Module-level debounce timer for updateSiteHtml */
+let htmlSyncTimer: ReturnType<typeof setTimeout> | null = null
+
+/** Module-level sync pending flag */
+let _syncPending = false
+
+/** Check if there is a pending sync operation */
+export const isSyncPending = (): boolean => _syncPending
+
+/** Listeners for save status changes */
+const saveStatusListeners: Set<(status: SaveStatus) => void> = new Set()
+
+/** Subscribe to save status changes. Returns unsubscribe function. */
+export const onSaveStatusChange = (listener: (status: SaveStatus) => void): (() => void) => {
+  saveStatusListeners.add(listener)
+  return () => saveStatusListeners.delete(listener)
+}
+
+const notifySaveStatus = (status: SaveStatus) => {
+  for (const listener of saveStatusListeners) {
+    listener(status)
+  }
+}
 
 /** Get current user ID from localStorage (until real auth is wired) */
 const getUserId = (): string => {
@@ -50,8 +76,10 @@ const setLocalSites = (sites: SiteData[]) => {
   }
 }
 
-/** Sync a site to the database (fire-and-forget) */
-const syncToDb = async (siteId: string, data: Partial<SiteData>) => {
+/** Sync a site to the database — awaitable, tracks pending state */
+const syncToDb = async (siteId: string, data: Partial<SiteData>): Promise<boolean> => {
+  _syncPending = true
+  notifySaveStatus('saving')
   try {
     const userId = getUserId()
     const res = await fetch(`/api/sites/${siteId}`, {
@@ -68,7 +96,7 @@ const syncToDb = async (siteId: string, data: Partial<SiteData>) => {
       if (res.status === 404) {
         const localSite = getLocalSites().find(s => s.id === siteId)
         if (localSite) {
-          await fetch('/api/sites', {
+          const createRes = await fetch('/api/sites', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -80,15 +108,29 @@ const syncToDb = async (siteId: string, data: Partial<SiteData>) => {
               html: data.html || localStorage.getItem(`ubuilder_html_${siteId}`) || undefined,
             }),
           })
+          if (!createRes.ok) {
+            notifySaveStatus('error')
+            return false
+          }
         }
+      } else {
+        notifySaveStatus('error')
+        return false
       }
     }
+
+    _syncPending = false
+    notifySaveStatus('saved')
+    return true
   } catch (err) {
     console.warn('[sites-api] DB sync failed (non-critical):', err)
+    _syncPending = false
+    notifySaveStatus('error')
+    return false
   }
 }
 
-/** Create a new site — saves to localStorage + DB */
+/** Create a new site — saves to localStorage, awaits DB insert before returning */
 export const createSite = async (site: SiteData & { html?: string }): Promise<SiteData> => {
   // Save to localStorage immediately
   const sites = getLocalSites()
@@ -106,16 +148,20 @@ export const createSite = async (site: SiteData & { html?: string }): Promise<Si
     } catch { /* quota exceeded */ }
   }
 
-  // Sync to DB in background
+  // Await DB insert (not fire-and-forget)
   const userId = getUserId()
-  fetch('/api/sites', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-user-id': userId,
-    },
-    body: JSON.stringify(site),
-  }).catch(err => console.warn('[sites-api] DB create failed:', err))
+  try {
+    await fetch('/api/sites', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': userId,
+      },
+      body: JSON.stringify(site),
+    })
+  } catch (err) {
+    console.warn('[sites-api] DB create failed:', err)
+  }
 
   return site
 }
@@ -141,17 +187,20 @@ export const updateSite = async (siteId: string, data: Partial<SiteData>): Promi
   syncToDb(siteId, data)
 }
 
-/** Update only the HTML of a site */
+/** Update only the HTML of a site — debounced DB sync at 1.5s */
 export const updateSiteHtml = async (siteId: string, html: string): Promise<void> => {
   try {
     localStorage.setItem(`ubuilder_html_${siteId}`, html)
   } catch { /* quota exceeded */ }
 
   // Debounced DB sync — don't hammer the API on every keystroke
-  clearTimeout((updateSiteHtml as any)._timer)
-  ;(updateSiteHtml as any)._timer = setTimeout(() => {
+  if (htmlSyncTimer !== null) {
+    clearTimeout(htmlSyncTimer)
+  }
+  htmlSyncTimer = setTimeout(() => {
+    htmlSyncTimer = null
     syncToDb(siteId, { html })
-  }, 3000) // Sync every 3 seconds max
+  }, 1500) // Sync every 1.5 seconds max
 }
 
 /** Get a site by ID — localStorage first, then DB fallback */
@@ -206,12 +255,11 @@ export const getSiteHtml = async (siteId: string): Promise<string | null> => {
   return null
 }
 
-/** List all sites — localStorage first, then DB fallback */
+/** List all sites — merge localStorage + DB results (don't overwrite) */
 export const listSites = async (): Promise<SiteData[]> => {
   const local = getLocalSites()
-  if (local.length > 0) return local
 
-  // Fallback to DB
+  // Always try to fetch from DB and merge
   try {
     const userId = getUserId()
     const res = await fetch('/api/sites', {
@@ -220,19 +268,25 @@ export const listSites = async (): Promise<SiteData[]> => {
     if (res.ok) {
       const { data } = await res.json()
       if (data?.length > 0) {
-        setLocalSites(data)
-        return data
+        // Merge: local sites take priority (newer edits), DB fills gaps
+        const localIds = new Set(local.map(s => s.id))
+        const dbOnly = (data as SiteData[]).filter(s => !localIds.has(s.id))
+        if (dbOnly.length > 0) {
+          const merged = [...local, ...dbOnly]
+          setLocalSites(merged)
+          return merged
+        }
       }
     }
   } catch {
-    // DB unavailable
+    // DB unavailable — return local only
   }
 
   return local
 }
 
-/** Delete (archive) a site */
-export const deleteSite = async (siteId: string): Promise<void> => {
+/** Delete (archive) a site — calls API then cleans localStorage */
+export const deleteSite = async (siteId: string): Promise<boolean> => {
   // Remove from localStorage
   const sites = getLocalSites().filter(s => s.id !== siteId)
   setLocalSites(sites)
@@ -245,8 +299,17 @@ export const deleteSite = async (siteId: string): Promise<void> => {
     localStorage.removeItem(`ubuilder_plan_${siteId}`)
   } catch { /* ignore */ }
 
-  // Archive in DB
-  fetch(`/api/sites/${siteId}`, { method: 'DELETE' }).catch(() => {})
+  // Archive in DB — await result
+  try {
+    const userId = getUserId()
+    const res = await fetch(`/api/sites/${siteId}`, {
+      method: 'DELETE',
+      headers: { 'x-user-id': userId },
+    })
+    return res.ok
+  } catch {
+    return false
+  }
 }
 
 /** Sync all localStorage sites to DB (call once on login/app init) */

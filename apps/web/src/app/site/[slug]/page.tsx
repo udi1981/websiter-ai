@@ -39,7 +39,8 @@ const PublicSitePage = async ({ params }: Props) => {
       srcDoc={site.html}
       className="h-screen w-screen border-0"
       title={site.name}
-      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+      sandbox="allow-scripts allow-forms allow-popups"
+      referrerPolicy="no-referrer"
     />
   )
 }

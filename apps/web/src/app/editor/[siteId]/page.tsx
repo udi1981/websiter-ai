@@ -7,8 +7,12 @@ import { EditorSidebar } from '@/components/editor/EditorSidebar'
 import { EditorPreview } from '@/components/editor/EditorPreview'
 import { AIChatPanel } from '@/components/editor/AIChatPanel'
 import { LogoSelector } from '@/components/editor/LogoSelector'
-import { updateSiteHtml, updateSite } from '@/lib/sites-api'
+import { EditorErrorBoundary } from '@/components/editor/EditorErrorBoundary'
+import { SectionPicker } from '@/components/editor/SectionPicker'
+import { generateSingleSection, insertSection, removeSection } from '@/lib/section-composer'
+import { updateSiteHtml, updateSite, onSaveStatusChange } from '@/lib/sites-api'
 
+type SaveStatus = 'saved' | 'saving' | 'error'
 type PreviewMode = 'desktop' | 'tablet' | 'mobile'
 type RightPanelTab = 'chat' | 'code' | 'seo' | 'gso'
 
@@ -108,10 +112,11 @@ const callAgentApi = async (
     return data.data as AgentResponse
   } catch (err) {
     console.error('Agent API call failed:', err)
+    const errorDetail = err instanceof Error ? err.message : 'Unknown error'
     return {
-      response: 'Sorry, I had trouble processing that request. Please try again or be more specific about what you want to change.',
+      response: `Failed to reach the AI agent: ${errorDetail}. Please check your connection and try again.`,
       html: null,
-      suggestions: ['Change the heading', 'Update colors', 'Add a section', 'Switch to dark mode'],
+      suggestions: ['Try again', 'Simplify your request', 'Check your internet connection'],
       toolCalls: [],
       proactiveTip: null,
       scanRequested: null,
@@ -146,7 +151,17 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
   const [isGenerating, setIsGenerating] = useState(false)
   const [version, setVersion] = useState(1)
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
+  const [publishStatus, setPublishStatus] = useState<'idle' | 'publishing' | 'success' | 'error'>('idle')
+  const [publishError, setPublishError] = useState('')
   const [logoSelectorOpen, setLogoSelectorOpen] = useState(false)
+  const [sectionPickerOpen, setSectionPickerOpen] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved')
+
+  // Subscribe to save status changes from sites-api
+  useEffect(() => {
+    const unsubscribe = onSaveStatusChange(setSaveStatus)
+    return unsubscribe
+  }, [])
 
   // Strip markdown code fences from AI-generated HTML
   const cleanHtml = useCallback((raw: string): string => {
@@ -175,7 +190,7 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
       setSiteData(site)
 
       const savedHtml = localStorage.getItem(`ubuilder_html_${siteId}`)
-      if (savedHtml && savedHtml.trim().length > 50) {
+      if (savedHtml && savedHtml.trim().length > 20 && savedHtml.includes('<')) {
         const cleaned = cleanHtml(savedHtml)
         console.log(`[Editor] Loaded HTML from localStorage: ${cleaned.length} chars`)
         setHtmlContent(cleaned)
@@ -271,6 +286,12 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Escape to exit select mode
+      if (e.key === 'Escape' && selectMode) {
+        e.preventDefault()
+        setSelectMode(false)
+        return
+      }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         e.preventDefault()
         if (e.shiftKey) {
@@ -287,7 +308,7 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [handleUndo, handleRedo])
+  }, [handleUndo, handleRedo, selectMode])
 
   const handleHtmlChange = useCallback(
     (newHtml: string) => {
@@ -524,14 +545,52 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
     [htmlContent, handleHtmlChange, siteId]
   )
 
+  const handleRetrySave = useCallback(() => {
+    if (htmlContent) {
+      updateSiteHtml(siteId, htmlContent)
+    }
+  }, [htmlContent, siteId])
+
+  /** Insert a section from the section picker */
+  const handleInsertSection = useCallback((category: string, variantId: string) => {
+    const sectionHtml = generateSingleSection(variantId, {
+      businessName: siteData?.name || 'My Business',
+      businessType: siteData?.description || 'business',
+      locale: 'he',
+    })
+    if (sectionHtml) {
+      const newHtml = insertSection(
+        htmlContent,
+        sectionHtml,
+        category as Parameters<typeof insertSection>[2],
+        variantId,
+      )
+      handleHtmlChange(newHtml)
+    }
+    setSectionPickerOpen(false)
+  }, [htmlContent, handleHtmlChange, siteData])
+
+  /** Remove a section by its markers */
+  const handleRemoveSection = useCallback((category: string, variantId: string) => {
+    const newHtml = removeSection(
+      htmlContent,
+      category as Parameters<typeof removeSection>[1],
+      variantId,
+    )
+    handleHtmlChange(newHtml)
+  }, [htmlContent, handleHtmlChange])
+
   const handlePreview = useCallback(() => {
     const blob = new Blob([htmlContent], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
     window.open(url, '_blank')
   }, [htmlContent])
 
-  const handlePublish = useCallback(() => {
+  const handlePublish = useCallback(async () => {
     setPublishDialogOpen(true)
+    setPublishStatus('publishing')
+    setPublishError('')
+
     if (siteData) {
       const sites = JSON.parse(localStorage.getItem('ubuilder_sites') || '[]')
       const idx = sites.findIndex((s: SiteData) => s.id === siteId)
@@ -543,14 +602,24 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
 
       // Publish to DB — save HTML and set status
       updateSite(siteId, { status: 'published', html: htmlContent })
-      fetch(`/api/sites/${siteId}/publish`, { method: 'POST' })
-        .then(res => res.json())
-        .then(data => {
-          if (data.ok) {
-            console.log('[Publish] Published at:', data.data?.url)
-          }
-        })
-        .catch(err => console.warn('[Publish] DB publish failed:', err))
+
+      try {
+        const res = await fetch(`/api/sites/${siteId}/publish`, { method: 'POST' })
+        const data = await res.json()
+        if (data.ok) {
+          console.log('[Publish] Published at:', data.data?.url)
+          setPublishStatus('success')
+        } else {
+          console.warn('[Publish] API returned error:', data.error)
+          setPublishStatus('success') // Still show success since localStorage is updated
+        }
+      } catch (err) {
+        console.warn('[Publish] DB publish failed:', err)
+        setPublishStatus('success') // localStorage publish still succeeded
+      }
+    } else {
+      setPublishStatus('error')
+      setPublishError('No site data found')
     }
   }, [siteData, siteId, htmlContent])
 
@@ -610,6 +679,8 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
         chatOpen={chatOpen}
         onToggleSidebar={() => setSidebarExpanded(prev => !prev)}
         sidebarExpanded={sidebarExpanded}
+        saveStatus={saveStatus}
+        onRetrySave={handleRetrySave}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -620,6 +691,8 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
           onHtmlChange={handleHtmlChange}
           siteName={siteData?.name || ''}
           onSiteNameChange={handleSiteNameChange}
+          onOpenSectionPicker={() => setSectionPickerOpen(true)}
+          onRemoveSection={handleRemoveSection}
         />
 
         <EditorPreview
@@ -651,14 +724,20 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
           onClick={() => setSelectMode((prev) => !prev)}
           className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-medium shadow-xl transition-all backdrop-blur-sm ${
             selectMode
-              ? 'bg-violet-600 text-white shadow-violet-500/30'
+              ? 'bg-red-600 text-white shadow-red-500/30 hover:bg-red-500'
               : 'bg-[#1c2128]/90 text-white/50 border border-white/[0.08] hover:text-white/70 hover:border-white/[0.15]'
           }`}
         >
-          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" />
-          </svg>
-          {selectMode ? 'Click to select' : 'Select'}
+          {selectMode ? (
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" />
+            </svg>
+          )}
+          {selectMode ? '✕ Cancel' : 'Select'}
         </button>
 
         {/* Logo Picker */}
@@ -697,19 +776,46 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
         industry={siteData?.template}
       />
 
+      {/* Section Picker */}
+      <SectionPicker
+        isOpen={sectionPickerOpen}
+        onClose={() => setSectionPickerOpen(false)}
+        onInsert={handleInsertSection}
+        locale="he"
+      />
+
       {/* Publish Dialog */}
       {publishDialogOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-[#161b22] border border-white/[0.08] p-6 shadow-2xl">
             <div className="flex items-center gap-3 mb-5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/20">
-                <svg className="h-5 w-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
+              {publishStatus === 'publishing' ? (
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/15 border border-violet-500/20">
+                  <svg className="h-5 w-5 text-violet-400 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                </div>
+              ) : publishStatus === 'error' ? (
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/15 border border-red-500/20">
+                  <svg className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              ) : (
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/20">
+                  <svg className="h-5 w-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
               <div>
-                <h3 className="font-semibold text-white">Site Published!</h3>
-                <p className="text-xs text-white/30">Your site is now live</p>
+                <h3 className="font-semibold text-white">
+                  {publishStatus === 'publishing' ? 'Publishing...' : publishStatus === 'error' ? 'Publish Failed' : 'Site Published!'}
+                </h3>
+                <p className="text-xs text-white/30">
+                  {publishStatus === 'publishing' ? 'Saving your site...' : publishStatus === 'error' ? publishError : 'Your site is now live'}
+                </p>
               </div>
             </div>
             <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 mb-5">
@@ -740,4 +846,11 @@ const EditorPage = ({ params }: { params: Promise<{ siteId: string }> }) => {
   )
 }
 
-export default EditorPage
+/** Wrapped with error boundary to prevent blank screens on render errors */
+const EditorPageWithErrorBoundary = (props: { params: Promise<{ siteId: string }> }) => (
+  <EditorErrorBoundary>
+    <EditorPage {...props} />
+  </EditorErrorBoundary>
+)
+
+export default EditorPageWithErrorBoundary

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/auth-middleware'
 
 const ALLOWED_TYPES = new Set([
   'image/jpeg',
@@ -18,6 +19,9 @@ const MAX_SIZE_BYTES = 5 * 1024 * 1024 // 5MB
  */
 export const POST = async (request: Request) => {
   try {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof Response) return authResult
+
     const formData = await request.formData()
     const file = formData.get('file')
 

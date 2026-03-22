@@ -129,6 +129,7 @@ type DiscoveryRequest = {
   }
   messages: { role: 'user' | 'assistant'; content: string }[]
   context: Record<string, unknown>
+  locale?: 'en' | 'he'
 }
 
 /** Count how many dimensions in the context have meaningful values */
@@ -239,6 +240,11 @@ export const POST = async (request: Request) => {
 
     // Add question count context to help AI know when to stop
     contextParts.push(`\nThis is question ${userMessageCount + 1} of maximum ${MAX_QUESTIONS}. ${userMessageCount >= 5 ? 'You should wrap up soon — set readyToGenerate=true if you have enough.' : ''}`)
+
+    // Locale awareness
+    if (body.locale === 'he') {
+      contextParts.push('\nIMPORTANT: The user wants a HEBREW website. Respond in Hebrew. All generated content should be in Hebrew.')
+    }
 
     let userContent: string
     if (body.messages.length === 0) {
@@ -381,9 +387,11 @@ export const POST = async (request: Request) => {
         ok: true,
         data: {
           question: shouldForceReady
-            ? 'I have enough information. Let\'s build your website! 🚀'
+            ? (body.locale === 'he' ? 'יש לי מספיק מידע. בואו נבנה את האתר! 🚀' : 'I have enough information. Let\'s build your website! 🚀')
             : text.replace(/[{}"\[\]]/g, '').trim().slice(0, 500),
-          suggestions: shouldForceReady ? [] : ['Tell me more', 'Skip to build'],
+          suggestions: shouldForceReady
+            ? []
+            : (body.locale === 'he' ? ['ספרו לי עוד', 'דלג לבנייה'] : ['Tell me more', 'Skip to build']),
           context: body.context,
           progress: { current: userMessageCount + 1, total: MAX_QUESTIONS },
           readyToGenerate: shouldForceReady,
@@ -392,9 +400,26 @@ export const POST = async (request: Request) => {
     }
   } catch (err) {
     console.error('Discovery API error:', err)
-    return NextResponse.json(
-      { ok: false, error: 'Internal server error' },
-      { status: 500 }
-    )
+    // Return a valid Hebrew question instead of error — keeps the flow going
+    // The client would otherwise show an English fallback
+    let locale = 'he'
+    try {
+      const bodyClone = await request.clone().json()
+      locale = bodyClone.locale || 'he'
+    } catch { /* use default */ }
+    return NextResponse.json({
+      ok: true,
+      data: {
+        question: locale === 'he'
+          ? 'ספר/י לי על העסק שלך — מה התחום ומי קהל היעד?'
+          : 'Tell me about your business — what industry and who is your target audience?',
+        suggestions: locale === 'he'
+          ? ['עסק שירותי', 'חנות אונליין', 'פורטפוליו', 'עסק מקומי']
+          : ['Service business', 'Online store', 'Portfolio', 'Local business'],
+        context: {},
+        progress: { current: 1, total: 6 },
+        readyToGenerate: false,
+      },
+    })
   }
 }

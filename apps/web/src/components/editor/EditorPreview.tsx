@@ -81,7 +81,10 @@ export const EditorPreview = ({
     const iframe = iframeRef.current
     if (!iframe) return
 
-    const content = htmlContent && htmlContent.trim().length > 50
+    const hasValidHtml = htmlContent && htmlContent.trim().length > 20 && (
+      htmlContent.includes('<') || htmlContent.includes('<!DOCTYPE')
+    )
+    const content = hasValidHtml
       ? htmlContent
       : `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:system-ui;color:#888;background:#fafafa;"><div style="text-align:center"><p style="font-size:18px;margin-bottom:8px;">No content yet</p><p style="font-size:14px;">Use the AI chat to generate or modify your site</p></div></body></html>`
 

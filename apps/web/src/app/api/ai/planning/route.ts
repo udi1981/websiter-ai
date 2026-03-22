@@ -63,6 +63,17 @@ You MUST respond with valid JSON only. No markdown, no code fences, no explanati
     "gridColumns": "2 | 3 | 4",
     "sectionSpacing": "80px | 100px | 120px"
   },
+## MULTI-PAGE STRUCTURE
+Generate 3-5 pages depending on business needs:
+- **Home** (/) — Always included. Main landing with hero, features, testimonials, CTA. 10-14 sections.
+- **About** (/about) — Company story, team, mission. 4-6 sections.
+- **Services** (/services) — Detailed service descriptions. 4-6 sections. (Skip for simple businesses)
+- **Contact** (/contact) — Contact form, map, details. 2-3 sections.
+- **Blog** (/blog) — Blog listing. 2-3 sections. (Optional)
+
+Each page has its own sections array with appropriate variantIds.
+The navbar on every page must include links to all other pages.
+
   "pages": [
     {
       "name": "Home",
@@ -70,26 +81,42 @@ You MUST respond with valid JSON only. No markdown, no code fences, no explanati
       "purpose": "Main landing page — convert visitors to customers",
       "sections": [
         {
-          "type": "hero",
-          "variant": "full-screen-image-overlay",
-          "headline": "Exact headline text",
-          "subheadline": "Exact subheadline text",
-          "cta": { "text": "Button text", "action": "scroll-to-contact | link | modal" },
-          "secondaryCta": { "text": "Secondary button", "action": "..." },
-          "image": { "description": "What the hero image should show", "mood": "warm | professional | energetic | calm" },
+          "type": "navbar",
+          "variantId": "navbar-minimal | navbar-transparent | navbar-floating | navbar-split | navbar-mega-menu | navbar-hamburger | navbar-sidebar | navbar-command",
           "notes": "Any specific instructions for this section"
         },
         {
-          "type": "features | services | about | testimonials | pricing | gallery | team | stats | faq | contact | cta-banner | blog-preview | menu | portfolio | process | partners | newsletter",
-          "variant": "grid-3col | cards | list | timeline | accordion | tabs | carousel",
+          "type": "hero",
+          "variantId": "hero-gradient-mesh | hero-split-image | hero-fullscreen-video | hero-particles | hero-typewriter | hero-parallax-layers | hero-magazine | hero-product-showcase | hero-minimal-text | hero-counter-stats | hero-carousel | hero-aurora | hero-noise-gradient | hero-interactive-cards | hero-3d-globe",
+          "headline": "Exact headline text",
+          "subheadline": "Exact subheadline text",
+          "cta": { "text": "Button text", "action": "scroll-to-contact | link | modal" },
+          "notes": "Any specific instructions"
+        },
+
+## HERO VARIANT SELECTION GUIDE
+Pick the hero variant based on the business industry:
+- restaurant/cafe/food → hero-split-image (show food/interior photo)
+- tech/saas/software → hero-gradient-mesh OR hero-aurora (abstract dynamic)
+- beauty/health/spa → hero-parallax-layers (elegant layered)
+- law/finance/consulting → hero-minimal-text (clean corporate)
+- ecommerce/retail → hero-product-showcase OR hero-carousel
+- portfolio/creative/agency → hero-magazine OR hero-interactive-cards
+- real-estate → hero-split-image (property showcase)
+- education → hero-typewriter (engaging text)
+- fitness/gym → hero-counter-stats (impressive numbers)
+NEVER use the same hero variant for every site. Match the hero to the business personality.
+
+        {
+          "type": "features | testimonials | pricing | cta | faq | footer | gallery | team | stats | contact | partners | how-it-works | blog | portfolio | comparison | newsletter | about",
+          "variantId": "Pick from: features-bento-grid | features-tabs | features-accordion | features-zigzag | features-icon-grid | features-carousel | features-comparison | features-timeline | features-video-cards | features-interactive | features-stats-integrated | features-hoverable-cards | testimonials-carousel | testimonials-masonry | testimonials-featured | testimonials-video | testimonials-wall | testimonials-minimal | testimonials-star-rating | testimonials-logo-bar | testimonials-before-after | testimonials-glassmorphism | pricing-animated-cards | pricing-toggle | pricing-comparison-table | pricing-slider | pricing-minimal | pricing-gradient | pricing-enterprise | pricing-israeli | cta-gradient-banner | cta-split-image | cta-floating-card | cta-newsletter | cta-countdown | cta-sticky-bottom | cta-video-background | cta-glassmorphism | faq-accordion | faq-searchable | faq-categorized | faq-two-column | faq-chat-style | footer-multi-column | footer-minimal | footer-mega | footer-centered | footer-gradient | footer-cta-integrated | gallery-masonry | gallery-lightbox | gallery-carousel | gallery-filterable | gallery-fullscreen | gallery-before-after | team-grid | team-carousel | team-flip-cards | team-hoverable | stats-counters | stats-progress-bars | stats-dashboard | stats-radial | contact-form-map | contact-split | contact-chat-widget | contact-minimal | partners-marquee | partners-grid | partners-tiered | how-it-works-steps | how-it-works-timeline | how-it-works-interactive | how-it-works-video | blog-card-grid | blog-featured-list | blog-magazine | blog-minimal | portfolio-case-study | portfolio-filterable | portfolio-masonry | comparison-feature-matrix | comparison-before-after | newsletter-inline | newsletter-popup | newsletter-bottom-bar | about-story-timeline | about-team-mission | about-split-image",
           "title": "Section title",
           "subtitle": "Section subtitle",
           "items": [
             {
               "title": "Item title",
               "description": "Item description",
-              "icon": "emoji or icon name",
-              "image": { "description": "what image shows", "mood": "..." }
+              "icon": "emoji or icon name"
             }
           ],
           "notes": "Specific instructions"
@@ -126,6 +153,34 @@ You MUST respond with valid JSON only. No markdown, no code fences, no explanati
   }
 }
 
+## SECTION CONTENT REQUIREMENTS
+Each section's "items" array MUST contain COMPLETE, business-specific content matching the section type:
+
+- **features/how-it-works**: items[] with { title, description, icon } — 4-6 items, each description 2-3 sentences, icons as emoji
+- **testimonials**: items[] with { title: "Person Name", description: "Full testimonial quote (2-3 sentences)", icon: "Company / Role" }
+- **pricing**: items[] with { title: "Plan Name", description: "$XX/mo — feature1, feature2, feature3, feature4", icon: "💼" or similar }
+- **faq**: items[] with { title: "The full question?", description: "The complete, helpful answer (2-4 sentences)" } — 5-8 items
+- **stats**: items[] with { title: "100+", description: "Label for this stat", icon: "📊" }
+- **team**: items[] with { title: "Person Name", description: "Role — short bio (1-2 sentences)", icon: "👤" }
+- **partners**: items[] with { title: "Partner Name", description: "What they do or partnership type" }
+- **gallery/portfolio**: items[] with { title: "Project Name", description: "Brief description", icon: "category tag" }
+- **blog**: items[] with { title: "Article Title", description: "Article excerpt (2-3 sentences)" }
+- **comparison**: items[] with { title: "Feature Name", description: "us: ✓ | competitor: ✗ — explanation" }
+- **contact**: items[] with { title: "Email / Phone / Address", description: "info@business.com", icon: "📧📞📍" }
+
+## CRITICAL: variantId FORMAT
+Use EXACTLY these variant IDs (with hyphens, not underscores). Examples:
+- nav-transparent, nav-floating, nav-minimal, nav-split
+- hero-gradient-mesh, hero-split-image, hero-aurora, hero-typewriter
+- features-bento-grid, features-tabs, features-zigzag, features-icon-grid
+- testimonials-carousel, testimonials-masonry, testimonials-glassmorphism
+- pricing-animated-cards, pricing-toggle, pricing-comparison-table
+- cta-gradient-banner, cta-glassmorphism, cta-floating-card
+- faq-accordion, faq-searchable, faq-categorized
+- footer-multi-column, footer-gradient, footer-cta-integrated
+- stats-counters, gallery-masonry, team-grid, contact-form-map
+- partners-marquee, how-it-works-steps, blog-card-grid, about-story-timeline
+
 ## RULES
 1. Every section must have REAL, specific, compelling content — never placeholder text
 2. Headlines must be benefit-oriented and conversion-focused, not generic
@@ -141,7 +196,9 @@ You MUST respond with valid JSON only. No markdown, no code fences, no explanati
 12. Typography: recommend specific Google Fonts that match the brand personality
 13. The hero section must specify exactly: headline, subheadline, CTAs, image mood, layout style
 14. Sections must vary in layout: no two sections should use the same visual pattern
-15. Include conversion strategy with specific trust elements relevant to the industry`
+15. Include conversion strategy with specific trust elements relevant to the industry
+16. ALWAYS include a variantId for EVERY section — this is CRITICAL for the section composer to work
+17. The hero cta object MUST have both text and action fields`
 
 type PlanningRequest = {
   discoveryContext: Record<string, unknown>
@@ -186,6 +243,7 @@ type PlanningRequest = {
   }
   description: string
   templateId?: string
+  locale?: 'en' | 'he'
 }
 
 export const POST = async (request: Request) => {
@@ -375,6 +433,17 @@ export const POST = async (request: Request) => {
       contextParts.push('--- END SCANNED DATA ---')
     }
 
+    // Locale awareness
+    if (body.locale === 'he') {
+      contextParts.push('\n--- LANGUAGE REQUIREMENT ---')
+      contextParts.push('This website MUST be in HEBREW (עברית).')
+      contextParts.push('All content (headlines, descriptions, CTAs, FAQ, testimonials) must be written in fluent Hebrew.')
+      contextParts.push('Typography must use Hebrew-supporting fonts: Heebo, Assistant, Rubik, Frank Ruhl Libre, or Noto Sans Hebrew.')
+      contextParts.push('Layout must be RTL — set dir="rtl" and use CSS logical properties.')
+      contextParts.push('Phone format: 05X-XXX-XXXX | Currency: ₪ (ILS)')
+      contextParts.push('--- END LANGUAGE REQUIREMENT ---')
+    }
+
     const userContent = `Create a comprehensive build plan for this website.\n\n${contextParts.join('\n')}\n\nRespond with the JSON build plan only.`
 
     let text = ''
@@ -393,7 +462,7 @@ export const POST = async (request: Request) => {
           },
           body: JSON.stringify({
             model: 'claude-sonnet-4-20250514',
-            max_tokens: 8192,
+            max_tokens: 16384,
             temperature: 0.3,
             system: PLANNING_SYSTEM_PROMPT,
             messages: [{ role: 'user', content: userContent }],
@@ -426,7 +495,7 @@ export const POST = async (request: Request) => {
             contents: [{ role: 'user', parts: [{ text: userContent }] }],
             generationConfig: {
               temperature: 0.3,
-              maxOutputTokens: 8192,
+              maxOutputTokens: 16384,
               responseMimeType: 'application/json',
             },
           }),
@@ -467,20 +536,29 @@ export const POST = async (request: Request) => {
         } catch {
           // Attempt repair: truncated JSON — close open structures
           let repaired = jsonMatch[0]
-          // Count open braces/brackets
+
+          // Remove trailing incomplete constructs (truncated mid-value)
+          // Strip incomplete string value at the end
+          repaired = repaired.replace(/,\s*"[^"]*"?\s*:\s*"[^"]*$/, '')
+          // Strip incomplete array item
+          repaired = repaired.replace(/,\s*\{[^}]*$/, '')
+          // Strip trailing comma
+          repaired = repaired.replace(/,\s*$/, '')
+          // Strip incomplete key-value (no closing quote on value)
+          repaired = repaired.replace(/:\s*"[^"]*$/, ': ""')
+          // Strip incomplete key (no colon yet)
+          repaired = repaired.replace(/,\s*"[^"]*$/, '')
+
+          // Count open braces/brackets and close them
           const openBraces = (repaired.match(/\{/g) || []).length
           const closeBraces = (repaired.match(/\}/g) || []).length
           const openBrackets = (repaired.match(/\[/g) || []).length
           const closeBrackets = (repaired.match(/\]/g) || []).length
-          // Remove trailing comma or incomplete value
-          repaired = repaired.replace(/,\s*$/, '')
-          repaired = repaired.replace(/:\s*"[^"]*$/, ': ""')
-          repaired = repaired.replace(/,\s*"[^"]*$/, '')
-          // Close open structures
           for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += ']'
           for (let i = 0; i < openBraces - closeBraces; i++) repaired += '}'
+
           plan = JSON.parse(repaired)
-          console.log('Planning: JSON repaired successfully')
+          console.log('Planning: JSON repaired successfully, keys:', Object.keys(plan).join(', '))
         }
       }
 

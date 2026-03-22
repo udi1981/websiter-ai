@@ -1,23 +1,17 @@
 import { NextResponse } from 'next/server'
-import type { Lead, LeadSource, LeadStatus } from '@ubuilder/types'
 
-// TODO: Replace with Drizzle ORM query when DB connected
-const leadsStore = new Map<string, Lead[]>()
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { Pool } = require('pg')
 
-/** Helper to get or initialize leads array for a site */
-const getLeads = (siteId: string): Lead[] => {
-  if (!leadsStore.has(siteId)) {
-    leadsStore.set(siteId, [])
-  }
-  return leadsStore.get(siteId)!
-}
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+  max: 3,
+})
 
 /**
- * GET /api/crm/leads
- * List all leads for a site with filtering, search, sorting, and pagination.
- *
- * Query params:
- *   siteId (required), status, search, sortBy, sortOrder, page, limit
+ * GET /api/crm/leads?siteId=xxx
+ * List leads for a site with optional filtering.
  */
 export const GET = async (request: Request) => {
   try {
@@ -25,239 +19,148 @@ export const GET = async (request: Request) => {
     const siteId = searchParams.get('siteId')
 
     if (!siteId) {
-      return NextResponse.json(
-        { ok: false, error: 'siteId is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ ok: false, error: 'siteId is required' }, { status: 400 })
     }
 
-    // TODO: Replace with Drizzle ORM query when DB connected
-    let leads = [...getLeads(siteId)]
-
-    // Filter by status
-    const status = searchParams.get('status') as LeadStatus | null
-    if (status) {
-      leads = leads.filter(l => l.status === status)
-    }
-
-    // Search by name, email, or phone
+    const status = searchParams.get('status')
     const search = searchParams.get('search')
-    if (search) {
-      const q = search.toLowerCase()
-      leads = leads.filter(
-        l =>
-          l.name?.toLowerCase().includes(q) ||
-          l.email?.toLowerCase().includes(q) ||
-          l.phone?.includes(q)
-      )
-    }
-
-    // Sort
-    const sortBy = searchParams.get('sortBy') || 'createdAt'
-    const sortOrder = searchParams.get('sortOrder') || 'desc'
-    leads.sort((a, b) => {
-      const aVal = a[sortBy as keyof Lead]
-      const bVal = b[sortBy as keyof Lead]
-      if (aVal instanceof Date && bVal instanceof Date) {
-        return sortOrder === 'desc'
-          ? bVal.getTime() - aVal.getTime()
-          : aVal.getTime() - bVal.getTime()
-      }
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortOrder === 'desc' ? bVal - aVal : aVal - bVal
-      }
-      return 0
-    })
-
-    // Pagination
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)))
-    const total = leads.length
-    const totalPages = Math.ceil(total / limit)
-    const paginated = leads.slice((page - 1) * limit, page * limit)
+    const offset = (page - 1) * limit
+
+    let query = 'SELECT * FROM leads WHERE site_id = $1'
+    const params: unknown[] = [siteId]
+    let paramIdx = 2
+
+    if (status) {
+      query += ` AND status_id = $${paramIdx}`
+      params.push(status)
+      paramIdx++
+    }
+
+    if (search) {
+      query += ` AND (name ILIKE $${paramIdx} OR email ILIKE $${paramIdx} OR phone ILIKE $${paramIdx})`
+      params.push(`%${search}%`)
+      paramIdx++
+    }
+
+    const countQuery = query.replace('SELECT *', 'SELECT COUNT(*)::int as count')
+    query += ` ORDER BY created_at DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`
+    params.push(limit, offset)
+
+    const [dataResult, countResult] = await Promise.all([
+      pool.query(query, params),
+      pool.query(countQuery, params.slice(0, paramIdx - 1)),
+    ])
+
+    const total = countResult.rows[0]?.count || 0
 
     return NextResponse.json({
       ok: true,
-      data: paginated,
-      pagination: { page, limit, total, totalPages },
+      data: dataResult.rows,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     })
   } catch (err) {
     console.error('CRM Leads GET error:', err)
-    return NextResponse.json(
-      { ok: false, error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
   }
 }
 
 /**
  * POST /api/crm/leads
- * Create a new lead for a site.
- *
- * Body: { siteId, name?, email?, phone?, source, notes?, metadata?, assignedTo? }
- * Returns the created lead.
+ * Create a new lead. Used by chatbot widget (public) and dashboard (authenticated).
  */
 export const POST = async (request: Request) => {
   try {
     const body = await request.json()
-    const { siteId, name, email, phone, source, notes, metadata, assignedTo } = body
+    const { siteId, name, email, phone, source, message } = body
 
     if (!siteId) {
-      return NextResponse.json(
-        { ok: false, error: 'siteId is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ ok: false, error: 'siteId is required' }, { status: 400 })
     }
 
     if (!name && !email && !phone) {
-      return NextResponse.json(
-        { ok: false, error: 'At least one of name, email, or phone is required' },
-        { status: 400 }
+      return NextResponse.json({ ok: false, error: 'At least one of name, email, or phone is required' }, { status: 400 })
+    }
+
+    const id = `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+
+    // Get default status_id — use 'new' or find first status
+    let statusId = 'new'
+    try {
+      const statusRes = await pool.query(
+        "SELECT id FROM lead_statuses WHERE tenant_id = (SELECT tenant_id FROM sites WHERE id = $1 LIMIT 1) LIMIT 1",
+        [siteId]
       )
-    }
+      if (statusRes.rows[0]) statusId = statusRes.rows[0].id
+    } catch { /* use default */ }
 
-    const validSources: LeadSource[] = ['website_form', 'chat', 'manual', 'import', 'api']
-    if (source && !validSources.includes(source)) {
-      return NextResponse.json(
-        { ok: false, error: `Invalid source. Must be one of: ${validSources.join(', ')}` },
-        { status: 400 }
-      )
-    }
+    // Get tenant_id — find first tenant (or create from site's user)
+    let tenantId = ''
+    try {
+      const tenantRes = await pool.query("SELECT id FROM tenants LIMIT 1")
+      if (tenantRes.rows[0]) {
+        tenantId = tenantRes.rows[0].id
+      } else {
+        // No tenant exists — create one
+        tenantId = `tenant_${Date.now()}`
+        await pool.query("INSERT INTO tenants (id, name, created_at, updated_at) VALUES ($1, 'Default', NOW(), NOW())", [tenantId])
+      }
+    } catch { /* fallback */ }
 
-    const now = new Date()
-    const lead: Lead = {
-      id: `lead_${crypto.randomUUID()}`,
-      siteId,
-      name: name || null,
-      email: email || null,
-      phone: phone || null,
-      source: source || 'manual',
-      status: 'new',
-      score: 0,
-      notes: notes || null,
-      metadata: metadata || null,
-      assignedTo: assignedTo || null,
-      createdAt: now,
-      updatedAt: now,
-    }
+    const result = await pool.query(
+      `INSERT INTO leads (id, tenant_id, site_id, name, email, phone, status_id, source, notes, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+       RETURNING *`,
+      [id, tenantId, siteId, name || null, email || null, phone || null, statusId, source || 'website', message ? JSON.stringify([{ text: message, date: new Date().toISOString() }]) : '[]']
+    )
 
-    // TODO: Replace with Drizzle ORM insert when DB connected
-    getLeads(siteId).push(lead)
-
-    return NextResponse.json({ ok: true, data: lead }, { status: 201 })
+    return NextResponse.json({ ok: true, data: result.rows[0] }, { status: 201 })
   } catch (err) {
     console.error('CRM Leads POST error:', err)
-    return NextResponse.json(
-      { ok: false, error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
   }
 }
 
 /**
- * PUT /api/crm/leads
- * Update an existing lead.
- *
- * Body: { siteId, leadId, status?, score?, notes?, assignedTo?, name?, email?, phone?, metadata? }
+ * PATCH /api/crm/leads
+ * Update a lead's status or fields.
  */
-export const PUT = async (request: Request) => {
+export const PATCH = async (request: Request) => {
   try {
     const body = await request.json()
-    const { siteId, leadId } = body
+    const { siteId, leadId, status, name, email, phone } = body
 
     if (!siteId || !leadId) {
-      return NextResponse.json(
-        { ok: false, error: 'siteId and leadId are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ ok: false, error: 'siteId and leadId are required' }, { status: 400 })
     }
 
-    // TODO: Replace with Drizzle ORM update when DB connected
-    const leads = getLeads(siteId)
-    const index = leads.findIndex(l => l.id === leadId)
+    const sets: string[] = ['updated_at = NOW()']
+    const params: unknown[] = []
+    let idx = 1
 
-    if (index === -1) {
-      return NextResponse.json(
-        { ok: false, error: 'Lead not found' },
-        { status: 404 }
-      )
-    }
+    if (status) { sets.push(`status_id = $${idx}`); params.push(status); idx++ }
+    if (name) { sets.push(`name = $${idx}`); params.push(name); idx++ }
+    if (email) { sets.push(`email = $${idx}`); params.push(email); idx++ }
+    if (phone) { sets.push(`phone = $${idx}`); params.push(phone); idx++ }
 
-    const validStatuses: LeadStatus[] = ['new', 'contacted', 'qualified', 'converted', 'lost']
-    if (body.status && !validStatuses.includes(body.status)) {
-      return NextResponse.json(
-        { ok: false, error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
-        { status: 400 }
-      )
-    }
+    params.push(leadId, siteId)
 
-    const updated: Lead = {
-      ...leads[index],
-      ...(body.name !== undefined && { name: body.name }),
-      ...(body.email !== undefined && { email: body.email }),
-      ...(body.phone !== undefined && { phone: body.phone }),
-      ...(body.status !== undefined && { status: body.status }),
-      ...(body.score !== undefined && { score: body.score }),
-      ...(body.notes !== undefined && { notes: body.notes }),
-      ...(body.assignedTo !== undefined && { assignedTo: body.assignedTo }),
-      ...(body.metadata !== undefined && { metadata: body.metadata }),
-      updatedAt: new Date(),
-    }
-
-    leads[index] = updated
-
-    return NextResponse.json({ ok: true, data: updated })
-  } catch (err) {
-    console.error('CRM Leads PUT error:', err)
-    return NextResponse.json(
-      { ok: false, error: 'Internal server error' },
-      { status: 500 }
+    const result = await pool.query(
+      `UPDATE leads SET ${sets.join(', ')} WHERE id = $${idx} AND site_id = $${idx + 1} RETURNING *`,
+      params
     )
+
+    if (!result.rows[0]) {
+      return NextResponse.json({ ok: false, error: 'Lead not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ ok: true, data: result.rows[0] })
+  } catch (err) {
+    console.error('CRM Leads PATCH error:', err)
+    return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
   }
 }
 
-/**
- * DELETE /api/crm/leads
- * Soft delete a lead by setting status to 'lost'.
- *
- * Body: { siteId, leadId }
- */
-export const DELETE = async (request: Request) => {
-  try {
-    const body = await request.json()
-    const { siteId, leadId } = body
-
-    if (!siteId || !leadId) {
-      return NextResponse.json(
-        { ok: false, error: 'siteId and leadId are required' },
-        { status: 400 }
-      )
-    }
-
-    // TODO: Replace with Drizzle ORM update when DB connected
-    const leads = getLeads(siteId)
-    const index = leads.findIndex(l => l.id === leadId)
-
-    if (index === -1) {
-      return NextResponse.json(
-        { ok: false, error: 'Lead not found' },
-        { status: 404 }
-      )
-    }
-
-    // Soft delete: set status to 'lost'
-    leads[index] = {
-      ...leads[index],
-      status: 'lost',
-      updatedAt: new Date(),
-    }
-
-    return NextResponse.json({ ok: true, data: leads[index] })
-  } catch (err) {
-    console.error('CRM Leads DELETE error:', err)
-    return NextResponse.json(
-      { ok: false, error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
+/** PUT delegates to PATCH for backward compatibility */
+export const PUT = async (request: Request) => PATCH(request)

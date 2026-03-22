@@ -215,6 +215,30 @@ Photography/Creative:
 - Team/testimonials: 400w, circular clip with border
 - ALL images: loading="lazy" (except hero), descriptive alt text
 
+## SECTION MARKERS (REQUIRED)
+Every section MUST be wrapped with HTML comment markers so the editor can identify, swap, and reorder sections.
+
+Format: \`<!-- section:CATEGORY:VARIANT-ID -->\` before the section, \`<!-- /section:CATEGORY:VARIANT-ID -->\` after.
+
+Available categories: navbar, hero, features, testimonials, pricing, cta, faq, footer, gallery, team, stats, contact, partners, how-it-works, blog, portfolio, comparison, newsletter, about
+
+Example:
+\`\`\`html
+<!-- section:navbar:navbar-minimal -->
+<nav>...</nav>
+<!-- /section:navbar:navbar-minimal -->
+
+<!-- section:hero:hero-gradient-mesh -->
+<section>...</section>
+<!-- /section:hero:hero-gradient-mesh -->
+
+<!-- section:features:features-bento-grid -->
+<section>...</section>
+<!-- /section:features:features-bento-grid -->
+\`\`\`
+
+Pick a descriptive variant ID that matches the style you're building (e.g., hero-split-image, features-zigzag, testimonials-carousel, faq-accordion, footer-mega).
+
 ## SECTION BLUEPRINTS (build 12-16 sections, each VISUALLY UNIQUE)
 
 ### 1. NAVIGATION (required)
@@ -391,6 +415,56 @@ Content structure per section:
 ✓ Every section has a UNIQUE visual layout — NO repetitive patterns`
 
 /**
+ * Hebrew generation addendum — appended to AI prompts when locale is 'he'.
+ * Ensures all generated content is in Hebrew with proper RTL support.
+ */
+export const HEBREW_GENERATION_ADDENDUM = `
+
+## HEBREW / RTL REQUIREMENTS (CRITICAL — this site is in Hebrew)
+
+### Language & Content
+- ALL text content MUST be written in Hebrew (עברית) — headlines, paragraphs, buttons, labels, FAQ, testimonials, everything
+- The HTML root element MUST have \`dir="rtl"\` and \`lang="he"\`
+- Use natural, fluent Hebrew — not Google Translate quality. Write like a native Hebrew copywriter.
+- Navigation reads right-to-left (logo on the right, menu items flow RTL)
+- Phone numbers in Israeli format: 05X-XXX-XXXX or 03-XXX-XXXX
+- Currency: ₪ (ILS) — e.g., ₪299, ₪1,499
+- Addresses in Hebrew format: רחוב, עיר, מיקוד
+
+### Typography
+- Font stack: 'Heebo', 'Assistant', system-ui, sans-serif (import Heebo from Google Fonts)
+- For serif headings, use 'Frank Ruhl Libre' or 'Noto Serif Hebrew'
+- Hebrew text generally looks better with slightly larger font sizes (+1-2px compared to English)
+- Line height for Hebrew body text: 1.7-1.9 (Hebrew needs more breathing room)
+
+### CSS & Layout (RTL)
+- Set \`text-align: right\` as default for body text
+- ALL CSS MUST use logical properties:
+  - \`margin-inline-start\` instead of \`margin-left\`
+  - \`margin-inline-end\` instead of \`margin-right\`
+  - \`padding-inline-start\` instead of \`padding-left\`
+  - \`padding-inline-end\` instead of \`padding-right\`
+  - \`inset-inline-start\` instead of \`left\`
+  - \`inset-inline-end\` instead of \`right\`
+  - \`border-inline-start\` instead of \`border-left\`
+  - \`float: inline-start\` instead of \`float: left\`
+- Flexbox: \`direction: rtl\` is inherited — flex items automatically reverse
+- Grid: no changes needed if using logical properties
+- Icons/arrows that indicate direction should be mirrored (← becomes →)
+- Hamburger menu opens from the right side on mobile
+
+### Google Fonts Import for Hebrew
+\`\`\`html
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700&display=swap" rel="stylesheet">
+\`\`\`
+
+### Schema.org for Hebrew Sites
+- Use \`"inLanguage": "he"\` in Schema.org structured data
+- Address fields in Hebrew
+- Include \`"areaServed": "IL"\` for local businesses
+`
+
+/**
  * Build user prompt from a structured build plan.
  * The plan contains specific content, colors, fonts, and section details.
  */
@@ -509,7 +583,8 @@ ${sectionList}
 10. Custom scrollbar, smooth scroll, all animations mentioned in system prompt
 11. Mix font styles for personality: serif headings + sans-serif body, or vice versa
 12. OUTPUT 1200+ LINES of premium, well-organized code
-13. CRITICAL: Keep CSS compact (~250 lines). Spend your token budget on rich HTML content and sections, NOT verbose CSS. The complete document from <!DOCTYPE html> to </html> is essential — NEVER stop mid-generation.`
+13. CRITICAL: Keep CSS compact (~250 lines). Spend your token budget on rich HTML content and sections, NOT verbose CSS. The complete document from <!DOCTYPE html> to </html> is essential — NEVER stop mid-generation.
+14. CRITICAL: Wrap EVERY section with marker comments: <!-- section:CATEGORY:VARIANT-ID --> ... <!-- /section:CATEGORY:VARIANT-ID -->`
 
   return prompt
 }

@@ -84,7 +84,7 @@ export const DiscoveryChat = ({
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isAiThinking])
+  }, [messages, isAiThinking, readyToGenerate])
 
   const handleSend = () => {
     if (!input.trim() || isAiThinking || isBuilding) return
@@ -347,13 +347,13 @@ export const DiscoveryChat = ({
           </div>
           <div className="flex items-center justify-between">
             <p className="text-[10px] text-text-muted hidden sm:block">Shift+Enter לשורה חדשה / for new line</p>
-            {/* Skip to Build button */}
-            {userMessageCount >= 2 && !isAiThinking && (
+            {/* Skip to Build button — always visible, prominent */}
+            {!isAiThinking && !isBuilding && (
               <button
                 onClick={onBuild}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-text-muted hover:text-primary hover:bg-primary/5 transition-colors ms-auto"
+                className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/20 hover:border-primary/40 transition-all ms-auto"
               >
-                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 010 1.954l-7.108 4.061A1.125 1.125 0 013 16.811V8.69zM12.75 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 010 1.954l-7.108 4.061a1.125 1.125 0 01-1.683-.977V8.69z" />
                 </svg>
                 דלג ובנה עכשיו / Skip & Build Now

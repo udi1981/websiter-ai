@@ -15,7 +15,11 @@
   },
   "devDependencies": {
     "next": "^15.2.3",
+    "tsx": "^4.21.0",
     "turbo": "^2.4.4",
     "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "pg": "^8.20.0"
   }
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/auth-middleware'
 import type { Customer } from '@ubuilder/types'
 
 // TODO: Replace with Drizzle ORM query when DB connected
@@ -21,6 +22,9 @@ const getCustomers = (siteId: string): Customer[] => {
  */
 export const GET = async (request: Request) => {
   try {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof Response) return authResult
+
     const { searchParams } = new URL(request.url)
     const siteId = searchParams.get('siteId')
 
@@ -108,6 +112,9 @@ export const GET = async (request: Request) => {
  */
 export const POST = async (request: Request) => {
   try {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof Response) return authResult
+
     const body = await request.json()
     const { siteId, name, email } = body
 

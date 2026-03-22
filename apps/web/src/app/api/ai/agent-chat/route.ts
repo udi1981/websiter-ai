@@ -5,6 +5,9 @@
  * This is the "Team 100 Agent" that lives inside each generated site's editor.
  */
 
+import { NextResponse } from 'next/server'
+import { classifyTask, getAgentSystemPrompt } from '@/lib/agent-orchestrator'
+
 export const maxDuration = 60
 
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages'
@@ -80,7 +83,17 @@ Include relevant tool calls to show the user what you did:
 - If user says "regenerate" or "ג'נרט מחדש" → suggest regenerating specific sections, not the whole site
 - If user says "improve" or "שפר" → analyze the site and suggest the top 3 improvements
 - If user says "SEO" or "optimize SEO" → do a full SEO audit and fix issues
-- If user says "GSO" or "optimize GSO" → do a full GSO audit and fix issues`
+- If user says "GSO" or "optimize GSO" → do a full GSO audit and fix issues
+
+## SECTION MARKERS
+The generated HTML uses section markers: \`<!-- section:CATEGORY:VARIANT-ID -->\` and \`<!-- /section:CATEGORY:VARIANT-ID -->\`.
+When the user asks to swap, replace, or change a section:
+1. Find the relevant section markers in the HTML
+2. Replace the content between markers with the new section HTML
+3. Update the variant ID in the markers if the style changed
+4. Preserve the marker structure so the editor can continue to identify sections
+
+Available section categories: navbar, hero, features, testimonials, pricing, cta, faq, footer, gallery, team, stats, contact, partners, how-it-works, blog, portfolio, comparison, newsletter, about`
 
 type AgentRequest = {
   message: string
@@ -91,6 +104,7 @@ type AgentRequest = {
     description: string
     businessType: string
   }
+  locale?: 'en' | 'he'
 }
 
 export async function POST(request: Request) {
@@ -98,28 +112,19 @@ export async function POST(request: Request) {
   const geminiKey = process.env.GEMINI_API_KEY
 
   if (!claudeKey && !geminiKey) {
-    return new Response(
-      JSON.stringify({ ok: false, error: 'No AI API key configured' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    )
+    return NextResponse.json({ ok: false, error: 'No AI API key configured' }, { status: 500 })
   }
 
   try {
     const body = (await request.json()) as AgentRequest
-    const { message, htmlContent, chatHistory, siteData } = body
+    const { message, htmlContent, chatHistory, siteData, locale } = body
 
     // Input validation
     if (!message || typeof message !== 'string' || !message.trim()) {
-      return new Response(
-        JSON.stringify({ ok: false, error: 'Message is required and must be a non-empty string' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
+      return NextResponse.json({ ok: false, error: 'Message is required and must be a non-empty string' }, { status: 400 })
     }
     if (htmlContent !== undefined && typeof htmlContent !== 'string') {
-      return new Response(
-        JSON.stringify({ ok: false, error: 'htmlContent must be a string' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
+      return NextResponse.json({ ok: false, error: 'htmlContent must be a string' }, { status: 400 })
     }
 
     // HTML size limit — if > 100KB, truncate to first and last 40KB with a note
@@ -137,9 +142,14 @@ export async function POST(request: Request) {
     const pageAnalysis = analyzeHtml(processedHtml)
 
     // Build the user message with full context
+    // Hebrew response instruction when locale is 'he'
+    const hebrewInstruction = locale === 'he'
+      ? `\n\n## LANGUAGE REQUIREMENT\nThe site locale is Hebrew (he). You MUST:\n- Respond in Hebrew (your conversational response, suggestions, proactiveTip)\n- Generate all HTML text content in Hebrew with dir="rtl" lang="he"\n- Use Hebrew Google Fonts (Heebo, Assistant, Rubik)\n- Use CSS logical properties (margin-inline-start, not margin-left)\n- Phone format: 05X-XXX-XXXX | Currency: ₪\n`
+      : ''
+
     const contextMessage = `## Current Site Context
 Site name: ${siteData?.name || 'Unknown'}
-Business type: ${siteData?.description || siteData?.businessType || 'Unknown'}
+Business type: ${siteData?.description || siteData?.businessType || 'Unknown'}${hebrewInstruction}
 
 ## Current Page Analysis
 - Total sections: ${pageAnalysis.sectionCount}
@@ -172,6 +182,22 @@ ${message}`
     // Add the current message with full context
     messages.push({ role: 'user', content: contextMessage })
 
+    // Enhance system prompt with specialized agent knowledge
+    const detectedRoles = classifyTask(message)
+    let agentEnhancement = ''
+    if (detectedRoles.length > 0 && detectedRoles[0] !== 'orchestrator') {
+      const siteContext = {
+        siteId: '',
+        siteName: siteData?.name || '',
+        businessType: siteData?.businessType || '',
+        locale: (locale || 'en') as 'en' | 'he',
+      }
+      const specialistPrompt = getAgentSystemPrompt(detectedRoles[0], siteContext)
+      agentEnhancement = `\n\n## SPECIALIST KNOWLEDGE (${detectedRoles[0]})\n${specialistPrompt.substring(0, 2000)}`
+    }
+
+    const enhancedSystemPrompt = AGENT_SYSTEM_PROMPT + agentEnhancement
+
     let responseText = ''
 
     // Try Claude first (primary)
@@ -188,7 +214,7 @@ ${message}`
             model: CLAUDE_MODEL,
             max_tokens: 64000,
             temperature: 0.5,
-            system: AGENT_SYSTEM_PROMPT,
+            system: enhancedSystemPrompt,
             messages,
           }),
         })
@@ -213,7 +239,7 @@ ${message}`
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            system_instruction: { parts: [{ text: AGENT_SYSTEM_PROMPT }] },
+            system_instruction: { parts: [{ text: enhancedSystemPrompt }] },
             contents: [
               // Include chat history for Gemini (map roles: assistant -> model)
               ...messages.map((m) => ({
@@ -243,10 +269,7 @@ ${message}`
     }
 
     if (!responseText) {
-      return new Response(
-        JSON.stringify({ ok: false, error: 'All AI providers failed' }),
-        { status: 502, headers: { 'Content-Type': 'application/json' } }
-      )
+      return NextResponse.json({ ok: false, error: 'All AI providers failed' }, { status: 502 })
     }
 
     // Parse the JSON response
@@ -279,84 +302,79 @@ ${message}`
         scanResults = await callScanApi(scanUrl, baseUrl)
       }
 
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          data: {
-            response: (parsed.response as string) || 'I made the changes you requested.',
-            html,
-            suggestions: (parsed.suggestions as string[]) || [],
-            toolCalls: (parsed.toolCalls as { name: string; status: string }[]) || [],
-            proactiveTip: (parsed.proactiveTip as string) || null,
-            scanRequested: scanUrl,
-            scanResults,
-          },
-        }),
-        { headers: { 'Content-Type': 'application/json' } }
-      )
+      return NextResponse.json({
+        ok: true,
+        data: {
+          response: (parsed.response as string) || 'I made the changes you requested.',
+          html,
+          suggestions: (parsed.suggestions as string[]) || [],
+          toolCalls: (parsed.toolCalls as { name: string; status: string }[]) || [],
+          proactiveTip: (parsed.proactiveTip as string) || null,
+          scanRequested: scanUrl,
+          scanResults,
+        },
+      })
     } catch (parseErr) {
       console.error('Agent Chat: JSON parse failed:', parseErr, 'Text start:', responseText.substring(0, 300))
 
-      // Return the raw text as a response without HTML changes
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          data: {
-            response: responseText.replace(/[{}"\[\]]/g, '').trim().substring(0, 500),
-            html: null,
-            suggestions: ['Try again', 'Be more specific'],
-            toolCalls: [],
-            proactiveTip: null,
-            scanRequested: null,
-          },
-        }),
-        { headers: { 'Content-Type': 'application/json' } }
-      )
+      // Return a clean error message — don't expose mangled AI text to the user
+      return NextResponse.json({
+        ok: true,
+        data: {
+          response: 'I had trouble formatting my response. Could you try rephrasing your request?',
+          html: null,
+          suggestions: ['Try again', 'Be more specific', 'Simplify your request'],
+          toolCalls: [],
+          proactiveTip: null,
+          scanRequested: null,
+        },
+      })
     }
   } catch (err) {
     console.error('Agent Chat API error:', err)
-    return new Response(
-      JSON.stringify({ ok: false, error: 'Internal server error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    )
+    const errorMessage = err instanceof Error ? err.message : 'Internal server error'
+    return NextResponse.json({ ok: false, error: `Agent error: ${errorMessage}` }, { status: 500 })
   }
 }
 
-/** Robust JSON extractor that handles nested braces correctly */
+/** Robust JSON extractor that handles nested braces and escaped quotes correctly */
 const extractJsonObject = (text: string): Record<string, unknown> => {
+  // Strip markdown code fences if present
+  const cleaned = text.replace(/^```(?:json)?\s*\n?/m, '').replace(/\n?```\s*$/m, '')
+
   // Find the first opening brace
-  const startIdx = text.indexOf('{')
+  const startIdx = cleaned.indexOf('{')
   if (startIdx === -1) throw new Error('No JSON found in response')
 
   let depth = 0
   let inString = false
-  let escaped = false
 
-  for (let i = startIdx; i < text.length; i++) {
-    const ch = text[i]
+  for (let i = startIdx; i < cleaned.length; i++) {
+    const ch = cleaned[i]
 
-    if (escaped) {
-      escaped = false
+    if (inString) {
+      // Handle all escape sequences inside strings (\\, \", \n, \t, \uXXXX, etc.)
+      if (ch === '\\') {
+        i++ // skip next character entirely — it's escaped
+        continue
+      }
+      if (ch === '"') {
+        inString = false
+      }
       continue
     }
 
-    if (ch === '\\' && inString) {
-      escaped = true
+    // Outside of strings
+    if (ch === '"') {
+      inString = true
       continue
     }
-
-    if (ch === '"' && !escaped) {
-      inString = !inString
-      continue
-    }
-
-    if (inString) continue
 
     if (ch === '{') depth++
     else if (ch === '}') {
       depth--
       if (depth === 0) {
-        const jsonStr = text.slice(startIdx, i + 1)
+        const jsonStr = cleaned.slice(startIdx, i + 1)
         return JSON.parse(jsonStr)
       }
     }

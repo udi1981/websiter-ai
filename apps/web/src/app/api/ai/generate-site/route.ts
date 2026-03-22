@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { PREMIUM_GENERATION_PROMPT } from '@/lib/generation-prompt'
+import { PREMIUM_GENERATION_PROMPT, HEBREW_GENERATION_ADDENDUM } from '@/lib/generation-prompt'
 
 // Vercel: allow up to 300s for generation (Claude needs time for 1000+ line sites)
 export const maxDuration = 300
@@ -463,12 +463,18 @@ ChatGPT uses Bing for live web search. Ensure:
  */
 export async function POST(request: Request) {
   try {
-    const { designDna, siteName, businessType, originalContent } = await request.json()
+    const { designDna, siteName, businessType, originalContent, locale } = await request.json()
 
     const claudeKey = process.env.CLAUDE_API_KEY
     const geminiKey = process.env.GEMINI_API_KEY
 
-    const userPrompt = buildUserPrompt({ designDna, siteName, businessType, originalContent })
+    let userPrompt = buildUserPrompt({ designDna, siteName, businessType, originalContent })
+    const generationPrompt = locale === 'he'
+      ? GENERATION_PROMPT + HEBREW_GENERATION_ADDENDUM
+      : GENERATION_PROMPT
+    if (locale === 'he') {
+      userPrompt += HEBREW_GENERATION_ADDENDUM
+    }
 
     // Try Claude first, fall back to Gemini
     if (claudeKey) {
@@ -484,7 +490,7 @@ export async function POST(request: Request) {
             model: CLAUDE_MODEL,
             max_tokens: 64000,
             temperature: 0.7,
-            system: GENERATION_PROMPT,
+            system: generationPrompt,
             messages: [{ role: 'user', content: userPrompt }],
           }),
         })

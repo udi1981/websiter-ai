@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createDb, sites, eq, and } from '@ubuilder/db'
+import { requireAuth } from '@/lib/auth-middleware'
 
 type RouteParams = { params: Promise<{ siteId: string }> }
 
 /** GET /api/sites/[siteId] — Get a single site with HTML */
 export const GET = async (req: NextRequest, { params }: RouteParams) => {
   try {
+    const authResult = await requireAuth(req)
+    if (authResult instanceof Response) return authResult
+    const { userId } = authResult
+
     const { siteId } = await params
-    const userId = req.headers.get('x-user-id')
 
     const db = createDb()
     const [site] = await db
       .select()
       .from(sites)
-      .where(userId ? and(eq(sites.id, siteId), eq(sites.userId, userId)) : eq(sites.id, siteId))
+      .where(and(eq(sites.id, siteId), eq(sites.userId, userId)))
       .limit(1)
 
     if (!site) {
@@ -30,10 +34,25 @@ export const GET = async (req: NextRequest, { params }: RouteParams) => {
 /** PATCH /api/sites/[siteId] — Update a site */
 export const PATCH = async (req: NextRequest, { params }: RouteParams) => {
   try {
+    const authResult = await requireAuth(req)
+    if (authResult instanceof Response) return authResult
+    const { userId } = authResult
+
     const { siteId } = await params
     const body = await req.json()
 
     const db = createDb()
+
+    // Verify ownership before update
+    const [existing] = await db
+      .select({ id: sites.id })
+      .from(sites)
+      .where(and(eq(sites.id, siteId), eq(sites.userId, userId)))
+      .limit(1)
+
+    if (!existing) {
+      return NextResponse.json({ ok: false, error: 'Site not found' }, { status: 404 })
+    }
 
     // Build update object with only provided fields
     const updates: Record<string, unknown> = { updatedAt: new Date() }
@@ -48,12 +67,8 @@ export const PATCH = async (req: NextRequest, { params }: RouteParams) => {
     const [updated] = await db
       .update(sites)
       .set(updates)
-      .where(eq(sites.id, siteId))
+      .where(and(eq(sites.id, siteId), eq(sites.userId, userId)))
       .returning()
-
-    if (!updated) {
-      return NextResponse.json({ ok: false, error: 'Site not found' }, { status: 404 })
-    }
 
     return NextResponse.json({ ok: true, data: updated })
   } catch (err) {
@@ -65,13 +80,17 @@ export const PATCH = async (req: NextRequest, { params }: RouteParams) => {
 /** DELETE /api/sites/[siteId] — Soft delete (archive) a site */
 export const DELETE = async (req: NextRequest, { params }: RouteParams) => {
   try {
+    const authResult = await requireAuth(req)
+    if (authResult instanceof Response) return authResult
+    const { userId } = authResult
+
     const { siteId } = await params
 
     const db = createDb()
     const [archived] = await db
       .update(sites)
       .set({ status: 'archived', updatedAt: new Date() })
-      .where(eq(sites.id, siteId))
+      .where(and(eq(sites.id, siteId), eq(sites.userId, userId)))
       .returning({ id: sites.id })
 
     if (!archived) {

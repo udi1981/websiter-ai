@@ -138,10 +138,16 @@ export const AIChatPanel = ({
     setCodeEditing(false)
   }
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(htmlContent)
-    setCopyFeedback(true)
-    setTimeout(() => setCopyFeedback(false), 2000)
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(htmlContent)
+      setCopyFeedback(true)
+      setTimeout(() => setCopyFeedback(false), 2000)
+    } catch {
+      // Clipboard API may fail in insecure contexts or when permission denied
+      setCopyFeedback(false)
+      console.warn('Clipboard write failed — permission denied or insecure context')
+    }
   }
 
   const handleDownload = () => {
@@ -220,6 +226,9 @@ export const AIChatPanel = ({
                     ? 'bg-violet-500/15 text-violet-300'
                     : 'text-white/40 hover:text-white/60 hover:bg-white/[0.04]'
                 }`}
+                aria-label={`${tab === 'chat' ? 'AI Chat' : tab.toUpperCase()} tab`}
+                aria-selected={activeTab === tab}
+                role="tab"
               >
                 {tab === 'chat' && (
                   <span className="flex items-center gap-1.5">
@@ -238,6 +247,7 @@ export const AIChatPanel = ({
           <button
             onClick={onClose}
             className="rounded-lg p-1.5 text-white/30 hover:text-white/60 hover:bg-white/[0.06] transition-all"
+            aria-label="Close panel"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -372,6 +382,7 @@ export const AIChatPanel = ({
                     disabled={!input.trim() || isGenerating}
                     className="rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 p-2 text-white disabled:opacity-30 hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20"
                     title="Send"
+                    aria-label="Send message"
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />

@@ -4,30 +4,36 @@
  * Uses Claude's streaming API so the user sees progress in real-time.
  */
 
+import { NextResponse } from 'next/server'
+
 // Vercel: allow up to 300s for streaming responses (Pro plan)
 // Falls back to 60s on hobby plan automatically
 export const maxDuration = 300
 
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages'
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514'
-const FETCH_TIMEOUT = 120000 // 120s — generous for large site generation
+const FETCH_TIMEOUT = 240000 // 240s (4 min) — generous for large site generation
+const KEEPALIVE_INTERVAL = 15000 // 15s — periodic keepalive to prevent proxy/browser timeouts
 
 export async function POST(request: Request) {
   try {
-    const { designDna, siteName, businessType, originalContent, systemPrompt, userPrompt } = await request.json()
+    const { designDna, siteName, businessType, originalContent, systemPrompt, userPrompt, locale } = await request.json()
 
     const claudeKey = process.env.CLAUDE_API_KEY
     const geminiKey = process.env.GEMINI_API_KEY
     if (!claudeKey && !geminiKey) {
-      return new Response(
-        JSON.stringify({ ok: false, error: 'No AI API key configured. Set CLAUDE_API_KEY or GEMINI_API_KEY.' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      return NextResponse.json(
+        { ok: false, error: 'No AI API key configured. Set CLAUDE_API_KEY or GEMINI_API_KEY.' },
+        { status: 400 }
       )
     }
 
+    // Hebrew addendum for RTL sites
+    const hebrewAddendum = locale === 'he' ? `\n\n## HEBREW / RTL REQUIREMENTS\n- ALL text in Hebrew. dir="rtl" lang="he" on root element.\n- Font: 'Heebo', 'Assistant', sans-serif (import from Google Fonts).\n- Use CSS logical properties (margin-inline-start, not margin-left).\n- Phone: 05X-XXX-XXXX | Currency: ₪\n- Write fluent, native-sounding Hebrew copy.` : ''
+
     // Use provided prompts or build comprehensive ones
-    const system = systemPrompt || `You are the world's #1 web designer. Generate a complete, stunning HTML website from <!DOCTYPE html> to </html>. No markdown fences, no explanations. Include all CSS in <style>, all JS in <script>. Use Google Fonts via <link>. Use verified Unsplash photo IDs. Make it look like a $20,000 agency site. 1200+ lines minimum. Include Schema.org structured data, SEO meta tags, scroll animations, mobile hamburger menu, smooth scroll, parallax, counter animations, testimonial carousel, and back-to-top button.`
-    const user = userPrompt || `Generate a phenomenal website for "${siteName || 'My Site'}" (${businessType || 'business'}).
+    const system = systemPrompt || `You are the world's #1 web designer. Generate a complete, stunning HTML website from <!DOCTYPE html> to </html>. No markdown fences, no explanations. Include all CSS in <style>, all JS in <script>. Use Google Fonts via <link>. Use verified Unsplash photo IDs. Make it look like a $20,000 agency site. 1200+ lines minimum. Include Schema.org structured data, SEO meta tags, scroll animations, mobile hamburger menu, smooth scroll, parallax, counter animations, testimonial carousel, and back-to-top button.${hebrewAddendum}`
+    const user = (userPrompt ? userPrompt + hebrewAddendum : '') || `Generate a phenomenal website for "${siteName || 'My Site'}" (${businessType || 'business'}).${hebrewAddendum}
 Design DNA: ${JSON.stringify(designDna || {})}
 Original content: ${JSON.stringify(originalContent || {})}
 Build 12-16 unique sections. Every section must have a different visual layout.`
@@ -85,18 +91,18 @@ Build 12-16 unique sections. Every section must have a different visual layout.`
 
     if (!response || !response.ok) {
       const errorMsg = response ? `API error (${response.status})` : 'All AI providers failed'
-      return new Response(
-        JSON.stringify({ ok: false, error: errorMsg }),
-        { status: 502, headers: { 'Content-Type': 'application/json' } }
+      return NextResponse.json(
+        { ok: false, error: errorMsg },
+        { status: 502 }
       )
     }
 
     // Transform Claude's SSE stream into a simpler text stream for the client
     const reader = response.body?.getReader()
     if (!reader) {
-      return new Response(
-        JSON.stringify({ ok: false, error: 'No response body' }),
-        { status: 502, headers: { 'Content-Type': 'application/json' } }
+      return NextResponse.json(
+        { ok: false, error: 'No response body' },
+        { status: 502 }
       )
     }
 
@@ -106,6 +112,15 @@ Build 12-16 unique sections. Every section must have a different visual layout.`
     const stream = new ReadableStream({
       async start(controller) {
         let buffer = ''
+
+        // Periodic keepalive to prevent proxy/browser timeouts
+        const keepaliveTimer = setInterval(() => {
+          try {
+            controller.enqueue(encoder.encode(': keepalive\n\n'))
+          } catch {
+            // Controller may be closed already
+          }
+        }, KEEPALIVE_INTERVAL)
 
         try {
           while (true) {
@@ -163,8 +178,10 @@ Build 12-16 unique sections. Every section must have a different visual layout.`
 
           // Send final done event if not already sent
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`))
+          clearInterval(keepaliveTimer)
           controller.close()
         } catch (error) {
+          clearInterval(keepaliveTimer)
           const message = error instanceof Error ? error.message : 'Stream error'
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', error: message })}\n\n`))
           controller.close()
@@ -183,9 +200,9 @@ Build 12-16 unique sections. Every section must have a different visual layout.`
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
-    return new Response(
-      JSON.stringify({ ok: false, error: `Stream setup failed: ${message}` }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    return NextResponse.json(
+      { ok: false, error: `Stream setup failed: ${message}` },
+      { status: 500 }
     )
   }
 }

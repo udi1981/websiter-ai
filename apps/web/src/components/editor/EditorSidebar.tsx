@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 
-type SidebarSection = 'pages' | 'layers' | 'design' | 'settings'
+type SidebarSection = 'pages' | 'sections' | 'layers' | 'design' | 'settings'
 
 type EditorSidebarProps = {
   expanded: boolean
@@ -11,6 +11,9 @@ type EditorSidebarProps = {
   onHtmlChange: (html: string) => void
   siteName: string
   onSiteNameChange: (name: string) => void
+  onOpenSectionPicker?: () => void
+  onSwapSection?: (category: string, oldVariantId: string, newVariantId: string) => void
+  onRemoveSection?: (category: string, variantId: string) => void
 }
 
 type LayerItem = {
@@ -98,8 +101,31 @@ const extractColors = (html: string): string[] => {
   return Array.from(colors).slice(0, 12)
 }
 
+/** Extract sections from HTML comment markers <!-- section:CATEGORY:VARIANT-ID --> */
+const extractSections = (html: string): { category: string; variantId: string; name: string }[] => {
+  const sections: { category: string; variantId: string; name: string }[] = []
+  const regex = /<!-- section:(\w[\w-]*):(\w[\w-]*) -->/g
+  let match
+  while ((match = regex.exec(html)) !== null) {
+    const category = match[1]
+    const variantId = match[2]
+    const name = variantId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    sections.push({ category, variantId, name })
+  }
+  return sections
+}
+
+const CATEGORY_ICONS: Record<string, string> = {
+  navbar: '\u{1F9ED}', hero: '\u{1F31F}', features: '\u2728', testimonials: '\u{1F4AC}',
+  pricing: '\u{1F4B0}', cta: '\u{1F3AF}', faq: '\u2753', footer: '\u{1F4CD}',
+  gallery: '\u{1F5BC}\uFE0F', team: '\u{1F465}', stats: '\u{1F4CA}', contact: '\u{1F4E7}',
+  partners: '\u{1F91D}', 'how-it-works': '\u{1F527}', blog: '\u{1F4DD}',
+  portfolio: '\u{1F4BC}', comparison: '\u2696\uFE0F', newsletter: '\u{1F4EC}', about: '\u{1F4D6}',
+}
+
 const sidebarItems = [
   { key: 'pages' as const, label: 'Pages', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2' },
+  { key: 'sections' as const, label: 'Sections', icon: 'M4 5h16M4 5v2h16V5M4 10h10M4 10v2h10v-2M4 15h13M4 15v2h13v-2' },
   { key: 'layers' as const, label: 'Layers', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
   { key: 'design' as const, label: 'Design', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
   { key: 'settings' as const, label: 'Settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
@@ -112,6 +138,8 @@ export const EditorSidebar = ({
   onHtmlChange,
   siteName,
   onSiteNameChange,
+  onOpenSectionPicker,
+  onRemoveSection,
 }: EditorSidebarProps) => {
   const [activeSection, setActiveSection] = useState<SidebarSection>('pages')
   const [metaTitle, setMetaTitle] = useState('')
@@ -120,6 +148,7 @@ export const EditorSidebar = ({
   const pages = useMemo(() => extractPages(htmlContent), [htmlContent])
   const layers = useMemo(() => extractLayers(htmlContent), [htmlContent])
   const colors = useMemo(() => extractColors(htmlContent), [htmlContent])
+  const sections = useMemo(() => extractSections(htmlContent), [htmlContent])
 
   useMemo(() => {
     const titleMatch = htmlContent.match(/<title>([\s\S]*?)<\/title>/i)
@@ -172,6 +201,7 @@ export const EditorSidebar = ({
                 : 'text-white/30 hover:text-white/60 hover:bg-white/[0.04]'
             }`}
             title={label}
+            aria-label={`${label} section`}
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
@@ -199,6 +229,7 @@ export const EditorSidebar = ({
                 ? 'bg-violet-500/15 text-violet-300'
                 : 'text-white/40 hover:text-white/60 hover:bg-white/[0.04]'
             }`}
+            aria-label={`${label} section`}
           >
             <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
@@ -220,6 +251,22 @@ export const EditorSidebar = ({
               {pages.map((page, idx) => (
                 <button
                   key={`${page.id}-${idx}`}
+                  onClick={() => {
+                    // Navigate the preview iframe to this section/page anchor
+                    const iframe = document.querySelector('iframe[title="Site Preview"]') as HTMLIFrameElement | null
+                    if (iframe?.contentDocument) {
+                      const href = page.href
+                      if (href.startsWith('#') && href.length > 1) {
+                        const target = iframe.contentDocument.querySelector(href) ||
+                          iframe.contentDocument.getElementById(href.slice(1))
+                        if (target) {
+                          target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }
+                      } else if (href === '#' || href === '/') {
+                        iframe.contentWindow?.scrollTo({ top: 0, behavior: 'smooth' })
+                      }
+                    }
+                  }}
                   className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-start text-[13px] text-white/60 hover:text-white/80 hover:bg-white/[0.04] transition-all group"
                 >
                   <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.04]">
@@ -231,6 +278,65 @@ export const EditorSidebar = ({
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {activeSection === 'sections' && (
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-white/30 uppercase tracking-widest">Sections</span>
+              <span className="text-[10px] text-white/20">{sections.length}</span>
+            </div>
+            {sections.length > 0 ? (
+              <div className="space-y-0.5">
+                {sections.map((section, idx) => (
+                  <div
+                    key={`${section.category}-${section.variantId}-${idx}`}
+                    className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-start text-[13px] text-white/60 hover:text-white/80 hover:bg-white/[0.04] transition-all border-b border-white/[0.03] last:border-b-0"
+                  >
+                    <span className="text-base shrink-0 leading-none" role="img" aria-label={section.category}>
+                      {CATEGORY_ICONS[section.category] || '\u{1F4E6}'}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate text-[13px] text-white/70">{section.name}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-white/25">{section.category}</span>
+                        <span className="rounded bg-white/[0.06] px-1 py-0.5 text-[9px] text-white/20 font-mono">
+                          {section.variantId}
+                        </span>
+                      </div>
+                    </div>
+                    {onRemoveSection && (
+                      <button
+                        onClick={() => onRemoveSection(section.category, section.variantId)}
+                        className="opacity-0 group-hover:opacity-100 shrink-0 rounded p-1 text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                        title="Remove section"
+                        aria-label={`Remove ${section.name} section`}
+                      >
+                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-white/20 px-2 py-4">
+                No sections detected. Generate a new site or add sections.
+              </p>
+            )}
+            {onOpenSectionPicker && (
+              <button
+                onClick={onOpenSectionPicker}
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-2 text-[12px] font-medium text-violet-300 hover:bg-violet-500/20 hover:border-violet-500/30 transition-all"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Add Section
+              </button>
+            )}
           </div>
         )}
 
