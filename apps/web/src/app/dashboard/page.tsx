@@ -52,6 +52,7 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Load from localStorage for instant display
     try {
       const stored = localStorage.getItem('ubuilder_user')
       if (stored) {
@@ -60,7 +61,6 @@ const DashboardPage = () => {
       const savedSites = localStorage.getItem('ubuilder_sites')
       if (savedSites) {
         const parsed = JSON.parse(savedSites) as Site[]
-        // Enrich sites with HTML from localStorage for thumbnails
         const enriched = parsed.map((site) => {
           if (!site.html) {
             const savedHtml = localStorage.getItem(`ubuilder_html_${site.id}`)
@@ -76,6 +76,53 @@ const DashboardPage = () => {
       // Corrupted localStorage — layout handles auth redirect
     }
     setLoading(false)
+
+    // Also fetch from API to include DB-created sites (pipeline/scan flow)
+    const fetchDbSites = async () => {
+      try {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+        try {
+          const u = localStorage.getItem('ubuilder_user')
+          if (u) { const p = JSON.parse(u); if (p?.id) headers['x-user-id'] = p.id }
+        } catch { /* */ }
+
+        const res = await fetch('/api/sites', { headers })
+        if (!res.ok) return
+        const data = await res.json()
+        if (!data.ok || !Array.isArray(data.data)) return
+
+        const dbSites = data.data as Array<{ id: string; name: string; slug: string; status: string; html?: string; industry?: string; updatedAt?: string }>
+        if (dbSites.length === 0) return
+
+        // Merge: DB sites take precedence, localStorage enriches with HTML for thumbnails
+        setSites(prev => {
+          const merged = new Map<string, Site>()
+          // Add localStorage sites first
+          for (const s of prev) merged.set(s.id, s)
+          // Add/update with DB sites
+          for (const db of dbSites) {
+            const existing = merged.get(db.id)
+            merged.set(db.id, {
+              id: db.id,
+              name: db.name || existing?.name || 'Untitled',
+              status: (db.status as 'draft' | 'published') || 'draft',
+              lastEdited: db.updatedAt ? new Date(db.updatedAt).toLocaleDateString() : 'Recently',
+              url: `${db.slug}.ubuilder.co`,
+              description: existing?.description || '',
+              template: existing?.template || 'ai-generated',
+              html: existing?.html || db.html || '',
+            })
+          }
+          const result = [...merged.values()]
+          // Sync back to localStorage
+          try { localStorage.setItem('ubuilder_sites', JSON.stringify(result)) } catch { /* */ }
+          return result
+        })
+      } catch {
+        // API fetch failed — localStorage data is still shown
+      }
+    }
+    fetchDbSites()
   }, [])
 
   const [deleting, setDeleting] = useState<string | null>(null)

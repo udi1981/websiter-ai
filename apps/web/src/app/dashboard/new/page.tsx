@@ -879,6 +879,8 @@ const NewSitePage = () => {
       || 'My Website'
 
     let html = ''
+    let realSiteId: string | null = null
+    let realJobId: string | null = null
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let plan: any = null
 
@@ -956,6 +958,13 @@ const NewSitePage = () => {
                 if (status === 'needs-improvement') label = `⚠️ CPO scored ${event.overall}/10 — requesting improvements...`
 
                 dispatch({ type: 'BUILD_PROGRESS', status: label, progress })
+
+                // Capture real siteId + jobId from pipeline init event
+                if (phase === 'init' && event.siteId) {
+                  realSiteId = event.siteId as string
+                  realJobId = event.jobId as string || null
+                  console.log(`[Pipeline] Real site: ${realSiteId}, job: ${realJobId}`)
+                }
 
                 // Capture HTML from build phase or complete
                 if (phase === 'complete' && event.html) {
@@ -1214,7 +1223,8 @@ const NewSitePage = () => {
 
     if (html && html.length > 100) {
       dispatch({ type: 'BUILD_PROGRESS', status: 'Saving your site...', progress: 100 })
-      const siteId = `site_${Date.now()}`
+      // Use real DB siteId from pipeline if available, otherwise generate local one
+      const siteId = realSiteId || `site_${Date.now()}`
       const slug = siteName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
       const savedSites = (() => {
         try {
@@ -1242,17 +1252,19 @@ const NewSitePage = () => {
         localStorage.setItem(`ubuilder_plan_${siteId}`, JSON.stringify(plan))
       }
 
-      // Persist to database (fire-and-forget)
-      createSite({
-        id: siteId,
-        name: siteName,
-        slug,
-        html,
-        buildPlan: plan || undefined,
-        industry: plan?.industry || undefined,
-        primaryColor: plan?.colorPalette?.primary || '#7C3AED',
-        sourceUrl: state.url || undefined,
-      }).catch(err => console.warn('[Build] DB sync failed:', err))
+      // Persist to database (fire-and-forget) — skip if pipeline already created the site
+      if (!realSiteId) {
+        createSite({
+          id: siteId,
+          name: siteName,
+          slug,
+          html,
+          buildPlan: plan || undefined,
+          industry: plan?.industry || undefined,
+          primaryColor: plan?.colorPalette?.primary || '#7C3AED',
+          sourceUrl: state.url || undefined,
+        }).catch(err => console.warn('[Build] DB sync failed:', err))
+      }
 
       router.push(`/editor/${siteId}`)
     } else {

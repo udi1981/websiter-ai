@@ -313,17 +313,26 @@ const mergeSections = (
 
     const designItems = ds.items as unknown[] | undefined
     const contentItems = cs.items as unknown[] | undefined
-    const mergedItems = hasProductData(designItems)
-      ? designItems
-      : (designItems && designItems.length > 0) ? designItems
+    // Content items win when they have product data (from scan catalog injection)
+    // or when design items are empty/generic
+    const mergedItems = hasProductData(contentItems)
+      ? contentItems
+      : hasProductData(designItems) ? designItems
       : (contentItems && contentItems.length > 0) ? contentItems
+      : (designItems && designItems.length > 0) ? designItems
       : []
 
     return {
       ...ds,
+      // Content agent output always wins for text fields (enriched with scan data)
       headline: cs.headline || ds.headline || ds.title,
-      subheadline: cs.subheadline || ds.subheadline || ds.description,
+      title: cs.title || cs.headline || ds.title || ds.headline,
+      subheadline: cs.subheadline || cs.subtitle || ds.subheadline || ds.description,
+      subtitle: cs.subtitle || cs.subheadline || ds.subtitle || ds.description,
+      description: cs.description || ds.description,
       cta: cs.cta || ds.cta,
+      ctaText: cs.ctaText || cs.cta || ds.ctaText || ds.cta,
+      ctaSecondary: cs.ctaSecondary || ds.ctaSecondary,
       items: mergedItems,
       variantId: ds.variantId,
       type: ds.type,
