@@ -734,7 +734,23 @@ Please revise and return improved JSON.`
         // ── PHASE 3: CONTENT ──
         send({ phase: 'content', agent: '@content', status: 'running' })
         const contentStepId = await tracker.startStep(jobId!, 'content', '@content'); lastStepName = 'content'
-        const designSections = (finalDesign.sections as Array<Record<string, unknown>>) || []
+        let designSections = (finalDesign.sections as Array<Record<string, unknown>>) || []
+
+        // Critical fallback: if design returned empty sections, use industry defaults
+        if (designSections.length === 0) {
+          console.warn('[pipeline] Design returned empty sections — using industry fallback')
+          const industryKey = (strategyOutput.industry as string || businessType || 'default').toLowerCase()
+          const fallbackSections = INDUSTRY_SECTION_MAP[industryKey] || INDUSTRY_SECTION_MAP.default
+          designSections = fallbackSections.map((s, i) => ({
+            type: s.type,
+            variantId: s.variantId,
+            order: i,
+            title: '',
+            headline: '',
+          }))
+          finalDesign.sections = designSections
+          send({ phase: 'design', status: 'fallback-sections', count: designSections.length })
+        }
 
         const contentPrompt = getAgentSystemPrompt('content', siteContext)
         const contentDesignPages = (finalDesign.pages || []) as Array<{ sections?: Array<Record<string, unknown>> }>
