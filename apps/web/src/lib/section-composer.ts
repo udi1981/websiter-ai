@@ -637,7 +637,7 @@ const adaptContent = (
     case 'pricing': {
       // V1.3.1: Handle both old format { title, description } and new enriched format { name, price, features[], ... }
       const rawItems = (content.items || content.plans || []) as Record<string, unknown>[]
-      if (rawItems.length) {
+      if (rawItems.length > 0) {
         const plans = rawItems.map((item, i) => {
           // New enriched format: { name, price (number), currency, features[], cta, popular, originalPrice, description }
           if (item.name && (item.price !== undefined || item.features)) {
@@ -675,7 +675,15 @@ const adaptContent = (
         })
         return { ...normalized, plans, items: plans }
       }
-      break
+      // Fallback: provide default plans so generator doesn't crash on plans.map()
+      return {
+        ...normalized,
+        plans: [
+          { name: content.businessName || 'Basic', price: '', period: '', description: '', features: [], cta: 'בחרו', popular: false },
+          { name: 'Premium', price: '', period: '', description: '', features: [], cta: 'בחרו', popular: true },
+          { name: 'Enterprise', price: '', period: '', description: '', features: [], cta: 'בחרו', popular: false },
+        ],
+      }
     }
     case 'faq': {
       // V1.3.1: Handle both { title, description } and { question, answer } formats
@@ -831,6 +839,8 @@ const adaptContent = (
     default:
       break
   }
+  // Safety net: ensure items is always an array to prevent .map() crashes in generators
+  if (!Array.isArray(normalized.items)) normalized.items = []
   return normalized
 }
 
