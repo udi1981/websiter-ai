@@ -309,14 +309,24 @@ Image Generation: Imagen 4.0 (hero, about, gallery, team, logo)
 
 HERO SELECTION BY INDUSTRY:
 - restaurant → hero-split-image
-- tech/saas → hero-gradient-mesh / hero-aurora
+- tech/saas → hero-tech-dark (dark cinematic with glow accents)
 - beauty/spa → hero-parallax-layers
 - law/accounting → hero-minimal-text
-- ecommerce/retail → hero-product-showcase
-- fitness/gym → hero-video-background
+- ecommerce/retail → hero-apple-clean (split layout with product focus)
+- consumer_electronics → hero-apple-clean or hero-family-warm (product-first with trust cues)
+- fitness/gym → hero-fullscreen-video
 - realestate → hero-carousel
 - portfolio → hero-fullscreen-image
-- agency/creative → hero-animated-text
+- agency/creative → hero-gradient-mesh
+- kids/family → hero-family-warm (warm, trust-first, rounded elements)
+
+PREMIUM SECTION VARIANTS (use these for premium art directions):
+- hero-apple-clean: Split layout, generous whitespace, product image right, stats below CTA. Best for product businesses.
+- hero-tech-dark: Dark background, gradient glow orbs, glassmorphism feature cards. Best for SaaS/tech.
+- hero-family-warm: Soft gradient, rounded CTA, inline trust cues (warranty/GPS/support). Best for family/kids/safety.
+- pricing-premium-showcase: Elevated cards with popular badge, strikethrough pricing, feature checklists. Best for product comparison.
+- testimonials-premium: Clean cards with avatar initials, star ratings, hover lift. Best for trust building.
+- cta-premium-close: Full-width gradient CTA with benefit checklist. Best for closing sections.
 
 PREMIUM OUTPUT QUALITY STANDARDS:
 - Hero must feel cinematic — large typography, generous whitespace, strong visual anchor

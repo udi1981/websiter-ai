@@ -192,6 +192,15 @@ import {
   generateAboutSplitImage,
 } from './sections/utility-sections-extra'
 
+import {
+  generateHeroAppleClean,
+  generateHeroTechDark,
+  generateHeroFamilyWarm,
+  generatePricingPremiumShowcase,
+  generateTestimonialsPremium,
+  generateCtaPremiumClose,
+} from './sections/premium-sections'
+
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
@@ -324,6 +333,11 @@ reg('hero-noise-gradient', generateHeroNoiseGradient as unknown as GeneratorFn)
 reg('hero-interactive-cards', generateHeroInteractiveCards as unknown as GeneratorFn)
 reg('hero-3d-globe', generateHero3DGlobe as unknown as GeneratorFn)
 
+// --- Premium hero generators ---
+reg('hero-apple-clean', generateHeroAppleClean as unknown as GeneratorFn)
+reg('hero-tech-dark', generateHeroTechDark as unknown as GeneratorFn)
+reg('hero-family-warm', generateHeroFamilyWarm as unknown as GeneratorFn)
+
 // --- Features generators ---
 reg('features-bento-grid', generateFeaturesBentoGrid as unknown as GeneratorFn)
 reg('features-tabs', generateFeaturesTabs as unknown as GeneratorFn)
@@ -349,6 +363,7 @@ reg('testimonials-star-rating', generateTestimonialsStarRating as unknown as Gen
 reg('testimonials-logo-bar', generateTestimonialsLogoBar as unknown as GeneratorFn)
 reg('testimonials-before-after', generateTestimonialsBeforeAfter as unknown as GeneratorFn)
 reg('testimonials-glassmorphism', generateTestimonialsGlassmorphism as unknown as GeneratorFn)
+reg('testimonials-premium', generateTestimonialsPremium as unknown as GeneratorFn)
 
 // --- Pricing generators ---
 reg('pricing-animated-cards', generatePricingAnimatedCards as unknown as GeneratorFn)
@@ -359,6 +374,7 @@ reg('pricing-minimal', generatePricingMinimal as unknown as GeneratorFn)
 reg('pricing-gradient', generatePricingGradient as unknown as GeneratorFn)
 reg('pricing-enterprise', generatePricingEnterprise as unknown as GeneratorFn)
 reg('pricing-israeli', generatePricingIsraeli as unknown as GeneratorFn)
+reg('pricing-premium-showcase', generatePricingPremiumShowcase as unknown as GeneratorFn)
 
 // --- CTA generators ---
 reg('cta-gradient-banner', generateCtaGradientBanner as unknown as GeneratorFn)
@@ -369,6 +385,7 @@ reg('cta-countdown', generateCtaCountdown as unknown as GeneratorFn)
 reg('cta-sticky-bottom', generateCtaStickyBottom as unknown as GeneratorFn)
 reg('cta-video-background', generateCtaVideoBackground as unknown as GeneratorFn)
 reg('cta-glassmorphism', generateCtaGlassmorphism as unknown as GeneratorFn)
+reg('cta-premium-close', generateCtaPremiumClose as unknown as GeneratorFn)
 
 // --- FAQ generators ---
 reg('faq-accordion', generateFaqAccordion as unknown as GeneratorFn)
