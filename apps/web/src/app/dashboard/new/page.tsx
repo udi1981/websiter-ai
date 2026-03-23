@@ -1452,6 +1452,7 @@ const NewSitePage = () => {
 
           let scanJobId: string | undefined
           let scanResult: Record<string, unknown> | null = null
+          let scanPhaseIdx = 0
 
           if (res.ok && res.body) {
             const reader = res.body.getReader()
@@ -1474,11 +1475,38 @@ const NewSitePage = () => {
 
                   if (eventType === 'phase' && data.phase === 'init' && data.scanJobId) {
                     scanJobId = data.scanJobId
+                    // Show immediate progress so UI doesn't appear stuck
+                    dispatch({ type: 'BUILD_PROGRESS', status: state.locale === 'he' ? '🔍 מתחילים לסרוק...' : '🔍 Starting scan...', progress: 3 })
+                  }
+
+                  if (eventType === 'phase' && data.status === 'running') {
+                    // Update status text for each scan phase
+                    const isHe = state.locale === 'he'
+                    const phaseNames: Record<string, string> = {
+                      discovery: isHe ? '🔍 סורקים עמודים...' : '🔍 Crawling pages...',
+                      'visual-dna': isHe ? '🎨 מנתחים עיצוב...' : '🎨 Analyzing design...',
+                      components: isHe ? '🧩 מזהים רכיבים...' : '🧩 Detecting components...',
+                      content: isHe ? '📄 מחלצים תוכן...' : '📄 Extracting content...',
+                      'brand-intelligence': isHe ? '💡 מנתחים מותג...' : '💡 Analyzing brand...',
+                      technical: isHe ? '⚙️ ניתוח טכני...' : '⚙️ Technical analysis...',
+                      'strategic-insights': isHe ? '📊 ניתוח אסטרטגי...' : '📊 Strategic analysis...',
+                    }
+                    const label = phaseNames[data.phase] || data.description || 'Scanning...'
+                    // Use scanPhaseIdx to monotonically advance progress
+                    scanPhaseIdx++
+                    dispatch({ type: 'BUILD_PROGRESS', status: label, progress: Math.min(5 + scanPhaseIdx * 5, 38) })
+                  }
+
+                  if (eventType === 'phase' && data.status === 'done') {
+                    scanPhaseIdx++
+                    const pct = Math.min(5 + scanPhaseIdx * 5, 40)
+                    dispatch({ type: 'BUILD_PROGRESS', status: data.phase === 'content-extraction' ? (state.locale === 'he' ? '📦 מחלצים מוצרים...' : '📦 Extracting products...') : '', progress: pct })
                   }
 
                   if (eventType === 'progress') {
-                    const pct = Math.min(Math.round((data.percent || 0) * 0.4), 40) // Scan is 0-40% of total
-                    dispatch({ type: 'BUILD_PROGRESS', status: data.message || 'Scanning...', progress: pct })
+                    const pct = Math.max(5, Math.min(Math.round((data.percent || 0) * 0.4), 40))
+                    const msg = data.message || (state.locale === 'he' ? 'סורקים...' : 'Scanning...')
+                    dispatch({ type: 'BUILD_PROGRESS', status: msg, progress: pct })
                   }
 
                   if (eventType === 'result' && data.ok) {
