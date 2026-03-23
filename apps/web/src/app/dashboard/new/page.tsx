@@ -1441,6 +1441,33 @@ const NewSitePage = () => {
           const mode = state.scanMode || 'inspiration'
 
           dispatch({ type: 'SCAN_START' })
+          dispatch({ type: 'BUILD_PROGRESS', status: isHe ? '🔍 בודקים סריקות קודמות...' : '🔍 Checking for previous scans...', progress: 2 })
+
+          // Try to reuse a recent completed scan for the same URL
+          let existingScanJobId: string | undefined
+          try {
+            const checkRes = await fetch(`/api/scan/check?url=${encodeURIComponent(url)}`, { headers: getAuthHeaders() })
+            if (checkRes.ok) {
+              const checkData = await checkRes.json()
+              if (checkData.ok && checkData.scanJobId) {
+                existingScanJobId = checkData.scanJobId
+                console.log(`[Build] Found existing scan job: ${existingScanJobId}`)
+                dispatch({ type: 'BUILD_PROGRESS', status: isHe ? '✅ נמצאה סריקה קודמת! ממשיכים לבנייה...' : '✅ Found previous scan! Continuing to build...', progress: 40 })
+              }
+            }
+          } catch { /* check failed, will do fresh scan */ }
+
+          let scanJobId: string | undefined = existingScanJobId
+
+          if (existingScanJobId) {
+            // Skip scan, go directly to generation with existing scan data
+            dispatch({
+              type: 'SCAN_DONE',
+              result: null,
+              deepData: null,
+              scanJobId: existingScanJobId,
+            })
+          } else {
           dispatch({ type: 'BUILD_PROGRESS', status: isHe ? '🔍 סורקים את האתר...' : '🔍 Scanning your site...', progress: 3 })
 
           // Heartbeat: increment progress every 6 seconds during long crawl phase
@@ -1475,7 +1502,6 @@ const NewSitePage = () => {
           // NOTE: Do NOT clearInterval(heartbeat) here — the SSE stream is still reading.
           // The heartbeat keeps progress moving while waiting for server SSE events.
 
-          let scanJobId: string | undefined
           let scanResult: Record<string, unknown> | null = null
           let scanPhaseIdx = 0
           const isHeLang = state.locale === 'he'
@@ -1567,6 +1593,7 @@ const NewSitePage = () => {
 
           // Stop heartbeat — scan SSE stream is done (success or failure)
           clearInterval(heartbeat)
+          } // end of else (fresh scan) block
 
           // Now trigger the actual generation pipeline directly with scan data
           dispatch({ type: 'BUILD_PROGRESS', status: isHeLang ? '🚀 מתחילים לבנות את האתר...' : '🚀 Starting generation...', progress: 42 })
