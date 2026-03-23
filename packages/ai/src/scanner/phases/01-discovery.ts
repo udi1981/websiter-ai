@@ -323,7 +323,7 @@ export const runDiscoveryPhase = async (
 
   // Remaining URLs (skip homepage)
   const remaining = allUrls.filter(u => normalizeUrl(u) !== normalizeUrl(url))
-  const BATCH_SIZE = 5
+  const BATCH_SIZE = 2 // Reduced from 5 to prevent OOM on dev server
 
   for (let i = 0; i < remaining.length; i += BATCH_SIZE) {
     const batch = remaining.slice(i, i + BATCH_SIZE)

@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Web Dashboard",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--max-old-space-size=4096", "C:/Users/udi19/Desktop/Udi New AI Project/websiter.ai/node_modules/.pnpm/next@15.5.12_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/next/dist/bin/next", "dev"],
+      "port": 3000,
+      "autoPort": true,
+      "cwd": "apps/web"
+    },
+    {
+      "name": "Renderer",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/udi19/Desktop/Udi New AI Project/websiter.ai/node_modules/.pnpm/next@15.5.12_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/next/dist/bin/next", "dev"],
+      "port": 3001,
+      "autoPort": true,
+      "cwd": "apps/renderer"
+    },
+    {
+      "name": "API Server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/udi19/Desktop/Udi New AI Project/websiter.ai/node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/cli.mjs", "watch", "src/index.ts"],
+      "port": 8787,
+      "autoPort": true,
+      "cwd": "apps/api"
+    }
+  ]
+}
