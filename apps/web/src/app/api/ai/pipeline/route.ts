@@ -55,8 +55,15 @@ const callPipelineAgent = async (
       if (res.ok) {
         const data = await res.json()
         const responseText = data.content?.[0]?.text || ''
+        console.log(`[Agent] Claude response: ${responseText.length} chars`)
         return { result: parseAgentResponse(responseText), promptSize, responseSize: responseText.length }
+      } else {
+        const errBody = await res.text().catch(() => '')
+        console.error(`[Agent] Claude API failed: ${res.status} ${res.statusText} — ${errBody.slice(0, 300)}`)
+        console.error(`[Agent] Prompt size: system=${systemPrompt.length}, user=${userMessage.length}`)
       }
+    } else {
+      console.warn('[Agent] No Claude API key — using Gemini fallback')
     }
 
     if (geminiKey) {
@@ -73,11 +80,15 @@ const callPipelineAgent = async (
       if (res.ok) {
         const data = await res.json()
         const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+        console.log(`[Agent] Gemini response: ${responseText.length} chars`)
         return { result: parseAgentResponse(responseText), promptSize, responseSize: responseText.length }
+      } else {
+        const errBody = await res.text().catch(() => '')
+        console.error(`[Agent] Gemini API failed: ${res.status} — ${errBody.slice(0, 300)}`)
       }
     }
 
-    throw new Error('No AI API key configured')
+    throw new Error('No AI API key configured or all APIs failed')
   } finally {
     clearTimeout(timeout)
   }
