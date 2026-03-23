@@ -719,6 +719,7 @@ Please revise and return improved JSON.`
           // ── PREMIUM VARIANT ENFORCEMENT ──
           // Deterministically upgrade key sections to premium variants
           // when business type, scan data, or art direction indicate premium output
+          console.log(`[pipeline] Enforcement check: businessType=${businessType}, scanMode=${scanMode}, sections=${designSections.length}, hasCatalog=${!!scanCatalog}`)
           const artDirection = (discoveryContext?.designDirection as string) || (discoveryContext?.designStyle as string) || ''
           const strategyBrand = (strategyOutput.brandPersonality as string) || ''
           const allContext = `${artDirection} ${strategyBrand} ${description}`.toLowerCase()
@@ -793,6 +794,10 @@ Please revise and return improved JSON.`
           }
 
           finalDesign.sections = designSections
+          // Also update pages[0].sections so downstream code reads enforced variants
+          if (Array.isArray(finalDesign.pages) && (finalDesign.pages as Record<string, unknown>[]).length > 0) {
+            (finalDesign.pages as Record<string, unknown>[])[0].sections = designSections
+          }
 
           await tracker.completeStep(designStepId, { promptSize, responseSize })
 
