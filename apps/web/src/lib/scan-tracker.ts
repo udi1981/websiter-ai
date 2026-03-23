@@ -167,7 +167,7 @@ export const extractAndPersistContent = async (
     const products = (catalog.products as Record<string, unknown>[]) || []
     if (products.length > 0) {
       try {
-        await enrichProductsFromPages(products, 6)
+        await enrichProductsFromPages(products, 3) // Limit to 3 pages to prevent OOM on dev server
         // Update extraction source if we got prices
         const enrichedCount = products.filter(p =>
           (p.price as Record<string, unknown>)?.value &&
@@ -488,7 +488,7 @@ const enrichProductsFromPages = async (
     const url = (product.productUrl as Record<string, unknown>)?.value as string
     try {
       const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), 12000)
+      const timer = setTimeout(() => controller.abort(), 8000) // 8s timeout per page
 
       const res = await fetch(url, {
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; UBuilder/1.0)' },
