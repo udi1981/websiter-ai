@@ -1458,15 +1458,12 @@ const NewSitePage = () => {
           } catch { /* check failed, will do fresh scan */ }
 
           let scanJobId: string | undefined = existingScanJobId
+          let scanResult: Record<string, unknown> | null = null
+          const isHeLang = isHe
 
           if (existingScanJobId) {
             // Skip scan, go directly to generation with existing scan data
-            dispatch({
-              type: 'SCAN_DONE',
-              result: null,
-              deepData: null,
-              scanJobId: existingScanJobId,
-            })
+            console.log('[Build] Skipping scan — using existing job:', existingScanJobId)
           } else {
           dispatch({ type: 'BUILD_PROGRESS', status: isHe ? '🔍 סורקים את האתר...' : '🔍 Scanning your site...', progress: 3 })
 
@@ -1502,9 +1499,7 @@ const NewSitePage = () => {
           // NOTE: Do NOT clearInterval(heartbeat) here — the SSE stream is still reading.
           // The heartbeat keeps progress moving while waiting for server SSE events.
 
-          let scanResult: Record<string, unknown> | null = null
           let scanPhaseIdx = 0
-          const isHeLang = state.locale === 'he'
 
           if (res.ok && res.body) {
             const reader = res.body.getReader()
