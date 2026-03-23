@@ -718,13 +718,17 @@ Please revise and return improved JSON.`
 
           // ── PREMIUM VARIANT ENFORCEMENT ──
           // Deterministically upgrade key sections to premium variants
-          // when art direction + business type strongly indicate premium output
+          // when business type, scan data, or art direction indicate premium output
           const artDirection = (discoveryContext?.designDirection as string) || (discoveryContext?.designStyle as string) || ''
-          const isPremium = artDirection.toLowerCase().includes('premium') || artDirection.toLowerCase().includes('apple') || artDirection.toLowerCase().includes('minimal')
-          const isFamilySafe = /kids|family|children|ילדים|משפח/.test(businessType + ' ' + description)
+          const strategyBrand = (strategyOutput.brandPersonality as string) || ''
+          const allContext = `${artDirection} ${strategyBrand} ${description}`.toLowerCase()
+          const isPremium = allContext.includes('premium') || allContext.includes('apple') || allContext.includes('minimal') || allContext.includes('פרימיום')
+          const isFamilySafe = /kids|family|children|ילדים|משפח|בטוח|בטיחות/.test(businessType + ' ' + description)
           const isTech = /saas|tech|ai|fintech|software/.test(businessType)
           const isEcommerce = /ecommerce|retail|shop|store|consumer_electronics/.test(businessType)
           const hasScanProducts = !!(scanCatalog && (scanCatalog.products as unknown[])?.length >= 2)
+          // Scan-based copy mode with real products = always premium-worthy
+          const isScanCopyWithProducts = scanMode === 'copy' && hasScanProducts
 
           const variantUpgrades: Record<string, string> = {}
 
@@ -735,12 +739,12 @@ Please revise and return improved JSON.`
             let reason = ''
 
             if (type === 'hero') {
-              if (isFamilySafe && isEcommerce) {
+              if (isFamilySafe && (isEcommerce || isScanCopyWithProducts)) {
                 newVariant = 'hero-family-warm'
-                reason = 'family-safe + e-commerce → warm trust hero'
-              } else if (isEcommerce || hasScanProducts) {
+                reason = 'family-safe + products → warm trust hero'
+              } else if (isEcommerce || isScanCopyWithProducts) {
                 newVariant = 'hero-apple-clean'
-                reason = 'e-commerce/products → apple-clean product hero'
+                reason = 'e-commerce/scan-products → apple-clean product hero'
               } else if (isTech) {
                 newVariant = 'hero-tech-dark'
                 reason = 'tech/SaaS → dark cinematic hero'
@@ -750,27 +754,29 @@ Please revise and return improved JSON.`
               }
             }
 
-            if (type === 'pricing' && hasScanProducts) {
-              if (currentVariant !== 'pricing-premium-showcase' && currentVariant !== 'pricing-israeli') {
-                newVariant = 'pricing-premium-showcase'
-                reason = 'real products available → premium showcase pricing'
+            if (type === 'pricing') {
+              if (hasScanProducts || isScanCopyWithProducts) {
+                if (currentVariant !== 'pricing-premium-showcase' && currentVariant !== 'pricing-israeli') {
+                  newVariant = 'pricing-premium-showcase'
+                  reason = 'real products/scan copy → premium showcase pricing'
+                }
               }
             }
 
             if (type === 'testimonials') {
-              if (isPremium || isEcommerce || isFamilySafe) {
+              if (isPremium || isEcommerce || isFamilySafe || isScanCopyWithProducts) {
                 if (!currentVariant.includes('premium')) {
                   newVariant = 'testimonials-premium'
-                  reason = 'premium/ecommerce/family → premium testimonials'
+                  reason = 'premium/ecommerce/family/scan → premium testimonials'
                 }
               }
             }
 
             if (type === 'cta') {
-              if (isPremium || isEcommerce) {
+              if (isPremium || isEcommerce || isScanCopyWithProducts) {
                 if (!currentVariant.includes('premium')) {
                   newVariant = 'cta-premium-close'
-                  reason = 'premium/ecommerce → premium closing CTA'
+                  reason = 'premium/ecommerce/scan → premium closing CTA'
                 }
               }
             }
