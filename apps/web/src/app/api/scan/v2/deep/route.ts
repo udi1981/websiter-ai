@@ -105,7 +105,7 @@ export async function POST(request: Request) {
           const { runScanPipeline } = await import('@/lib/scanner-v2')
 
           // V1 crawl-scope discipline
-          const maxPages = Math.min(options?.maxPages ?? 10, 10) // Cap at 10 to prevent OOM
+          const maxPages = Math.min(options?.maxPages ?? 30, 30) // Full crawl — sequential enrichment prevents OOM
 
           const result = await runScanPipeline(normalizedUrl, {
             maxPages,

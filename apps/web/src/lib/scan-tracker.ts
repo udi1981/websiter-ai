@@ -167,7 +167,7 @@ export const extractAndPersistContent = async (
     const products = (catalog.products as Record<string, unknown>[]) || []
     if (products.length > 0) {
       try {
-        await enrichProductsFromPages(products, 3) // Limit to 3 pages to prevent OOM on dev server
+        await enrichProductsFromPages(products, 8) // Sequential enrichment — no OOM risk
         // Update extraction source if we got prices
         const enrichedCount = products.filter(p =>
           (p.price as Record<string, unknown>)?.value &&
@@ -484,11 +484,13 @@ const enrichProductsFromPages = async (
     })
     .slice(0, maxFetches)
 
-  const enrichPromises = fetchableProducts.map(async (product) => {
+  // Sequential enrichment — one page at a time to prevent OOM on dev server
+  // Each page HTML is ~400-700KB, processing 6+ simultaneously crashes Node
+  for (const product of fetchableProducts) {
     const url = (product.productUrl as Record<string, unknown>)?.value as string
     try {
       const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), 8000) // 8s timeout per page
+      const timer = setTimeout(() => controller.abort(), 8000)
 
       const res = await fetch(url, {
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; UBuilder/1.0)' },
@@ -497,7 +499,7 @@ const enrichProductsFromPages = async (
       })
       clearTimeout(timer)
 
-      if (!res.ok) return
+      if (!res.ok) continue
 
       const html = await res.text()
 
@@ -529,11 +531,9 @@ const enrichProductsFromPages = async (
         }
       }
     } catch {
-      // Non-blocking — product remains with nav-level data
+      // Non-blocking — product remains with nav-level data, continue to next
     }
-  })
-
-  await Promise.allSettled(enrichPromises)
+  }
 }
 
 /** Extract price from HTML using multiple strategies */
