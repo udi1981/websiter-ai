@@ -1425,9 +1425,204 @@ const NewSitePage = () => {
       ready: true,
     })
 
-    // If URL present, trigger scan+build via handleContinue
+    // If URL present (import-site or inspiration flow), trigger scan then build
+    // Skip discovery — not needed when we already have a URL to scan
     if (state.url.trim().length > 5) {
-      await handleContinue()
+      // Start scan directly, then build after scan completes
+      const scanThenBuild = async () => {
+        try {
+          const url = state.url.trim().startsWith('http') ? state.url.trim() : `https://${state.url.trim()}`
+          const ownership = state.sourceOwnership || 'third_party'
+          const mode = state.scanMode || 'inspiration'
+
+          dispatch({ type: 'SCAN_START' })
+          dispatch({ type: 'BUILD_PROGRESS', status: state.locale === 'he' ? '🔍 סורקים את האתר...' : '🔍 Scanning your site...', progress: 5 })
+
+          const scanController = new AbortController()
+          const scanTimeout = setTimeout(() => scanController.abort(), 180000) // 3 min max
+
+          const res = await fetch('/api/scan/v2/deep', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ url, sourceOwnership: ownership, scanMode: mode }),
+            signal: scanController.signal,
+          })
+
+          clearTimeout(scanTimeout)
+
+          let scanJobId: string | undefined
+          let scanResult: Record<string, unknown> | null = null
+
+          if (res.ok && res.body) {
+            const reader = res.body.getReader()
+            const decoder = new TextDecoder()
+            let buffer = ''
+
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              buffer += decoder.decode(value, { stream: true })
+              const lines = buffer.split('\n\n')
+              buffer = lines.pop() || ''
+
+              for (const block of lines) {
+                const eventMatch = block.match(/^event: (\w+)\ndata: ([\s\S]+)$/)
+                if (!eventMatch) continue
+                const [, eventType, dataStr] = eventMatch
+                try {
+                  const data = JSON.parse(dataStr)
+
+                  if (eventType === 'phase' && data.phase === 'init' && data.scanJobId) {
+                    scanJobId = data.scanJobId
+                  }
+
+                  if (eventType === 'progress') {
+                    const pct = Math.min(Math.round((data.percent || 0) * 0.4), 40) // Scan is 0-40% of total
+                    dispatch({ type: 'BUILD_PROGRESS', status: data.message || 'Scanning...', progress: pct })
+                  }
+
+                  if (eventType === 'result' && data.ok) {
+                    scanResult = data.data as Record<string, unknown>
+                    dispatch({
+                      type: 'SCAN_DONE',
+                      result: data.data,
+                      deepData: data.data,
+                      scanJobId,
+                    })
+                  }
+                } catch { /* skip malformed SSE lines */ }
+              }
+            }
+            reader.releaseLock()
+          } else {
+            console.warn('[Build] Scan failed, proceeding without scan data')
+            dispatch({ type: 'SCAN_ERROR' })
+          }
+
+          // Now trigger the actual generation pipeline directly with scan data
+          dispatch({ type: 'BUILD_PROGRESS', status: state.locale === 'he' ? '🚀 מתחילים לבנות...' : '🚀 Starting generation...', progress: 42 })
+
+          const pipelineController = new AbortController()
+          const pipelineTimeout = setTimeout(() => pipelineController.abort(), 300000)
+
+          const pipelineRes = await fetch('/api/ai/pipeline', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              description: state.description || `${state.url.trim()} - imported site`,
+              locale: state.locale,
+              discoveryContext: enrichedContext,
+              deepScanData: scanResult || null,
+              scanJobId: scanJobId || undefined,
+              scanMode: mode,
+              sourceOwnership: ownership,
+              uploadedLogo: state.uploadedImage || undefined,
+              documentText: state.documentText || undefined,
+            }),
+            signal: pipelineController.signal,
+          })
+
+          if (!pipelineRes.ok) {
+            const errText = await pipelineRes.text().catch(() => 'Unknown error')
+            throw new Error(`Pipeline returned ${pipelineRes.status}: ${errText.slice(0, 200)}`)
+          }
+
+          let html = ''
+          let realSiteId: string | null = null
+          let realJobId: string | null = null
+
+          if (pipelineRes.body) {
+            const pReader = pipelineRes.body.getReader()
+            const pDecoder = new TextDecoder()
+            let pBuffer = ''
+
+            const phaseProgress: Record<string, number> = {
+              init: 42, strategy: 50, design: 60, content: 70, images: 78, build: 85, qa: 90, cpo: 95, complete: 100,
+            }
+            const phaseLabels: Record<string, string> = {
+              strategy: state.locale === 'he' ? '🧠 מנתחים אסטרטגיה...' : '🧠 Analyzing strategy...',
+              design: state.locale === 'he' ? '🎨 מעצבים...' : '🎨 Designing...',
+              content: state.locale === 'he' ? '✍️ כותבים תוכן...' : '✍️ Writing content...',
+              images: state.locale === 'he' ? '🖼️ מכינים תמונות...' : '🖼️ Preparing images...',
+              build: state.locale === 'he' ? '🏗️ בונים את האתר...' : '🏗️ Building site...',
+              qa: state.locale === 'he' ? '🔍 בודקים איכות...' : '🔍 Quality check...',
+              cpo: state.locale === 'he' ? '⭐ סקירה סופית...' : '⭐ Final review...',
+              complete: state.locale === 'he' ? '✅ האתר מוכן!' : '✅ Site ready!',
+            }
+
+            try {
+              while (true) {
+                const { done, value } = await pReader.read()
+                if (done) break
+                pBuffer += pDecoder.decode(value, { stream: true })
+                const pLines = pBuffer.split('\n')
+                pBuffer = pLines.pop() || ''
+
+                for (const line of pLines) {
+                  if (!line.startsWith('data: ')) continue
+                  try {
+                    const event = JSON.parse(line.slice(6))
+                    const phase = event.phase as string
+
+                    if (phase === 'init' && event.siteId) {
+                      realSiteId = event.siteId
+                      realJobId = event.jobId || null
+                    }
+
+                    const progress = phaseProgress[phase] || 50
+                    const label = phaseLabels[phase] || `${phase}...`
+                    dispatch({ type: 'BUILD_PROGRESS', status: label, progress })
+
+                    if ((phase === 'complete' || phase === 'build') && event.html) {
+                      html = event.html
+                    }
+                    if (phase === 'error') {
+                      throw new Error(event.error)
+                    }
+                  } catch (parseErr) {
+                    if (parseErr instanceof Error && parseErr.message !== event?.error) { /* skip */ }
+                  }
+                }
+              }
+            } finally {
+              pReader.releaseLock()
+            }
+          }
+          clearTimeout(pipelineTimeout)
+
+          // DB recovery if SSE ended before HTML arrived
+          if ((!html || html.length < 500) && realSiteId) {
+            await new Promise(r => setTimeout(r, 5000))
+            try {
+              const siteRes = await fetch(`/api/sites/${realSiteId}`, { headers: getAuthHeaders() })
+              if (siteRes.ok) {
+                const siteData = await siteRes.json()
+                if (siteData.ok && siteData.data?.html?.length > 1000) {
+                  html = siteData.data.html
+                }
+              }
+            } catch { /* */ }
+          }
+
+          if (html && html.length > 500) {
+            const siteId = realSiteId || `site_${Date.now()}`
+            const slug = (enrichedContext.business_name || 'site').toString().toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'site'
+            const savedSites = (() => { try { return JSON.parse(localStorage.getItem('ubuilder_sites') || '[]') } catch { return [] } })()
+            savedSites.push({ id: siteId, name: enrichedContext.business_name || state.description?.slice(0, 30) || 'New Site', status: 'draft', lastEdited: 'Just now', url: `${slug}.ubuilder.co` })
+            localStorage.setItem('ubuilder_sites', JSON.stringify(savedSites))
+            localStorage.setItem(`ubuilder_html_${siteId}`, html)
+            dispatch({ type: 'BUILD_DONE' })
+            router.push(`/editor/${siteId}`)
+          } else {
+            dispatch({ type: 'BUILD_ERROR', error: state.locale === 'he' ? 'לא הצלחנו לבנות את האתר. נסו שוב.' : 'Generation failed. Please try again.' })
+          }
+        } catch (err) {
+          console.error('[Build] Scan+build failed:', err)
+          dispatch({ type: 'BUILD_ERROR', error: state.locale === 'he' ? 'שגיאה בסריקת האתר. נסו שוב.' : 'Site scan failed. Please try again.' })
+        }
+      }
+
+      await scanThenBuild()
     } else {
       await handleBuild()
     }
