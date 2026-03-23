@@ -715,6 +715,77 @@ Please revise and return improved JSON.`
           designSections = uniqueSections.slice(0, 12)
 
           validateAndFixVariantIds(designSections)
+
+          // ── PREMIUM VARIANT ENFORCEMENT ──
+          // Deterministically upgrade key sections to premium variants
+          // when art direction + business type strongly indicate premium output
+          const artDirection = (discoveryContext?.designDirection as string) || (discoveryContext?.designStyle as string) || ''
+          const isPremium = artDirection.toLowerCase().includes('premium') || artDirection.toLowerCase().includes('apple') || artDirection.toLowerCase().includes('minimal')
+          const isFamilySafe = /kids|family|children|ילדים|משפח/.test(businessType + ' ' + description)
+          const isTech = /saas|tech|ai|fintech|software/.test(businessType)
+          const isEcommerce = /ecommerce|retail|shop|store|consumer_electronics/.test(businessType)
+          const hasScanProducts = !!(scanCatalog && (scanCatalog.products as unknown[])?.length >= 2)
+
+          const variantUpgrades: Record<string, string> = {}
+
+          for (const section of designSections) {
+            const type = section.type as string
+            const currentVariant = section.variantId as string
+            let newVariant: string | null = null
+            let reason = ''
+
+            if (type === 'hero') {
+              if (isFamilySafe && isEcommerce) {
+                newVariant = 'hero-family-warm'
+                reason = 'family-safe + e-commerce → warm trust hero'
+              } else if (isEcommerce || hasScanProducts) {
+                newVariant = 'hero-apple-clean'
+                reason = 'e-commerce/products → apple-clean product hero'
+              } else if (isTech) {
+                newVariant = 'hero-tech-dark'
+                reason = 'tech/SaaS → dark cinematic hero'
+              } else if (isPremium) {
+                newVariant = 'hero-apple-clean'
+                reason = 'premium direction → apple-clean hero'
+              }
+            }
+
+            if (type === 'pricing' && hasScanProducts) {
+              if (currentVariant !== 'pricing-premium-showcase' && currentVariant !== 'pricing-israeli') {
+                newVariant = 'pricing-premium-showcase'
+                reason = 'real products available → premium showcase pricing'
+              }
+            }
+
+            if (type === 'testimonials') {
+              if (isPremium || isEcommerce || isFamilySafe) {
+                if (!currentVariant.includes('premium')) {
+                  newVariant = 'testimonials-premium'
+                  reason = 'premium/ecommerce/family → premium testimonials'
+                }
+              }
+            }
+
+            if (type === 'cta') {
+              if (isPremium || isEcommerce) {
+                if (!currentVariant.includes('premium')) {
+                  newVariant = 'cta-premium-close'
+                  reason = 'premium/ecommerce → premium closing CTA'
+                }
+              }
+            }
+
+            if (newVariant && newVariant !== currentVariant) {
+              variantUpgrades[type] = `${currentVariant} → ${newVariant} (${reason})`
+              section.variantId = newVariant
+            }
+          }
+
+          if (Object.keys(variantUpgrades).length > 0) {
+            console.log('[pipeline] Premium variant enforcement:', JSON.stringify(variantUpgrades))
+            send({ phase: 'design', status: 'premium-upgrade', upgrades: variantUpgrades })
+          }
+
           finalDesign.sections = designSections
 
           await tracker.completeStep(designStepId, { promptSize, responseSize })
