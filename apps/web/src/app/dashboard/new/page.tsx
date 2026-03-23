@@ -1449,12 +1449,17 @@ const NewSitePage = () => {
             : ['🔍 Crawling pages...', '📄 Finding content...', '🧩 Detecting structure...', '🎨 Analyzing design...', '📊 Processing data...', '🏷️ Extracting prices...', '📱 Checking responsiveness...']
           let msgIdx = 0
           heartbeat = setInterval(() => {
-            if (heartbeatProgress < 38) {
-              heartbeatProgress += 2
+            // Keep advancing slowly — scan can take 2+ minutes for product enrichment
+            if (heartbeatProgress < 40) {
+              heartbeatProgress += 1.5
               msgIdx++
-              dispatch({ type: 'BUILD_PROGRESS', status: crawlMessages[msgIdx % crawlMessages.length], progress: heartbeatProgress })
+              dispatch({ type: 'BUILD_PROGRESS', status: crawlMessages[msgIdx % crawlMessages.length], progress: Math.round(heartbeatProgress) })
+            } else if (heartbeatProgress < 42) {
+              // Very slow final crawl — still show life
+              heartbeatProgress += 0.5
+              dispatch({ type: 'BUILD_PROGRESS', status: isHe ? '⏳ עוד רגע, מסיימים לנתח...' : '⏳ Almost done analyzing...', progress: Math.round(heartbeatProgress) })
             }
-          }, 6000) // Every 6 seconds, +2% (faster feedback)
+          }, 5000) // Every 5 seconds
 
           const scanController = new AbortController()
           const scanTimeout = setTimeout(() => scanController.abort(), 180000) // 3 min max
