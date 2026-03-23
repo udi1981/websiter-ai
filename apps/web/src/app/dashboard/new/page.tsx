@@ -1430,28 +1430,31 @@ const NewSitePage = () => {
     if (state.url.trim().length > 5) {
       // Start scan directly, then build after scan completes
       const scanThenBuild = async () => {
+        // Heartbeat lives outside try so it can be cleared in catch
+        let heartbeatProgress = 3
+        let heartbeat: ReturnType<typeof setInterval> | null = null
+        const isHe = state.locale === 'he'
+
         try {
           const url = state.url.trim().startsWith('http') ? state.url.trim() : `https://${state.url.trim()}`
           const ownership = state.sourceOwnership || 'third_party'
           const mode = state.scanMode || 'inspiration'
 
           dispatch({ type: 'SCAN_START' })
-          dispatch({ type: 'BUILD_PROGRESS', status: state.locale === 'he' ? '🔍 סורקים את האתר...' : '🔍 Scanning your site...', progress: 3 })
+          dispatch({ type: 'BUILD_PROGRESS', status: isHe ? '🔍 סורקים את האתר...' : '🔍 Scanning your site...', progress: 3 })
 
-          // Heartbeat: slowly increment progress during long crawl phase
-          let heartbeatProgress = 3
-          const isHe = state.locale === 'he'
+          // Heartbeat: increment progress every 6 seconds during long crawl phase
           const crawlMessages = isHe
-            ? ['🔍 סורקים עמודים...', '📄 מוצאים תוכן...', '🧩 מזהים מוצרים...', '🎨 מנתחים עיצוב...', '📊 מעבדים נתונים...']
-            : ['🔍 Crawling pages...', '📄 Finding content...', '🧩 Detecting products...', '🎨 Analyzing design...', '📊 Processing data...']
+            ? ['🔍 סורקים עמודים באתר...', '📄 מחפשים תוכן ומוצרים...', '🧩 מזהים מבנה האתר...', '🎨 מנתחים עיצוב...', '📊 מעבדים נתונים...', '🏷️ מחלצים מחירים...', '📱 בודקים רספונסיביות...']
+            : ['🔍 Crawling pages...', '📄 Finding content...', '🧩 Detecting structure...', '🎨 Analyzing design...', '📊 Processing data...', '🏷️ Extracting prices...', '📱 Checking responsiveness...']
           let msgIdx = 0
-          const heartbeat = setInterval(() => {
-            if (heartbeatProgress < 35) {
+          heartbeat = setInterval(() => {
+            if (heartbeatProgress < 38) {
               heartbeatProgress += 2
-              msgIdx = Math.min(msgIdx + 1, crawlMessages.length - 1)
+              msgIdx++
               dispatch({ type: 'BUILD_PROGRESS', status: crawlMessages[msgIdx % crawlMessages.length], progress: heartbeatProgress })
             }
-          }, 8000) // Every 8 seconds, +2%
+          }, 6000) // Every 6 seconds, +2% (faster feedback)
 
           const scanController = new AbortController()
           const scanTimeout = setTimeout(() => scanController.abort(), 180000) // 3 min max
@@ -1464,11 +1467,13 @@ const NewSitePage = () => {
           })
 
           clearTimeout(scanTimeout)
-          clearInterval(heartbeat)
+          // NOTE: Do NOT clearInterval(heartbeat) here — the SSE stream is still reading.
+          // The heartbeat keeps progress moving while waiting for server SSE events.
 
           let scanJobId: string | undefined
           let scanResult: Record<string, unknown> | null = null
           let scanPhaseIdx = 0
+          const isHeLang = state.locale === 'he'
 
           if (res.ok && res.body) {
             const reader = res.body.getReader()
@@ -1491,42 +1496,54 @@ const NewSitePage = () => {
 
                   if (eventType === 'phase' && data.phase === 'init' && data.scanJobId) {
                     scanJobId = data.scanJobId
-                    // Show immediate progress so UI doesn't appear stuck
-                    dispatch({ type: 'BUILD_PROGRESS', status: state.locale === 'he' ? '🔍 מתחילים לסרוק...' : '🔍 Starting scan...', progress: 3 })
+                    dispatch({ type: 'BUILD_PROGRESS', status: isHeLang ? '🔍 מתחילים לסרוק...' : '🔍 Starting scan...', progress: 5 })
                   }
 
                   if (eventType === 'phase' && data.status === 'running') {
-                    // Update status text for each scan phase
-                    const isHe = state.locale === 'he'
+                    // Update status text for each scan phase — ALWAYS use Hebrew when locale is he
                     const phaseNames: Record<string, string> = {
-                      discovery: isHe ? '🔍 סורקים עמודים...' : '🔍 Crawling pages...',
-                      'visual-dna': isHe ? '🎨 מנתחים עיצוב...' : '🎨 Analyzing design...',
-                      components: isHe ? '🧩 מזהים רכיבים...' : '🧩 Detecting components...',
-                      content: isHe ? '📄 מחלצים תוכן...' : '📄 Extracting content...',
-                      'brand-intelligence': isHe ? '💡 מנתחים מותג...' : '💡 Analyzing brand...',
-                      technical: isHe ? '⚙️ ניתוח טכני...' : '⚙️ Technical analysis...',
-                      'strategic-insights': isHe ? '📊 ניתוח אסטרטגי...' : '📊 Strategic analysis...',
+                      discovery: isHeLang ? '🔍 סורקים עמודים באתר...' : '🔍 Crawling pages...',
+                      'visual-dna': isHeLang ? '🎨 מנתחים עיצוב ומותג...' : '🎨 Analyzing design...',
+                      components: isHeLang ? '🧩 מזהים רכיבים ותבניות...' : '🧩 Detecting components...',
+                      content: isHeLang ? '📄 מחלצים תוכן ומוצרים...' : '📄 Extracting content...',
+                      'brand-intelligence': isHeLang ? '💡 מנתחים מותג ושוק...' : '💡 Analyzing brand...',
+                      technical: isHeLang ? '⚙️ ניתוח טכני ומבנה...' : '⚙️ Technical analysis...',
+                      'strategic-insights': isHeLang ? '📊 בונים אסטרטגיה...' : '📊 Strategic analysis...',
                     }
-                    const label = phaseNames[data.phase] || data.description || 'Scanning...'
-                    // Use scanPhaseIdx to monotonically advance progress
+                    // Always use our Hebrew label, ignore English server description
+                    const label = phaseNames[data.phase] || (isHeLang ? '🔍 סורקים...' : 'Scanning...')
                     scanPhaseIdx++
-                    dispatch({ type: 'BUILD_PROGRESS', status: label, progress: Math.min(5 + scanPhaseIdx * 5, 38) })
+                    // Jump heartbeat forward to match real phase progress
+                    heartbeatProgress = Math.max(heartbeatProgress, 5 + scanPhaseIdx * 5)
+                    dispatch({ type: 'BUILD_PROGRESS', status: label, progress: Math.min(heartbeatProgress, 38) })
                   }
 
                   if (eventType === 'phase' && data.status === 'done') {
                     scanPhaseIdx++
-                    const pct = Math.min(5 + scanPhaseIdx * 5, 40)
-                    dispatch({ type: 'BUILD_PROGRESS', status: data.phase === 'content-extraction' ? (state.locale === 'he' ? '📦 מחלצים מוצרים...' : '📦 Extracting products...') : '', progress: pct })
+                    heartbeatProgress = Math.max(heartbeatProgress, 5 + scanPhaseIdx * 5)
+                    const phaseDoneLabels: Record<string, string> = {
+                      'content-extraction': isHeLang ? '📦 מחלצים מוצרים ומחירים...' : '📦 Extracting products...',
+                      'discovery': isHeLang ? '✓ סריקת עמודים הושלמה' : '✓ Page crawl complete',
+                      'visual-dna': isHeLang ? '✓ ניתוח עיצוב הושלם' : '✓ Design analysis complete',
+                      'content': isHeLang ? '✓ תוכן חולץ בהצלחה' : '✓ Content extracted',
+                    }
+                    const doneLabel = phaseDoneLabels[data.phase] || ''
+                    if (doneLabel) dispatch({ type: 'BUILD_PROGRESS', status: doneLabel, progress: Math.min(heartbeatProgress, 40) })
                   }
 
                   if (eventType === 'progress') {
-                    const pct = Math.max(5, Math.min(Math.round((data.percent || 0) * 0.4), 40))
-                    const msg = data.message || (state.locale === 'he' ? 'סורקים...' : 'Scanning...')
-                    dispatch({ type: 'BUILD_PROGRESS', status: msg, progress: pct })
+                    const serverPct = data.percent || 0
+                    const mappedPct = Math.max(5, Math.min(Math.round(serverPct * 0.4), 40))
+                    heartbeatProgress = Math.max(heartbeatProgress, mappedPct)
+                    const msg = (isHeLang && serverPct === 100)
+                      ? '✅ הסריקה הושלמה!'
+                      : data.message || (isHeLang ? 'סורקים...' : 'Scanning...')
+                    dispatch({ type: 'BUILD_PROGRESS', status: msg, progress: heartbeatProgress })
                   }
 
                   if (eventType === 'result' && data.ok) {
                     scanResult = data.data as Record<string, unknown>
+                    clearInterval(heartbeat) // NOW stop heartbeat — scan is truly done
                     dispatch({
                       type: 'SCAN_DONE',
                       result: data.data,
@@ -1543,8 +1560,11 @@ const NewSitePage = () => {
             dispatch({ type: 'SCAN_ERROR' })
           }
 
+          // Stop heartbeat — scan SSE stream is done (success or failure)
+          clearInterval(heartbeat)
+
           // Now trigger the actual generation pipeline directly with scan data
-          dispatch({ type: 'BUILD_PROGRESS', status: state.locale === 'he' ? '🚀 מתחילים לבנות...' : '🚀 Starting generation...', progress: 42 })
+          dispatch({ type: 'BUILD_PROGRESS', status: isHeLang ? '🚀 מתחילים לבנות את האתר...' : '🚀 Starting generation...', progress: 42 })
 
           const pipelineController = new AbortController()
           const pipelineTimeout = setTimeout(() => pipelineController.abort(), 300000)
@@ -1662,8 +1682,9 @@ const NewSitePage = () => {
             dispatch({ type: 'BUILD_ERROR', error: state.locale === 'he' ? 'לא הצלחנו לבנות את האתר. נסו שוב.' : 'Generation failed. Please try again.' })
           }
         } catch (err) {
+          if (heartbeat) clearInterval(heartbeat)
           console.error('[Build] Scan+build failed:', err)
-          dispatch({ type: 'BUILD_ERROR', error: state.locale === 'he' ? 'שגיאה בסריקת האתר. נסו שוב.' : 'Site scan failed. Please try again.' })
+          dispatch({ type: 'BUILD_ERROR', error: isHe ? 'שגיאה בסריקת האתר. נסו שוב.' : 'Site scan failed. Please try again.' })
         }
       }
 
