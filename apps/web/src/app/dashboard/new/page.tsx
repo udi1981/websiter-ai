@@ -1830,6 +1830,19 @@ const NewSitePage = () => {
     return () => clearInterval(timer)
   }, [state.step, funFacts.length])
 
+  // Live elapsed timer for building screen
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  useEffect(() => {
+    if (state.step !== 'building') { setElapsedSeconds(0); return }
+    const timer = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
+    return () => clearInterval(timer)
+  }, [state.step])
+  const formatElapsed = (s: number) => {
+    const m = Math.floor(s / 60)
+    const sec = s % 60
+    return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `0:${sec.toString().padStart(2, '0')}`
+  }
+
   // ─── Render ──────────────────────────────────────────────────────────────
 
   const containerClass = `min-h-[100dvh] bg-bg${state.locale === 'he' ? ' rtl' : ''}`
@@ -2216,14 +2229,27 @@ const NewSitePage = () => {
             <div>
               <div className="text-4xl mb-3">⚡</div>
               <h2 className="text-2xl font-bold text-text">{t('בונים את האתר שלכם...', 'Building your website...')}</h2>
+              <p className="text-sm text-text-muted mt-2">
+                {state.url
+                  ? t('הסריקה והבנייה לוקחים 5-7 דקות', 'Scanning and building takes 5-7 minutes')
+                  : t('הבנייה לוקחת 3-4 דקות', 'Building takes 3-4 minutes')
+                }
+              </p>
             </div>
 
-            {/* Main progress bar */}
+            {/* Main progress bar + timer */}
             <div className="space-y-2">
               <div className="h-3 w-full rounded-full bg-bg-secondary overflow-hidden">
                 <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary-hover transition-all duration-700 ease-out" style={{ width: `${state.buildProgress}%` }} />
               </div>
-              <p className="text-sm text-text-muted">{state.buildProgress}%</p>
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                  <span className="text-xs text-green-400/80">{t('המערכת פעילה', 'System active')}</span>
+                </div>
+                <span className="text-sm text-text-muted font-mono">{formatElapsed(elapsedSeconds)}</span>
+                <span className="text-sm text-text-muted">{state.buildProgress}%</span>
+              </div>
             </div>
 
             {/* Active step spotlight */}
