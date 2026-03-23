@@ -939,7 +939,7 @@ const NewSitePage = () => {
       dispatch({ type: 'BUILD_PROGRESS', status: '🚀 Team 100 activated — @strategist analyzing...', progress: 5 })
 
       const pipelineController = new AbortController()
-      const pipelineTimeout = setTimeout(() => pipelineController.abort(), 300000) // 5 min max
+      const pipelineTimeout = setTimeout(() => pipelineController.abort(), 600000) // 5 min max
 
       const pipelineRes = await fetch('/api/ai/pipeline', {
         method: 'POST',
@@ -1594,7 +1594,7 @@ const NewSitePage = () => {
           dispatch({ type: 'BUILD_PROGRESS', status: isHeLang ? '🚀 מתחילים לבנות את האתר...' : '🚀 Starting generation...', progress: 42 })
 
           const pipelineController = new AbortController()
-          const pipelineTimeout = setTimeout(() => pipelineController.abort(), 300000)
+          const pipelineTimeout = setTimeout(() => pipelineController.abort(), 600000)
 
           const pipelineRes = await fetch('/api/ai/pipeline', {
             method: 'POST',

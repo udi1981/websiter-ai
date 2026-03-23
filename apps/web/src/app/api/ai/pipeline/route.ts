@@ -421,7 +421,7 @@ const buildFallbackSite = (params: {
 
 // ─── Main Pipeline Route ─────────────────────────────────────────
 
-export const maxDuration = 300
+export const maxDuration = 600 // 10 minutes — pipeline needs 5-7 min for full generation
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
