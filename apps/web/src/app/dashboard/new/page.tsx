@@ -1436,7 +1436,22 @@ const NewSitePage = () => {
           const mode = state.scanMode || 'inspiration'
 
           dispatch({ type: 'SCAN_START' })
-          dispatch({ type: 'BUILD_PROGRESS', status: state.locale === 'he' ? '🔍 סורקים את האתר...' : '🔍 Scanning your site...', progress: 5 })
+          dispatch({ type: 'BUILD_PROGRESS', status: state.locale === 'he' ? '🔍 סורקים את האתר...' : '🔍 Scanning your site...', progress: 3 })
+
+          // Heartbeat: slowly increment progress during long crawl phase
+          let heartbeatProgress = 3
+          const isHe = state.locale === 'he'
+          const crawlMessages = isHe
+            ? ['🔍 סורקים עמודים...', '📄 מוצאים תוכן...', '🧩 מזהים מוצרים...', '🎨 מנתחים עיצוב...', '📊 מעבדים נתונים...']
+            : ['🔍 Crawling pages...', '📄 Finding content...', '🧩 Detecting products...', '🎨 Analyzing design...', '📊 Processing data...']
+          let msgIdx = 0
+          const heartbeat = setInterval(() => {
+            if (heartbeatProgress < 35) {
+              heartbeatProgress += 2
+              msgIdx = Math.min(msgIdx + 1, crawlMessages.length - 1)
+              dispatch({ type: 'BUILD_PROGRESS', status: crawlMessages[msgIdx % crawlMessages.length], progress: heartbeatProgress })
+            }
+          }, 8000) // Every 8 seconds, +2%
 
           const scanController = new AbortController()
           const scanTimeout = setTimeout(() => scanController.abort(), 180000) // 3 min max
@@ -1449,6 +1464,7 @@ const NewSitePage = () => {
           })
 
           clearTimeout(scanTimeout)
+          clearInterval(heartbeat)
 
           let scanJobId: string | undefined
           let scanResult: Record<string, unknown> | null = null
