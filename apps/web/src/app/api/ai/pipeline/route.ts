@@ -46,22 +46,35 @@ const callPipelineAgent = async (
 
   try {
     if (claudeKey) {
-      const res = await fetch(CLAUDE_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': claudeKey, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: 8192, system: systemPrompt, messages: [{ role: 'user', content: userMessage }] }),
-        signal: controller.signal,
-      })
-      if (res.ok) {
-        const data = await res.json()
-        const responseText = data.content?.[0]?.text || ''
-        console.log(`[Agent] Claude response: ${responseText.length} chars`)
-        return { result: parseAgentResponse(responseText), promptSize, responseSize: responseText.length }
-      } else {
+      // Retry up to 3 times for transient errors (429, 529, 500)
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        const res = await fetch(CLAUDE_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': claudeKey, 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: 8192, system: systemPrompt, messages: [{ role: 'user', content: userMessage }] }),
+          signal: controller.signal,
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const responseText = data.content?.[0]?.text || ''
+          console.log(`[Agent] Claude response: ${responseText.length} chars (attempt ${attempt})`)
+          return { result: parseAgentResponse(responseText), promptSize, responseSize: responseText.length }
+        }
+
+        const status = res.status
         const errBody = await res.text().catch(() => '')
-        console.error(`[Agent] Claude API failed: ${res.status} ${res.statusText} — ${errBody.slice(0, 300)}`)
-        console.error(`[Agent] Prompt size: system=${systemPrompt.length}, user=${userMessage.length}`)
+        console.error(`[Agent] Claude API failed: ${status} — ${errBody.slice(0, 200)} (attempt ${attempt}/3)`)
+
+        // Retry on transient errors (overloaded, rate limit, server error)
+        if ((status === 529 || status === 429 || status >= 500) && attempt < 3) {
+          const waitMs = attempt * 5000 // 5s, 10s
+          console.log(`[Agent] Retrying in ${waitMs / 1000}s...`)
+          await new Promise(r => setTimeout(r, waitMs))
+          continue
+        }
+        break // Non-retryable error (400, 401, etc.)
       }
+      console.warn('[Agent] Claude failed after retries — falling back to Gemini')
     } else {
       console.warn('[Agent] No Claude API key — using Gemini fallback')
     }
