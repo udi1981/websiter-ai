@@ -332,7 +332,7 @@ const INDUSTRY_DIRECTION_MAP: Record<string, string> = {
 export const selectArtDirection = (input: SelectionInput): ArtDirection => {
   // Check explicit design direction from user
   if (input.designDirection) {
-    const lower = input.designDirection.toLowerCase()
+    const lower = (typeof input.designDirection === 'string' ? input.designDirection : String(input.designDirection)).toLowerCase()
     if (lower.includes('apple') || lower.includes('minimal') || lower.includes('luxury')) {
       return DIRECTIONS.find(d => d.id === 'minimal-luxury')!
     }
@@ -355,7 +355,8 @@ export const selectArtDirection = (input: SelectionInput): ArtDirection => {
 
   // Check target audience hints
   if (input.targetAudience) {
-    const lower = input.targetAudience.toLowerCase()
+    const audienceStr = typeof input.targetAudience === 'string' ? input.targetAudience : JSON.stringify(input.targetAudience)
+    const lower = audienceStr.toLowerCase()
     if (lower.includes('הורים') || lower.includes('parents') || lower.includes('ילדים') || lower.includes('children') || lower.includes('families')) {
       return DIRECTIONS.find(d => d.id === 'family-premium')!
     }
