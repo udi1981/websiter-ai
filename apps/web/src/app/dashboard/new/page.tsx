@@ -1580,7 +1580,8 @@ const NewSitePage = () => {
                       throw new Error(event.error)
                     }
                   } catch (parseErr) {
-                    if (parseErr instanceof Error && parseErr.message !== event?.error) { /* skip */ }
+                    if (parseErr instanceof Error && parseErr.message.startsWith('[Pipeline]')) throw parseErr
+                    /* skip malformed SSE lines */
                   }
                 }
               }
