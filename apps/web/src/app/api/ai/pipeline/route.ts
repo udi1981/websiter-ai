@@ -41,13 +41,13 @@ const callPipelineAgent = async (
   const claudeKey = process.env.CLAUDE_API_KEY
   const geminiKey = process.env.GEMINI_API_KEY
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 150000) // 2.5 min per agent call
+  const timeout = setTimeout(() => controller.abort(), 90000) // 90s per agent call (was 150s — reduce to prevent pipeline timeout)
   const promptSize = systemPrompt.length + userMessage.length
 
   try {
     if (claudeKey) {
-      // Retry up to 3 times for transient errors (429, 529, 500, network errors)
-      for (let attempt = 1; attempt <= 3; attempt++) {
+      // Retry up to 2 times for transient errors (fast failure to stay within pipeline timeout)
+      for (let attempt = 1; attempt <= 2; attempt++) {
         try {
           const res = await fetch(CLAUDE_API_URL, {
             method: 'POST',
@@ -64,10 +64,10 @@ const callPipelineAgent = async (
 
           const status = res.status
           const errBody = await res.text().catch(() => '')
-          console.error(`[Agent] Claude API failed: ${status} — ${errBody.slice(0, 200)} (attempt ${attempt}/3)`)
+          console.error(`[Agent] Claude API failed: ${status} — ${errBody.slice(0, 200)} (attempt /2)`)
 
           // Retry on transient errors (overloaded, rate limit, server error)
-          if ((status === 529 || status === 429 || status >= 500) && attempt < 3) {
+          if ((status === 529 || status === 429 || status >= 500) && attempt < 2) {
             const waitMs = attempt * 5000 // 5s, 10s
             console.log(`[Agent] Retrying in ${waitMs / 1000}s...`)
             await new Promise(r => setTimeout(r, waitMs))
@@ -78,8 +78,8 @@ const callPipelineAgent = async (
           // Network-level errors: ECONNRESET, ETIMEDOUT, DNS failures
           const errMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr)
           const isAbort = errMsg.includes('abort')
-          console.error(`[Agent] Claude fetch error: ${errMsg} (attempt ${attempt}/3)`)
-          if (!isAbort && attempt < 3) {
+          console.error(`[Agent] Claude fetch error: ${errMsg} (attempt /2)`)
+          if (!isAbort && attempt < 2) {
             const waitMs = attempt * 3000
             console.log(`[Agent] Network error — retrying in ${waitMs / 1000}s...`)
             await new Promise(r => setTimeout(r, waitMs))
