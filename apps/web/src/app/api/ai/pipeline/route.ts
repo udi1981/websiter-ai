@@ -1516,14 +1516,34 @@ Return JSON: {
                   )
 
                   // Write inner pages to pages table
+                  // Real DB schema: id, tenant_id(FK→tenants), title, slug, page_type, status, blocks(jsonb), locale
+                  // No html/path/order/meta columns — store HTML in blocks jsonb
                   if (innerPages.length > 0) {
                     const { db: rawDb, sql } = await import('@ubuilder/db')
-                    for (const page of innerPages) {
+
+                    // Ensure tenant exists (same pattern as lead capture)
+                    try {
                       await rawDb.execute(sql`
-                        INSERT INTO pages (id, site_id, title, slug, path, html, "order", locale, meta, created_at, updated_at)
-                        VALUES (${page.metadata.id}, ${siteId}, ${page.metadata.title}, ${page.metadata.slug}, ${page.metadata.path}, ${page.html}, ${page.metadata.order}, ${locale}, ${JSON.stringify(page.metadata)}::jsonb, NOW(), NOW())
-                        ON CONFLICT (id) DO UPDATE SET html = EXCLUDED.html, updated_at = NOW()
+                        INSERT INTO tenants (id, name, created_at, updated_at)
+                        VALUES (${siteId}, ${businessNameResolved}, NOW(), NOW())
+                        ON CONFLICT (id) DO NOTHING
                       `)
+                    } catch { /* tenant may already exist */ }
+
+                    for (const page of innerPages) {
+                      const blocksJson = JSON.stringify({
+                        html: page.html,
+                        metadata: page.metadata,
+                      })
+                      try {
+                        await rawDb.execute(sql`
+                          INSERT INTO pages (id, tenant_id, title, slug, page_type, status, blocks, locale, created_at, updated_at)
+                          VALUES (${page.metadata.id}, ${siteId}, ${page.metadata.title}, ${page.metadata.slug}, ${page.metadata.pageType}, 'draft', ${blocksJson}::jsonb, ${locale}, NOW(), NOW())
+                          ON CONFLICT (id) DO UPDATE SET blocks = ${blocksJson}::jsonb, updated_at = NOW()
+                        `)
+                      } catch (pageErr) {
+                        console.error(`[pipeline] Failed to save page ${page.metadata.slug}:`, pageErr)
+                      }
                     }
                     console.log(`[pipeline] Multi-page: ${innerPages.length} inner pages generated and saved`)
                     send({ phase: 'build', status: 'inner-pages-done', pageCount: innerPages.length })

@@ -1,6 +1,7 @@
 /**
  * Inner page renderer — /site/[slug]/[page-path]
  * Serves inner pages (about, products, contact, blog) from the pages table.
+ * HTML is stored in blocks->html (jsonb) because the real DB has no html column.
  */
 
 import { createDb } from '@ubuilder/db'
@@ -25,11 +26,11 @@ const InnerPage = async ({ params }: Props) => {
 
   if (!site) return notFound()
 
-  // Find the inner page by path or slug
+  // Find the inner page — tenant_id = site.id, HTML stored in blocks->'html'
   const result = await db.execute(sql`
-    SELECT html, title FROM pages
-    WHERE site_id = ${site.id}
-      AND (slug = ${pagePath} OR path = ${pagePath})
+    SELECT blocks->>'html' as html, title FROM pages
+    WHERE tenant_id = ${site.id}
+      AND slug = ${pagePath}
     LIMIT 1
   `)
 
