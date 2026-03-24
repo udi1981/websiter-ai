@@ -196,6 +196,9 @@ export const runScanPipeline = async (
     // Build pages array for downstream phases
     const pagesForPhases = buildPagesArray(pageHtmlMap, pageCssUrls, result.siteMap)
 
+    // Memory fix: pageHtmlMap is no longer needed after pagesForPhases is built
+    // (Visual DNA phase still uses it — clear after phase 2)
+
     // ── Phase 2: Visual DNA ─────────────────────────────────────────────
     // Phase modules define their own internal types. We cast at boundaries.
     /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -223,6 +226,10 @@ export const runScanPipeline = async (
       const fontCount = (result.visualDna as any).typographySystem?.fonts?.length ?? 0
       return { colorCount, fontCount }
     })
+
+    // Memory fix: release raw HTML maps after visual DNA is extracted (~3-6MB freed)
+    pageHtmlMap.clear()
+    pageCssUrls.clear()
 
     // ── Phase 3: Component Library ──────────────────────────────────────
     await executePhase('components', result, completedPhases, emit, setPhaseResult, timeoutController, async () => {
@@ -285,6 +292,9 @@ export const runScanPipeline = async (
         motionLibrary: (phaseResult as any).motion?.library ?? null,
       }
     })
+
+    // Memory fix: release pagesForPhases — phases 7+ only need extracted data (~3-6MB freed)
+    pagesForPhases.length = 0
 
     // ── Phase 7: Strategic Insights (AI) ────────────────────────────────
     if (skipAi) {

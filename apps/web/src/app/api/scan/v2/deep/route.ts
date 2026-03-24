@@ -165,11 +165,22 @@ export async function POST(request: Request) {
           const { transformScanToGenerationContext } = await import('@/lib/scanner-v2')
           const generationCtx = transformScanToGenerationContext(result)
 
-          // Complete scan job with final artifacts
+          // Complete scan job with final artifacts — then release the large objects
           await completeScanJob(scanJobId, result as Record<string, unknown>, generationCtx)
+          // Release large objects from memory — data is now persisted in DB
+          // @ts-expect-error — intentional nulling for GC
+          result = null
 
           send('progress', { percent: 100, message: 'Deep scan complete!' })
-          send('result', { ok: true, data: result, scanJobId })
+          // Send summary only via SSE — full result is in DB, no need to serialize 2-4MB over SSE
+          const scanSummary = {
+            siteName: (result as Record<string, unknown>).siteName,
+            domain: (result as Record<string, unknown>).domain,
+            pageCount: ((result as Record<string, unknown>).siteMap as Record<string, unknown>)?.pages
+              ? ((((result as Record<string, unknown>).siteMap as Record<string, unknown>).pages as unknown[]) || []).length : 0,
+            productCount: generationCtx.sectionPlan?.length || 0,
+          }
+          send('result', { ok: true, data: scanSummary, scanJobId })
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Unknown error'
 

@@ -437,8 +437,13 @@ const buildFallbackSite = (params: {
 export const maxDuration = 600 // 10 minutes — pipeline needs 5-7 min for full generation
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { description, locale = 'he', discoveryContext, deepScanData, scanJobId, scanMode, sourceOwnership, uploadedLogo, documentText } = body
+  let body = await req.json()
+  const { description, locale = 'he', discoveryContext, scanJobId, scanMode, sourceOwnership, uploadedLogo, documentText } = body
+  // Extract only what we need from deepScanData then release the full body
+  const deepScanSourceUrl = (body.deepScanData as Record<string,unknown>)?.url as string | undefined
+  const deepScanSiteName = (body.deepScanData as Record<string,unknown>)?.siteName as string | undefined
+  const deepScanBusinessType = (body.deepScanData as Record<string,unknown>)?.businessType as string | undefined
+  body = null as unknown as Record<string, unknown> // Release request body from memory
 
   // Auth — require authenticated user (dev bypass via DEV_ONLY_AUTH_BYPASS + localhost)
   const authUser = await getAuthUser(req)
@@ -533,7 +538,7 @@ export async function POST(req: NextRequest) {
           status: 'draft',
           industry: businessType,
           locale,
-          sourceUrl: scanSourceUrl || deepScanData?.url as string || undefined,
+          sourceUrl: scanSourceUrl || deepScanSourceUrl as string || undefined,
         })
 
         // Link site to job
@@ -577,7 +582,7 @@ export async function POST(req: NextRequest) {
               locale,
               industry: businessType,
               discoveryAnswers: discoveryContext || {},
-              sourceUrl: scanSourceUrl || deepScanData?.url || null,
+              sourceUrl: scanSourceUrl || deepScanSourceUrl || null,
               hasUploadedLogo: !!uploadedLogo,
               uploadedLogoSize: uploadedLogo ? uploadedLogo.length : 0,
               hasDocumentText: !!documentText,
@@ -616,7 +621,7 @@ export async function POST(req: NextRequest) {
 Business description: ${description}
 Locale: ${locale}
 Discovery context: ${JSON.stringify(discoveryContext || {})}
-${deepScanData ? `Scan data available: ${JSON.stringify(deepScanData).slice(0, 3000)}` : ''}
+${deepScanSiteName ? `Scan data: siteName=${deepScanSiteName}, industry=${deepScanBusinessType || ''}` : ''}
 ${scanCatalog && (scanCatalog.products as unknown[])?.length > 0 ? `\nREAL PRODUCTS from scanned site: ${JSON.stringify((scanCatalog.products as Record<string, unknown>[]).slice(0, 8).map(p => (p.name as Record<string, unknown>)?.value)).slice(0, 500)}` : ''}
 ${scanContentModel?.faqs ? `\nREAL FAQ questions found: ${((scanContentModel.faqs as Record<string, unknown>[]) || []).slice(0, 5).map(f => (f as Record<string, unknown>).value).join('; ').slice(0, 300)}` : ''}
 ${documentBlock}
@@ -1312,7 +1317,7 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
               hasFooter: mergedSections.some(s => s.type === 'footer'),
               hasContactSection: mergedSections.some(s => s.type === 'contact'),
               locale,
-              byteSize: new TextEncoder().encode(composedHtml).length,
+              byteSize: Buffer.byteLength(composedHtml, 'utf8'),
             },
           })
 
