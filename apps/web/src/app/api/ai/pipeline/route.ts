@@ -1457,6 +1457,69 @@ Return JSON: {
             primaryColor: palette.primary || '#7C3AED',
             updatedAt: new Date(),
           }).where(eq(sites.id, siteId))
+
+          // ── MULTI-PAGE GENERATION (V1: up to 4 inner pages) ──
+          if (scanCatalog || scanContentModel) {
+            try {
+              send({ phase: 'build', status: 'inner-pages' })
+              const { buildPageInventory, buildGlobalDesignSystem, generateInnerPages } = await import('@/lib/multi-page-builder')
+
+              // Load scan result for page inventory
+              const scanFullResult = scanJobId
+                ? await tracker.getArtifact(scanJobId, 'scan_full_result').catch(() => null)
+                : null
+
+              if (scanFullResult) {
+                const pageInventory = buildPageInventory(
+                  scanFullResult as Record<string, unknown>,
+                  scanCatalog || undefined,
+                  scanContentModel || undefined,
+                )
+
+                if (pageInventory.length > 1) {
+                  const designSystem = buildGlobalDesignSystem({
+                    palette: resolvePalette(palette),
+                    fonts: {
+                      heading: typo?.headingFont || typo?.heading || (locale === 'he' ? 'Heebo' : 'Inter'),
+                      body: typo?.bodyFont || typo?.body || (locale === 'he' ? 'Assistant' : 'Inter'),
+                      headingWeight: typo?.headingWeight || '700',
+                      bodyWeight: typo?.bodyWeight || '400',
+                    },
+                    siteName: businessNameResolved,
+                    locale: locale as 'en' | 'he',
+                    pageInventory,
+                    scanNav: (scanContentModel?.navigation as Record<string, unknown>[]) || undefined,
+                    scanFooter: (scanContentModel?.footer as Record<string, unknown>[]) || undefined,
+                    ctaText: mergedSections.find(s => s.ctaText)?.ctaText as string || undefined,
+                    logoUrl: generatedImages.logo || undefined,
+                  })
+
+                  const { pages: innerPages } = await generateInnerPages(
+                    siteId,
+                    pageInventory,
+                    designSystem,
+                    mergedSections as Record<string, unknown>[],
+                  )
+
+                  // Write inner pages to pages table
+                  if (innerPages.length > 0) {
+                    const { db: rawDb, sql } = await import('@ubuilder/db')
+                    for (const page of innerPages) {
+                      await rawDb.execute(sql`
+                        INSERT INTO pages (id, site_id, title, slug, path, html, "order", locale, meta, created_at, updated_at)
+                        VALUES (${page.metadata.id}, ${siteId}, ${page.metadata.title}, ${page.metadata.slug}, ${page.metadata.path}, ${page.html}, ${page.metadata.order}, ${locale}, ${JSON.stringify(page.metadata)}::jsonb, NOW(), NOW())
+                        ON CONFLICT (id) DO UPDATE SET html = EXCLUDED.html, updated_at = NOW()
+                      `)
+                    }
+                    console.log(`[pipeline] Multi-page: ${innerPages.length} inner pages generated and saved`)
+                    send({ phase: 'build', status: 'inner-pages-done', pageCount: innerPages.length })
+                  }
+                }
+              }
+            } catch (mpErr) {
+              console.error('[pipeline] Multi-page generation error (non-blocking):', mpErr)
+            }
+          }
         }
 
         // ── COMPLETE ──
