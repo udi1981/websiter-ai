@@ -440,9 +440,15 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const { description, locale = 'he', discoveryContext, deepScanData, scanJobId, scanMode, sourceOwnership, uploadedLogo, documentText } = body
 
-  // Auth — get userId (fallback to x-user-id header)
+  // Auth — require authenticated user (dev bypass via DEV_ONLY_AUTH_BYPASS + localhost)
   const authUser = await getAuthUser(req)
-  const userId = authUser?.userId || req.headers.get('x-user-id') || 'anonymous'
+  if (!authUser) {
+    return new Response(
+      JSON.stringify({ ok: false, error: 'Authentication required' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+  const userId = authUser.userId
 
   // V1 validation: reject recreation mode and third_party + copy
   if (scanMode === 'recreation') {

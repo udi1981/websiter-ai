@@ -193,12 +193,13 @@ export const POST = async (
 
     const db = createDb()
 
-    // 1. Fetch site
+    // 1. Fetch site — must exist AND be published before any AI model call
     const [site] = await db
       .select({
         name: sites.name,
         html: sites.html,
         industry: sites.industry,
+        status: sites.status,
       })
       .from(sites)
       .where(eq(sites.id, siteId))
@@ -208,6 +209,13 @@ export const POST = async (
       return NextResponse.json(
         { ok: false, error: 'Site not found' },
         { status: 404 }
+      )
+    }
+
+    if (site.status !== 'published') {
+      return NextResponse.json(
+        { ok: false, error: 'Chatbot is only available on published sites' },
+        { status: 403 }
       )
     }
 

@@ -1,24 +1,16 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-middleware'
-import type { Customer } from '@ubuilder/types'
-
-// TODO: Replace with Drizzle ORM query when DB connected
-const customersStore = new Map<string, Customer[]>()
-
-/** Helper to get or initialize customers array for a site */
-const getCustomers = (siteId: string): Customer[] => {
-  if (!customersStore.has(siteId)) {
-    customersStore.set(siteId, [])
-  }
-  return customersStore.get(siteId)!
-}
+import { createDb, eq, and } from '@ubuilder/db'
+import { customers } from '@ubuilder/db'
+import { prefixedId } from '@ubuilder/utils'
 
 /**
- * GET /api/crm/customers
- * List all customers for a site with filtering, segment queries, and pagination.
- *
- * Query params:
- *   siteId (required), tag, minOrderCount, minTotalSpent, search, page, limit
+ * CRM Customers — persisted to PostgreSQL via Drizzle ORM.
+ * Table created via targeted SQL migration (not db:push).
+ */
+
+/**
+ * GET /api/crm/customers?siteId=xxx
  */
 export const GET = async (request: Request) => {
   try {
@@ -27,88 +19,36 @@ export const GET = async (request: Request) => {
 
     const { searchParams } = new URL(request.url)
     const siteId = searchParams.get('siteId')
-
     if (!siteId) {
-      return NextResponse.json(
-        { ok: false, error: 'siteId is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ ok: false, error: 'siteId is required' }, { status: 400 })
     }
 
-    // TODO: Replace with Drizzle ORM query when DB connected
-    let customers = [...getCustomers(siteId)]
-
-    // Filter by tag
-    const tag = searchParams.get('tag')
-    if (tag) {
-      customers = customers.filter(c => c.tags.includes(tag))
-    }
-
-    // Filter by minimum order count
-    const minOrderCount = searchParams.get('minOrderCount')
-    if (minOrderCount) {
-      const min = parseInt(minOrderCount, 10)
-      if (!isNaN(min)) {
-        customers = customers.filter(c => c.orderCount >= min)
-      }
-    }
-
-    // Filter by minimum total spent
-    const minTotalSpent = searchParams.get('minTotalSpent')
-    if (minTotalSpent) {
-      const min = parseFloat(minTotalSpent)
-      if (!isNaN(min)) {
-        customers = customers.filter(c => c.totalSpent >= min)
-      }
-    }
-
-    // Search by name, email, phone, or company
-    const search = searchParams.get('search')
-    if (search) {
-      const q = search.toLowerCase()
-      customers = customers.filter(
-        c =>
-          c.name.toLowerCase().includes(q) ||
-          c.email.toLowerCase().includes(q) ||
-          c.phone?.toLowerCase().includes(q) ||
-          c.company?.toLowerCase().includes(q)
-      )
-    }
-
-    // Sort by createdAt descending by default
-    customers.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-
-    // Pagination
+    const db = createDb()
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)))
-    const total = customers.length
-    const totalPages = Math.ceil(total / limit)
-    const paginated = customers.slice((page - 1) * limit, page * limit)
+    const offset = (page - 1) * limit
+
+    const results = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.siteId, siteId))
+      .orderBy(customers.createdAt)
+      .limit(limit)
+      .offset(offset)
 
     return NextResponse.json({
       ok: true,
-      data: paginated,
-      pagination: { page, limit, total, totalPages },
+      data: results,
+      pagination: { page, limit, total: results.length },
     })
   } catch (err) {
     console.error('CRM Customers GET error:', err)
-    return NextResponse.json(
-      { ok: false, error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
   }
 }
 
 /**
- * POST /api/crm/customers
- * Create or update (upsert) a customer by email.
- * If a customer with the same email exists for the site, it updates that record.
- * Otherwise, creates a new customer.
- *
- * Body: { siteId, name, email, phone?, company?, leadId?, tags?, totalSpent?, orderCount?, metadata? }
- * Returns the created or updated customer.
+ * POST /api/crm/customers — create or upsert by email
  */
 export const POST = async (request: Request) => {
   try {
@@ -116,76 +56,125 @@ export const POST = async (request: Request) => {
     if (authResult instanceof Response) return authResult
 
     const body = await request.json()
-    const { siteId, name, email } = body
+    const { siteId, name, email, phone, company, tags } = body
 
-    if (!siteId) {
-      return NextResponse.json(
-        { ok: false, error: 'siteId is required' },
-        { status: 400 }
-      )
+    if (!siteId || !name || !email) {
+      return NextResponse.json({ ok: false, error: 'siteId, name, and email are required' }, { status: 400 })
     }
 
-    if (!name || !email) {
-      return NextResponse.json(
-        { ok: false, error: 'name and email are required' },
-        { status: 400 }
-      )
-    }
+    const db = createDb()
 
-    // TODO: Replace with Drizzle ORM upsert when DB connected
-    const customers = getCustomers(siteId)
-    const existingIndex = customers.findIndex(
-      c => c.email.toLowerCase() === email.toLowerCase()
-    )
+    // Upsert: check if customer with this email already exists for this site
+    const [existing] = await db
+      .select()
+      .from(customers)
+      .where(and(eq(customers.siteId, siteId), eq(customers.email, email)))
+      .limit(1)
 
-    const now = new Date()
-
-    if (existingIndex !== -1) {
-      // Upsert: update existing customer
-      const existing = customers[existingIndex]
-      const updated: Customer = {
-        ...existing,
-        name: body.name ?? existing.name,
-        phone: body.phone !== undefined ? body.phone : existing.phone,
-        company: body.company !== undefined ? body.company : existing.company,
-        totalSpent: body.totalSpent !== undefined ? body.totalSpent : existing.totalSpent,
-        orderCount: body.orderCount !== undefined ? body.orderCount : existing.orderCount,
-        tags: body.tags !== undefined ? body.tags : existing.tags,
-        metadata: body.metadata !== undefined ? body.metadata : existing.metadata,
-        lastActivityAt: now,
-        updatedAt: now,
-      }
-      customers[existingIndex] = updated
+    if (existing) {
+      const [updated] = await db
+        .update(customers)
+        .set({
+          name,
+          phone: phone || existing.phone,
+          company: company || existing.company,
+          tags: tags || existing.tags,
+          updatedAt: new Date(),
+        })
+        .where(eq(customers.id, existing.id))
+        .returning()
 
       return NextResponse.json({ ok: true, data: updated })
     }
 
-    // Create new customer
-    const customer: Customer = {
-      id: `cust_${crypto.randomUUID()}`,
-      siteId,
-      leadId: body.leadId || null,
-      name,
-      email,
-      phone: body.phone || null,
-      company: body.company || null,
-      totalSpent: body.totalSpent || 0,
-      orderCount: body.orderCount || 0,
-      tags: body.tags || [],
-      metadata: body.metadata || null,
-      lastActivityAt: now,
-      createdAt: now,
-      updatedAt: now,
-    }
+    const id = prefixedId('cust')
+    const [created] = await db
+      .insert(customers)
+      .values({
+        id,
+        siteId,
+        name,
+        email,
+        phone: phone || null,
+        company: company || null,
+        tags: tags || [],
+        metadata: {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning()
 
-    customers.push(customer)
-
-    return NextResponse.json({ ok: true, data: customer }, { status: 201 })
+    return NextResponse.json({ ok: true, data: created }, { status: 201 })
   } catch (err) {
     console.error('CRM Customers POST error:', err)
-    return NextResponse.json(
-      { ok: false, error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+/**
+ * PATCH /api/crm/customers — update fields
+ */
+export const PATCH = async (request: Request) => {
+  try {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof Response) return authResult
+
+    const body = await request.json()
+    const { siteId, customerId } = body
+    if (!siteId || !customerId) {
+      return NextResponse.json({ ok: false, error: 'siteId and customerId required' }, { status: 400 })
+    }
+
+    const db = createDb()
+    const updates: Record<string, unknown> = { updatedAt: new Date() }
+    if (body.name !== undefined) updates.name = body.name
+    if (body.email !== undefined) updates.email = body.email
+    if (body.phone !== undefined) updates.phone = body.phone
+    if (body.company !== undefined) updates.company = body.company
+    if (body.tags !== undefined) updates.tags = body.tags
+    if (body.totalSpent !== undefined) updates.totalSpent = body.totalSpent
+    if (body.orderCount !== undefined) updates.orderCount = body.orderCount
+
+    const [updated] = await db
+      .update(customers)
+      .set(updates)
+      .where(and(eq(customers.id, customerId), eq(customers.siteId, siteId)))
+      .returning()
+
+    if (!updated) return NextResponse.json({ ok: false, error: 'Customer not found' }, { status: 404 })
+
+    return NextResponse.json({ ok: true, data: updated })
+  } catch (err) {
+    console.error('CRM Customers PATCH error:', err)
+    return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+/**
+ * DELETE /api/crm/customers
+ */
+export const DELETE = async (request: Request) => {
+  try {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof Response) return authResult
+
+    const body = await request.json()
+    const { siteId, customerId } = body
+    if (!siteId || !customerId) {
+      return NextResponse.json({ ok: false, error: 'siteId and customerId required' }, { status: 400 })
+    }
+
+    const db = createDb()
+    const [deleted] = await db
+      .delete(customers)
+      .where(and(eq(customers.id, customerId), eq(customers.siteId, siteId)))
+      .returning()
+
+    if (!deleted) return NextResponse.json({ ok: false, error: 'Customer not found' }, { status: 404 })
+
+    return NextResponse.json({ ok: true, data: { deleted: true, customerId } })
+  } catch (err) {
+    console.error('CRM Customers DELETE error:', err)
+    return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
   }
 }

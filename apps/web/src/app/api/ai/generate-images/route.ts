@@ -235,6 +235,13 @@ const generateImage = async (
  */
 export const POST = async (request: Request) => {
   try {
+    // Auth — require authenticated user for expensive image generation
+    const { getAuthUser } = await import('@/lib/auth-middleware')
+    const authUser = await getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json({ ok: false, error: 'Authentication required' }, { status: 401 })
+    }
+
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
       return NextResponse.json(

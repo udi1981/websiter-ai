@@ -36,9 +36,15 @@ export async function POST(request: Request) {
       options?: { maxPages?: number; skipAi?: boolean }
     }
 
-    // Auth — match pipeline pattern: session → x-user-id header → anonymous fallback
+    // Auth — require authenticated user (dev bypass via DEV_ONLY_AUTH_BYPASS + localhost)
     const authUser = await getAuthUser(request)
-    const userId = authUser?.userId || request.headers.get('x-user-id') || 'anonymous'
+    if (!authUser) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Authentication required' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } },
+      )
+    }
+    const userId = authUser.userId
 
     if (!url || typeof url !== 'string') {
       return new Response(

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/auth-middleware'
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { Pool } = require('pg')
@@ -15,6 +16,9 @@ const pool = new Pool({
  */
 export const GET = async (request: Request) => {
   try {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof Response) return authResult
+
     const { searchParams } = new URL(request.url)
     const siteId = searchParams.get('siteId')
 
@@ -128,6 +132,9 @@ export const POST = async (request: Request) => {
  */
 export const PATCH = async (request: Request) => {
   try {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof Response) return authResult
+
     const body = await request.json()
     const { siteId, leadId, status, name, email, phone } = body
 
