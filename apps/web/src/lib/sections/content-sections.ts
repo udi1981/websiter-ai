@@ -920,11 +920,14 @@ export const generatePricingAnimatedCards = (params: {
       <span ${s(`${fontStyle(fonts, 'body')};color:${palette.textMuted};font-size:0.9rem`)}>${f}</span>
     </li>`).join('')
 
+    const planWithImg = plan as PricingPlan & { image?: string; originalPrice?: string; onSale?: boolean }
     return `<div class="pac-card${plan.popular ? ' pac-popular' : ''}" ${s(`background:${palette.backgroundAlt};border:${plan.popular ? '2px' : '1px'} solid ${plan.popular ? palette.primary : palette.border};border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:8px;transition:all .4s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden`)}>
       ${plan.popular ? `<div ${s(`position:absolute;top:16px;inset-inline-end:16px;background:${palette.primary};color:#fff;${fontStyle(fonts, 'body')};font-size:0.75rem;padding:4px 12px;border-radius:20px`)}>Most Popular</div>` : ''}
+      ${planWithImg.image ? `<img src="${planWithImg.image}${planWithImg.image.includes('?') ? '&' : '?'}w=400&q=80" alt="${plan.name}" ${s(`width:100%;height:160px;object-fit:contain;border-radius:12px;margin-bottom:8px;background:${palette.background}`)} loading="lazy" />` : ''}
       <h3 ${s(`${fontStyle(fonts, 'heading')};font-size:1.1rem;color:${palette.text};margin:0`)}>${plan.name}</h3>
       <p ${s(`${fontStyle(fonts, 'body')};font-size:0.85rem;color:${palette.textMuted};margin:0`)}>${plan.description}</p>
       <div ${s(`margin:12px 0`)}>
+        ${planWithImg.originalPrice ? `<span ${s(`${fontStyle(fonts, 'body')};font-size:1rem;color:${palette.textMuted};text-decoration:line-through;margin-inline-end:8px`)}>${planWithImg.originalPrice}</span>` : ''}
         <span ${s(`${fontStyle(fonts, 'heading')};font-size:2.75rem;color:${palette.text}`)}>${plan.price}</span>
         ${plan.period ? `<span ${s(`${fontStyle(fonts, 'body')};color:${palette.textMuted};font-size:0.9rem`)}>/${plan.period}</span>` : ''}
       </div>
