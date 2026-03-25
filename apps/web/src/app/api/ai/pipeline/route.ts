@@ -1535,10 +1535,16 @@ Return JSON: {
                 : null
 
               if (scanFullResult) {
+                // Load deep content model for per-page extracted content
+                const siteContentModelForPages = scanJobId
+                  ? await tracker.getArtifact(scanJobId, 'site_content_model').catch(() => null)
+                  : null
+
                 const pageInventory = buildPageInventory(
                   scanFullResult as Record<string, unknown>,
                   scanCatalog || undefined,
                   scanContentModel || undefined,
+                  siteContentModelForPages || undefined,
                 )
 
                 if (pageInventory.length > 1) {

@@ -32,6 +32,7 @@ export type PageInventoryItem = {
   contentSummary?: string
   products?: Record<string, unknown>[]
   blogArticles?: Record<string, unknown>[]
+  extractedImages?: { src: string; alt: string }[]
 }
 
 export type PageMetadata = {
@@ -121,107 +122,70 @@ const inferPageType = (path: string, title: string): PageType | null => {
   return null
 }
 
-/** Build page inventory from scan data — selects up to 5 pages deterministically */
+/** Build page inventory from ALL scanned pages — every real page gets redesigned */
 export const buildPageInventory = (
   scanResult: Record<string, unknown>,
   contentCatalog?: Record<string, unknown>,
   sourceContentModel?: Record<string, unknown>,
+  siteContentModel?: Record<string, unknown>,
 ): PageInventoryItem[] => {
   const siteMap = scanResult.siteMap as Record<string, unknown>
   const pages = (siteMap?.pages as Record<string, unknown>[]) || []
   const baseUrl = (scanResult.url as string) || ''
+  const extractedPages = (siteContentModel?.pages as Record<string, unknown>[]) || []
 
-  // Classify all scanned pages
-  const classified: { page: Record<string, unknown>; type: PageType }[] = []
+  const inventory: PageInventoryItem[] = []
+  const products = (contentCatalog?.products as Record<string, unknown>[]) || []
 
-  for (const page of pages) {
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i]
     const scannerType = page.pageType as string
     const path = (page.path as string) || '/'
     const title = (page.title as string) || ''
 
-    // Try scanner classification first, then heuristic inference
-    let pageType = SCANNER_TYPE_MAP[scannerType] || inferPageType(path, title)
-    if (!pageType && path === '/') pageType = 'homepage'
-    if (!pageType) continue // Skip unclassifiable pages
+    // Classify page type
+    let pageType: PageType = SCANNER_TYPE_MAP[scannerType] || inferPageType(path, title) || 'about'
+    if (path === '/') pageType = 'homepage'
 
-    classified.push({ page, type: pageType })
-  }
-
-  // Select pages: one per type in priority order
-  const inventory: PageInventoryItem[] = []
-  const selectedTypes = new Set<PageType>()
-
-  for (const targetType of PAGE_TYPE_PRIORITY) {
-    if (selectedTypes.has(targetType)) continue
-
-    const candidates = classified.filter(c => c.type === targetType)
-    if (candidates.length === 0) continue
-
-    const best = candidates.sort((a, b) => {
-      const aLen = (a.page.contentLength as number) || 0
-      const bLen = (b.page.contentLength as number) || 0
-      return bLen - aLen
-    })[0]
-
-    const path = (best.page.path as string) || '/'
-    const title = (best.page.title as string) || ''
+    // Find matching extracted content for this page
+    const decodedPath = decodeURIComponent(path)
+    const extracted = extractedPages.find(ep =>
+      (ep.path as string) === path || (ep.path as string) === decodedPath
+    )
 
     const item: PageInventoryItem = {
-      pageType: targetType,
+      pageType,
       path,
       title: cleanPageTitle(title),
       sourceUrl: path === '/' ? baseUrl : `${baseUrl}${path}`,
     }
 
-    if (targetType === 'product-listing' && contentCatalog) {
-      item.products = (contentCatalog.products as Record<string, unknown>[]) || []
+    // Attach extracted content from deep extraction
+    if (extracted) {
+      const headings = (extracted.h1s as string[]) || (extracted.h2s as string[]) || []
+      const paragraphs = (extracted.paragraphs as string[]) || []
+      item.contentSummary = paragraphs.slice(0, 3).join('\n\n')
+
+      // Attach images from extracted content
+      const imgs = (extracted.images as { src: string; alt: string }[]) || []
+      if (imgs.length > 0) {
+        item.extractedImages = imgs
+      }
+    }
+
+    // Attach products for product-related pages
+    if (pageType === 'product-listing') {
+      item.products = products
     }
 
     inventory.push(item)
-    selectedTypes.add(targetType)
   }
 
-  // Synthesize missing page types from content — even if source site lacks dedicated pages
-  const products = (contentCatalog?.products as Record<string, unknown>[]) || []
-  const faqs = (sourceContentModel?.faqs as Record<string, unknown>[]) || []
-
-  if (!selectedTypes.has('product-listing') && products.length > 0) {
-    inventory.push({
-      pageType: 'product-listing',
-      path: '/products',
-      title: 'מוצרים',
-      sourceUrl: baseUrl + '/products',
-      products,
-    })
-    selectedTypes.add('product-listing')
-  }
-
-  if (!selectedTypes.has('about')) {
-    inventory.push({
-      pageType: 'about',
-      path: '/about',
-      title: 'אודות',
-      sourceUrl: baseUrl + '/about',
-      contentSummary: '',
-    })
-    selectedTypes.add('about')
-  }
-
-  if (!selectedTypes.has('contact')) {
-    inventory.push({
-      pageType: 'contact',
-      path: '/contact',
-      title: 'צור קשר',
-      sourceUrl: baseUrl + '/contact',
-    })
-    selectedTypes.add('contact')
-  }
-
-  // Always ensure homepage is first
+  // Ensure homepage is first
   inventory.sort((a, b) => {
-    const aIdx = PAGE_TYPE_PRIORITY.indexOf(a.pageType)
-    const bIdx = PAGE_TYPE_PRIORITY.indexOf(b.pageType)
-    return aIdx - bIdx
+    if (a.path === '/') return -1
+    if (b.path === '/') return 1
+    return 0
   })
 
   return inventory
@@ -391,16 +355,29 @@ export const composeInnerPage = (
   const template = PAGE_SECTION_TEMPLATES[page.pageType] || PAGE_SECTION_TEMPLATES.about
 
   try {
-    // Build sections with shared design system
+    // Build sections with shared design system + extracted images
     const sections: PageSection[] = template.map((t, i) => {
       const content = buildSectionContent(t.category, page, designSystem, homepageSections)
+      // Inject extracted images into hero/gallery sections
+      const images: Record<string, string> = {}
+      if (page.extractedImages && page.extractedImages.length > 0) {
+        if (t.category === 'hero') {
+          images.imageUrl = page.extractedImages[0].src
+        }
+        if (t.category === 'gallery') {
+          page.extractedImages.slice(0, 8).forEach((img, gi) => {
+            images[`gallery_${gi}`] = img.src
+          })
+          images.imageUrl = page.extractedImages[0].src
+        }
+      }
       return {
         id: `${pageId}-s${i}`,
         category: t.category,
         variantId: t.variantId,
         order: i,
         content,
-        images: {},
+        images,
       }
     })
 
@@ -578,6 +555,18 @@ const buildSectionContent = (
       return { ...base, headline: ds.locale === 'he' ? 'מחירים' : 'Pricing' }
 
     case 'gallery':
+      // Use extracted images from this page first, then products
+      if (page.extractedImages && page.extractedImages.length > 0) {
+        return {
+          ...base,
+          headline: page.title || (ds.locale === 'he' ? 'גלריה' : 'Gallery'),
+          items: page.extractedImages.slice(0, 8).map(img => ({
+            title: img.alt || '',
+            image: img.src,
+            description: '',
+          })),
+        }
+      }
       if (page.products && page.products.length > 0) {
         return {
           ...base,
