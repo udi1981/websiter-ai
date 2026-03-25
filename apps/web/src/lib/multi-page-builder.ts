@@ -397,8 +397,8 @@ export const composeInnerPage = (
         siteId: '', // Filled by caller
         pageType: page.pageType,
         title: page.title,
-        slug: pageTypeToSlug(page.pageType),
-        path: pageTypeToSlug(page.pageType),
+        slug: pathToSlug(page.path, page.pageType),
+        path: pathToSlug(page.path, page.pageType),
         order: PAGE_TYPE_PRIORITY.indexOf(page.pageType),
         sectionCount: sections.length,
         byteSize: Buffer.byteLength(html, 'utf8'),
@@ -458,8 +458,8 @@ const composeFallbackPage = (
       siteId: '',
       pageType: page.pageType,
       title: page.title,
-      slug: pageTypeToSlug(page.pageType),
-      path: pageTypeToSlug(page.pageType),
+      slug: pathToSlug(page.path, page.pageType),
+      path: pathToSlug(page.path, page.pageType),
       order: PAGE_TYPE_PRIORITY.indexOf(page.pageType),
       sectionCount: 3, // nav + main + footer
       byteSize: Buffer.byteLength(html, 'utf8'),
@@ -682,15 +682,17 @@ const buildSectionContent = (
   }
 }
 
-const pageTypeToSlug = (type: PageType): string => {
-  switch (type) {
-    case 'homepage': return ''
-    case 'product-listing': return 'products'
-    case 'about': return 'about'
-    case 'contact': return 'contact'
-    case 'blog-index': return 'blog'
-    default: return type
-  }
+/** Generate slug from original page path — unique per page */
+const pathToSlug = (path: string, pageType: PageType): string => {
+  if (path === '/' || path === '') return ''
+  // Use the original path, cleaned up for URL safety
+  const cleaned = decodeURIComponent(path)
+    .replace(/^\/+|\/+$/g, '') // Remove leading/trailing slashes
+    .replace(/[^a-zA-Z0-9\u0590-\u05fe\-_]/g, '-') // Keep Hebrew, alphanumeric, hyphens
+    .replace(/-+/g, '-') // Collapse multiple hyphens
+    .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+    .slice(0, 60) // Max length
+  return cleaned || pageType // Fallback to page type if path is empty
 }
 
 // ─── Multi-Page Generation Orchestrator ─────────────────────────────

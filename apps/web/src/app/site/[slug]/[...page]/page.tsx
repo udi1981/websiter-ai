@@ -26,9 +26,11 @@ const InnerPage = async ({ params }: Props) => {
     }
 
     // Query pages table — tenant_id = site.id, HTML stored in blocks jsonb
+    // Try both raw and decoded path (URL may be encoded)
+    const decodedPath = decodeURIComponent(pagePath)
     const result = await db.execute(sql`
       SELECT blocks->>'html' as html, title FROM pages
-      WHERE tenant_id = ${site.id} AND slug = ${pagePath}
+      WHERE tenant_id = ${site.id} AND (slug = ${pagePath} OR slug = ${decodedPath})
       LIMIT 1
     `)
 
