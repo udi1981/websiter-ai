@@ -1596,10 +1596,13 @@ Return JSON: {
                         metadata: page.metadata,
                       })
                       try {
+                        // Delete existing page with same slug for this tenant (upsert by slug)
+                        await rawDb.execute(sql`
+                          DELETE FROM pages WHERE tenant_id = ${siteId} AND slug = ${page.metadata.slug} AND locale = ${locale}
+                        `)
                         await rawDb.execute(sql`
                           INSERT INTO pages (id, tenant_id, title, slug, page_type, status, blocks, locale, created_at, updated_at)
                           VALUES (${page.metadata.id}, ${siteId}, ${page.metadata.title}, ${page.metadata.slug}, ${page.metadata.pageType}, 'draft', ${blocksJson}::jsonb, ${locale}, NOW(), NOW())
-                          ON CONFLICT (id) DO UPDATE SET blocks = ${blocksJson}::jsonb, updated_at = NOW()
                         `)
                       } catch (pageErr) {
                         console.error(`[pipeline] Failed to save page ${page.metadata.slug}:`, pageErr)
