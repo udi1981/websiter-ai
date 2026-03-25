@@ -1521,14 +1521,17 @@ Return JSON: {
                   if (innerPages.length > 0) {
                     const { db: rawDb, sql } = await import('@ubuilder/db')
 
-                    // Ensure tenant exists (same pattern as lead capture)
+                    // Ensure tenant exists for pages FK (same as lead capture)
+                    const tenantSlug = `site-${siteId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20)}`
                     try {
                       await rawDb.execute(sql`
-                        INSERT INTO tenants (id, name, created_at, updated_at)
-                        VALUES (${siteId}, ${businessNameResolved}, NOW(), NOW())
+                        INSERT INTO tenants (id, name, slug, created_at, updated_at)
+                        VALUES (${siteId}, ${businessNameResolved}, ${tenantSlug}, NOW(), NOW())
                         ON CONFLICT (id) DO NOTHING
                       `)
-                    } catch { /* tenant may already exist */ }
+                    } catch (tenantErr) {
+                      console.warn('[pipeline] Tenant creation (non-blocking):', tenantErr)
+                    }
 
                     for (const page of innerPages) {
                       const blocksJson = JSON.stringify({
