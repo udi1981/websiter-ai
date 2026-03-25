@@ -1595,12 +1595,43 @@ Return JSON: {
         console.error('[pipeline] Fatal error:', error)
         const errorMsg = error instanceof Error ? error.message : 'Pipeline failed'
 
-        // Server-side fallback: compose a site from industry section map
+        // Server-side fallback: compose a site from industry section map + scan data if available
         try {
           send({ phase: 'fallback', status: 'running', reason: errorMsg })
           await tracker.markJobFallback(jobId!)
 
-          const fallback = buildFallbackSite({ siteName, businessType, description: description || '', locale })
+          let fallback = buildFallbackSite({ siteName, businessType, description: description || '', locale })
+
+          // CRITICAL: If scan data exists, apply content bridge to inject real products/FAQ/nav
+          if (scanCatalog || scanContentModel) {
+            try {
+              const { bridgeScanContentToSections } = await import('@/lib/scan-content-bridge')
+              const fallbackSections = fallback.sections as Array<Record<string, unknown>> || []
+              bridgeScanContentToSections(fallbackSections, scanCatalog, scanContentModel)
+
+              // Re-compose with bridged content
+              const pageSections = sectionsToPageSections(fallbackSections)
+              const bridgedHtml = composePage({
+                id: `fallback-bridged-${Date.now()}`,
+                siteName,
+                locale: locale as 'en' | 'he',
+                palette: resolvePalette(undefined),
+                fonts: {
+                  heading: locale === 'he' ? 'Heebo' : 'Inter',
+                  body: locale === 'he' ? 'Assistant' : 'Inter',
+                  headingWeight: '700',
+                  bodyWeight: '400',
+                },
+                sections: pageSections,
+              })
+              if (bridgedHtml && bridgedHtml.length > fallback.html.length) {
+                fallback = { ...fallback, html: bridgedHtml }
+                console.log('[pipeline] Fallback enriched with scan data')
+              }
+            } catch (bridgeErr) {
+              console.error('[pipeline] Fallback bridge failed (using generic):', bridgeErr)
+            }
+          }
 
           if (siteId && fallback.html) {
             const db = createDb()
