@@ -494,6 +494,32 @@ export async function POST(req: NextRequest) {
       // Load migration artifacts for content injection (V1.2)
       scanCatalog = await tracker.getArtifact(scanJobId, 'content_catalog').catch(() => null)
       scanContentModel = await tracker.getArtifact(scanJobId, 'source_content_model').catch(() => null)
+      // Load deep content extraction (per-page structured content with images/text)
+      const siteContentModel = await tracker.getArtifact(scanJobId, 'site_content_model').catch(() => null)
+      if (siteContentModel) {
+        // Merge images from content model into generatedImages for section use
+        const pages = (siteContentModel.pages as Record<string, unknown>[]) || []
+        for (const page of pages) {
+          const images = (page.images as { src: string; alt: string }[]) || []
+          // Use first large image from each page as potential section background
+          const heroImg = images.find(i => !i.src.includes('.svg') && !i.src.includes('pixel'))
+          if (heroImg && page.path === '/') {
+            // Homepage hero image
+            if (!scanContentModel) scanContentModel = {}
+            ;(scanContentModel as Record<string, unknown>).heroImage = heroImg.src
+          }
+        }
+        // Store all product images for section use
+        const allImages = pages.flatMap(p => (p.images as { src: string; alt: string }[]) || [])
+        const productImages = allImages.filter(i =>
+          /product|mewatch|watch|tab|phone|שעון|טלפון|טאבלט/i.test(i.src + (i.alt || ''))
+        )
+        if (productImages.length > 0 && !scanContentModel) scanContentModel = {}
+        if (productImages.length > 0) {
+          ;(scanContentModel as Record<string, unknown>).productImages = productImages.map(i => i.src)
+        }
+        console.log(`[pipeline] Loaded site_content_model: ${pages.length} pages, ${productImages.length} product images`)
+      }
       // Get sourceUrl from scan job
       const scanJobStatus = await tracker.getJobStatus(scanJobId)
       if (scanJobStatus) {
@@ -1149,20 +1175,34 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
           } else {
             send({ phase: 'images', status: 'skipped', reason: 'no image-eligible sections' })
           }
-          // V1.2-3: Inject scan product images as supplements to generated images
+          // V1.2-3: Inject scan product images into generatedImages for section-composer
           if (scanCatalog) {
             const scanProducts = (scanCatalog.products as Record<string, unknown>[]) || []
+            let galleryIdx = 0
             for (const product of scanProducts) {
               const imgUrl = (product.image as Record<string, unknown>)?.value as string | null
               const name = (product.name as Record<string, unknown>)?.value as string | null
               if (imgUrl && name) {
-                // Add scan images keyed by product name for section-composer to use
+                // Add scan images keyed by product name
                 const key = `scan_product_${name.toLowerCase().replace(/\s+/g, '_').slice(0, 30)}`
-                if (!generatedImages[key]) {
-                  generatedImages[key] = imgUrl
+                if (!generatedImages[key]) generatedImages[key] = imgUrl
+                // Also add as gallery images so gallery sections can use them
+                if (galleryIdx < 8) {
+                  generatedImages[`gallery_${galleryIdx}`] = imgUrl
+                  galleryIdx++
                 }
               }
             }
+            // Set hero image from first product if no hero exists
+            if (!generatedImages.hero && scanProducts[0]) {
+              const firstImg = (scanProducts[0].image as Record<string, unknown>)?.value as string
+              if (firstImg) generatedImages.hero = firstImg
+            }
+            // Set gallery section image
+            if (!generatedImages.gallery && generatedImages.gallery_0) {
+              generatedImages.gallery = generatedImages.gallery_0
+            }
+            console.log(`[pipeline] Injected ${galleryIdx} product images into generatedImages`)
           }
 
           await tracker.completeStep(imageStepId)

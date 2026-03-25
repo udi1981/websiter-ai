@@ -123,6 +123,25 @@ export const completeScanJob = async (
     data: scanResult,
   })
 
+  // Save extracted page content (structured per-page models) if available
+  const extractedPages = (scanResult as Record<string, unknown>).extractedPageContent as Record<string, unknown>[] | undefined
+  if (extractedPages && extractedPages.length > 0) {
+    try {
+      await tracker.saveArtifact({
+        jobId,
+        artifactType: 'site_content_model' as ArtifactType,
+        data: {
+          pages: extractedPages,
+          pageCount: extractedPages.length,
+          extractedAt: new Date().toISOString(),
+        },
+      })
+      console.log(`[scan-tracker] Saved site_content_model: ${extractedPages.length} pages`)
+    } catch (err) {
+      console.error('[scan-tracker] Failed to save site_content_model:', err)
+    }
+  }
+
   // Save the transform bridge output
   const transformStepId = await tracker.startStep(jobId, 'scan_transform', '@scanner/transform')
   await tracker.saveArtifact({

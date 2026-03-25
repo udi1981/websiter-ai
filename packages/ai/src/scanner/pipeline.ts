@@ -256,6 +256,35 @@ export const runScanPipeline = async (
       return { pagesMapped: (phaseResult as any).pages?.length ?? 0 }
     })
 
+    // ── Phase 4.5: Deep Content Extraction (per-page structured content) ──
+    // Extract structured content from each page's HTML BEFORE clearing pagesForPhases
+    try {
+      const pageContentModels: Record<string, unknown>[] = []
+      for (const page of pagesForPhases) {
+        if (!page.html || page.html.length < 100) continue
+        // Inline lightweight extraction (no external import — packages/ai can't import apps/web)
+        const extractBasicContent = (html: string, url: string, path: string) => {
+          const title = (html.match(/<title[^>]*>([^<]+)<\/title>/i) || [])[1]?.trim() || ''
+          const h1s = [...html.matchAll(/<h1[^>]*>([\s\S]*?)<\/h1>/gi)].map(m => m[1].replace(/<[^>]+>/g, '').trim()).filter(t => t.length > 2)
+          const h2s = [...html.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/gi)].map(m => m[1].replace(/<[^>]+>/g, '').trim()).filter(t => t.length > 2)
+          const paragraphs = [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)].map(m => m[1].replace(/<[^>]+>/g, '').trim()).filter(t => t.length > 20).slice(0, 20)
+          const images = [...html.matchAll(/<img[^>]*\bsrc=["']([^"']+)["'][^>]*/gi)].map(m => {
+            const alt = (m[0].match(/alt=["']([^"']*)["']/i) || [])[1] || ''
+            return { src: m[1], alt }
+          }).filter(i => !i.src.startsWith('data:image/svg') && !i.src.includes('pixel')).slice(0, 20)
+          const ogImage = (html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)/i) || [])[1]
+          const metaDesc = (html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)/i) || [])[1]
+          return { url, path, title, h1s, h2s, paragraphs, images, ogImage, metaDescription: metaDesc }
+        }
+        pageContentModels.push(extractBasicContent(page.html, page.url, page.path))
+      }
+      // Attach to result for downstream artifact persistence
+      ;(result as Record<string, unknown>).extractedPageContent = pageContentModels
+      emit('content', 'done', `Extracted content from ${pageContentModels.length} pages`)
+    } catch (contentExtErr) {
+      console.error('[pipeline] Content extraction error (non-blocking):', contentExtErr)
+    }
+
     // ── Phase 5: Brand Intelligence (AI) ────────────────────────────────
     if (skipAi) {
       setPhaseResult('brand-intelligence', 'skipped', 0, { reason: 'skipAi option' })
