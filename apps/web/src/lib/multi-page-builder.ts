@@ -18,6 +18,7 @@
 import type { SectionPalette, SectionFonts, PageSection, SectionCategory } from '@ubuilder/types'
 import { prefixedId } from '@ubuilder/utils'
 import { composePage } from './section-composer'
+import { bridgeScanContentToSections } from './scan-content-bridge'
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -345,19 +346,29 @@ const PAGE_SECTION_TEMPLATES: Record<PageType, { category: SectionCategory; vari
 
 // ─── Per-Page Composer ──────────────────────────────────────────────
 
-/** Compose a single inner page using shared design system + page template */
+/** Bridge data passed from pipeline for real content injection */
+export type InnerPageBridgeData = {
+  scanCatalog: Record<string, unknown> | null
+  scanContentModel: Record<string, unknown> | null
+  generatedImages: Record<string, string>
+  /** Per-page extracted content from site_content_model */
+  pageExtractedContent?: Record<string, unknown>
+}
+
+/** Compose a single inner page using shared design system + real content bridge */
 export const composeInnerPage = (
   page: PageInventoryItem,
   designSystem: GlobalDesignSystem,
+  bridgeData: InnerPageBridgeData,
   homepageSections?: Record<string, unknown>[],
 ): { html: string; metadata: PageMetadata; source: 'redesign' | 'fallback' } => {
   const pageId = prefixedId('page')
   const template = PAGE_SECTION_TEMPLATES[page.pageType] || PAGE_SECTION_TEMPLATES.about
 
   try {
-    // Build sections with shared design system + extracted images
+    // Build sections with page-specific content + shared design system
     const sections: PageSection[] = template.map((t, i) => {
-      const content = buildSectionContent(t.category, page, designSystem, homepageSections)
+      const content = buildSectionContent(t.category, page, designSystem, bridgeData, homepageSections)
       // Inject extracted images into hero/gallery sections
       const images: Record<string, string> = {}
       if (page.extractedImages && page.extractedImages.length > 0) {
@@ -380,6 +391,26 @@ export const composeInnerPage = (
         images,
       }
     })
+
+    // ── RUN CONTENT BRIDGE ON SECTIONS (before composePage) ──
+    // This is the same bridge that runs for homepage — now runs for ALL pages
+    // It injects real products, FAQ, images, nav, footer, CTAs
+    const sectionsAsRecords = sections.map(s => ({ ...s.content, type: s.category, variantId: s.variantId })) as Record<string, unknown>[]
+    bridgeScanContentToSections(
+      sectionsAsRecords,
+      bridgeData.scanCatalog,
+      bridgeData.scanContentModel,
+      bridgeData.generatedImages,
+      designSystem.locale,
+      designSystem.siteName,
+    )
+    // Apply bridged content back to sections
+    for (let si = 0; si < sections.length; si++) {
+      sections[si] = {
+        ...sections[si],
+        content: { ...sections[si].content, ...sectionsAsRecords[si] },
+      }
+    }
 
     const html = composePage({
       id: pageId,
@@ -477,8 +508,17 @@ const buildSectionContent = (
   category: SectionCategory,
   page: PageInventoryItem,
   ds: GlobalDesignSystem,
+  bridgeData?: InnerPageBridgeData,
   homepageSections?: Record<string, unknown>[],
 ): Record<string, unknown> => {
+  // Page-specific extracted content takes priority over generic
+  const extracted = bridgeData?.pageExtractedContent
+  const extractedH1s = (extracted?.h1s as string[]) || []
+  const extractedH2s = (extracted?.h2s as string[]) || []
+  const extractedParagraphs = (extracted?.paragraphs as string[]) || []
+  const extractedImages = (extracted?.images as { src: string; alt: string }[]) || []
+  const hasPageContent = extractedH1s.length > 0 || extractedParagraphs.length > 0
+
   const base: Record<string, unknown> = {
     businessName: ds.siteName,
     locale: ds.locale,
@@ -506,25 +546,25 @@ const buildSectionContent = (
       }
 
     case 'hero': {
-      // Page-specific hero text
-      const heroText: Record<string, { he: string; en: string }> = {
+      // PREFER page-specific extracted headings over generic labels
+      const realH1 = extractedH1s[0] || ''
+      const realSub = extractedParagraphs[0] || page.contentSummary || ''
+
+      // Only use generic fallback if NO extracted content exists
+      const genericHeadlines: Record<string, { he: string; en: string }> = {
         'product-listing': { he: `המוצרים של ${ds.siteName}`, en: `${ds.siteName} Products` },
         'about': { he: `הסיפור של ${ds.siteName}`, en: `About ${ds.siteName}` },
         'contact': { he: `דברו איתנו`, en: `Get in Touch` },
         'blog-index': { he: `הבלוג של ${ds.siteName}`, en: `${ds.siteName} Blog` },
       }
-      const heroSub: Record<string, { he: string; en: string }> = {
-        'product-listing': { he: 'גלו את מגוון המוצרים שלנו', en: 'Discover our full product range' },
-        'about': { he: 'מי אנחנו ולמה אנחנו עושים את מה שאנחנו עושים', en: 'Who we are and why we do what we do' },
-        'contact': { he: 'נשמח לשמוע מכם ולעזור בכל שאלה', en: "We'd love to hear from you" },
-        'blog-index': { he: 'חדשות, טיפים ותובנות', en: 'News, tips and insights' },
-      }
       return {
         ...base,
-        headline: page.title || heroText[page.pageType]?.[ds.locale] || page.title,
-        subheadline: page.contentSummary || heroSub[page.pageType]?.[ds.locale] || '',
+        headline: realH1 || page.title || genericHeadlines[page.pageType]?.[ds.locale] || page.title,
+        subheadline: realSub,
         ctaText: ds.ctaText,
         ctaLink: ds.ctaLink,
+        // Inject hero image from page-specific extraction
+        imageUrl: extractedImages[0]?.src || undefined,
       }
     }
 
@@ -613,41 +653,47 @@ const buildSectionContent = (
         ],
       }
 
-    case 'about':
+    case 'about': {
+      // USE real extracted content when available
+      if (hasPageContent) {
+        const headings = [...extractedH1s, ...extractedH2s]
+        const items = headings.slice(1, 4).map((h, i) => ({
+          title: h,
+          description: extractedParagraphs[i + 1] || '',
+          icon: ['🎯', '💎', '🏆'][i] || '✨',
+        }))
+        return {
+          ...base,
+          headline: headings[0] || page.title || `${ds.siteName}`,
+          subheadline: extractedParagraphs[0] || '',
+          items: items.length > 0 ? items : undefined,
+        }
+      }
+      // Fallback to generic only when no extracted content exists
       return {
         ...base,
         headline: ds.locale === 'he' ? `הסיפור של ${ds.siteName}` : `The ${ds.siteName} Story`,
         subheadline: ds.locale === 'he'
           ? `${ds.siteName} מובילים בתחום עם חזון ברור ומחויבות לאיכות`
           : `${ds.siteName} is a leader in the field with a clear vision and commitment to quality`,
-        items: [
-          { title: ds.locale === 'he' ? 'החזון שלנו' : 'Our Vision', description: ds.locale === 'he' ? 'לספק את הפתרונות הטובים ביותר עבור הלקוחות שלנו' : 'To provide the best solutions for our customers', icon: '🎯' },
-          { title: ds.locale === 'he' ? 'הערכים שלנו' : 'Our Values', description: ds.locale === 'he' ? 'איכות, חדשנות ושירות מעולה' : 'Quality, innovation and excellent service', icon: '💎' },
-          { title: ds.locale === 'he' ? 'הניסיון שלנו' : 'Our Experience', description: ds.locale === 'he' ? 'שנים של מומחיות ואלפי לקוחות מרוצים' : 'Years of expertise and thousands of satisfied customers', icon: '🏆' },
-        ],
       }
+    }
 
     case 'team':
+      // Only emit team section if we have real team data (never hardcode fake members)
       return {
         ...base,
         headline: ds.locale === 'he' ? 'הצוות שלנו' : 'Our Team',
         subheadline: ds.locale === 'he' ? 'האנשים מאחורי המוצר' : 'The people behind the product',
-        members: [
-          { name: ds.locale === 'he' ? 'מנכ"ל' : 'CEO', role: ds.locale === 'he' ? 'מייסד ומנכ"ל' : 'Founder & CEO', bio: '', avatar: '👤' },
-          { name: ds.locale === 'he' ? 'סמנכ"ל טכנולוגיה' : 'CTO', role: ds.locale === 'he' ? 'סמנכ"ל טכנולוגיה' : 'Chief Technology Officer', bio: '', avatar: '👤' },
-        ],
+        members: [], // Empty — will be hidden by section-composer if no real data
       }
 
     case 'stats':
+      // Only emit stats if we have real data (never hardcode fake numbers)
       return {
         ...base,
         headline: ds.locale === 'he' ? 'המספרים מדברים' : 'By the Numbers',
-        stats: [
-          { value: '10,000+', label: ds.locale === 'he' ? 'לקוחות מרוצים' : 'Happy Customers' },
-          { value: '98%', label: ds.locale === 'he' ? 'שביעות רצון' : 'Satisfaction Rate' },
-          { value: '24/7', label: ds.locale === 'he' ? 'תמיכה' : 'Support' },
-          { value: '5+', label: ds.locale === 'he' ? 'שנות ניסיון' : 'Years Experience' },
-        ],
+        stats: [], // Empty — bridge will inject real stats if available
       }
 
     case 'blog':
@@ -702,6 +748,13 @@ export const generateInnerPages = async (
   siteId: string,
   pageInventory: PageInventoryItem[],
   designSystem: GlobalDesignSystem,
+  bridgeData: {
+    scanCatalog: Record<string, unknown> | null
+    scanContentModel: Record<string, unknown> | null
+    generatedImages: Record<string, string>
+    /** Per-page extracted content from site_content_model */
+    allExtractedPages?: Record<string, unknown>[]
+  },
   homepageSections?: Record<string, unknown>[],
 ): Promise<{ pages: { metadata: PageMetadata; html: string }[] }> => {
   const results: { metadata: PageMetadata; html: string }[] = []
@@ -711,10 +764,27 @@ export const generateInnerPages = async (
 
   for (const page of innerPages) {
     try {
-      const result = composeInnerPage(page, designSystem, homepageSections)
+      // Find page-specific extracted content by matching path
+      const decodedPath = decodeURIComponent(page.path)
+      const pageExtracted = (bridgeData.allExtractedPages || []).find(ep =>
+        (ep.path as string) === page.path ||
+        (ep.path as string) === decodedPath ||
+        (ep.url as string)?.endsWith(page.path)
+      )
+
+      const pageBridgeData: InnerPageBridgeData = {
+        scanCatalog: bridgeData.scanCatalog,
+        scanContentModel: bridgeData.scanContentModel,
+        generatedImages: bridgeData.generatedImages,
+        pageExtractedContent: pageExtracted || undefined,
+      }
+
+      const result = composeInnerPage(page, designSystem, pageBridgeData, homepageSections)
       result.metadata.siteId = siteId
       results.push({ metadata: result.metadata, html: result.html })
-      console.log(`[multi-page] Generated ${page.pageType}: ${result.metadata.slug} (${result.source}, ${result.metadata.byteSize} bytes)`)
+
+      const hasRealContent = pageExtracted ? 'real-content' : 'generic'
+      console.log(`[multi-page] Generated ${page.pageType}: ${result.metadata.slug} (${result.source}, ${hasRealContent}, ${result.metadata.byteSize} bytes)`)
     } catch (err) {
       console.error(`[multi-page] Failed to generate ${page.pageType}:`, err)
     }

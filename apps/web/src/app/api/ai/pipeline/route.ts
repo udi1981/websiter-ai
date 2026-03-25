@@ -1620,10 +1620,22 @@ Return JSON: {
                     logoUrl: generatedImages.logo || undefined,
                   })
 
+                  // Load per-page extracted content for page-specific bridging
+                  const siteContentModelForBridge = scanJobId
+                    ? await tracker.getArtifact(scanJobId, 'site_content_model').catch(() => null)
+                    : null
+                  const allExtractedPages = (siteContentModelForBridge?.pages as Record<string, unknown>[]) || []
+
                   const { pages: innerPages } = await generateInnerPages(
                     siteId,
                     pageInventory,
                     designSystem,
+                    {
+                      scanCatalog,
+                      scanContentModel,
+                      generatedImages,
+                      allExtractedPages,
+                    },
                     mergedSections as Record<string, unknown>[],
                   )
 
