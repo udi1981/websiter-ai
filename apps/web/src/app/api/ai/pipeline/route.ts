@@ -521,12 +521,18 @@ export async function POST(req: NextRequest) {
       let jobId: string | null = null
       let siteId: string | null = null
       let lastStepName: GenerationStepName = 'strategy'
-      const siteName = (discoveryContext?.business_name as string)
+      // Prefer scan-derived site name over raw description/URL
+      const scanSiteName = scanGenerationCtx
+        ? (scanGenerationCtx as Record<string, unknown>).siteName as string
+        : null
+      const siteName = scanSiteName
+        || (discoveryContext?.business_name as string)
         || (discoveryContext?.businessName as string)
-        || description?.slice(0, 40)
+        || (description && !description.includes('://') ? description.slice(0, 40) : null)
         || 'New Site'
-      const businessType = (discoveryContext?.industry as string)
-        || description?.split(' ')[0]
+      const businessType = (scanGenerationCtx as Record<string, unknown>)?.industry as string
+        || (discoveryContext?.industry as string)
+        || (description && !description.includes('://') ? description.split(' ')[0] : 'business')
         || 'business'
 
       try {
@@ -720,23 +726,28 @@ Return JSON with:
         try {
           const { result: designOutput, promptSize, responseSize } = await callPipelineAgent(designerPrompt, designInput)
 
-          // Cross-check: strategist reviews design
-          send({ phase: 'design', agent: '@strategist', status: 'cross-check' })
-          const crossCheckStepId = await tracker.startStep(jobId!, 'cross_check', '@strategist'); lastStepName = 'cross_check'
-          const designReview = await crossCheck('strategy' as AgentRole, designOutput, siteContext)
-
+          // Cross-check: strategist reviews design (non-fatal — skip if Gemini is down)
           finalDesign = designOutput
-          if (designReview.approved === false && designReview.suggestions) {
-            send({ phase: 'design', agent: '@designer', status: 'retry', feedback: designReview.suggestions })
-            await tracker.markStepRetry(designStepId)
-            const retryInput = `Your design was reviewed. Issues: ${JSON.stringify(designReview.issues)}
+          try {
+            send({ phase: 'design', agent: '@strategist', status: 'cross-check' })
+            const crossCheckStepId = await tracker.startStep(jobId!, 'cross_check', '@strategist'); lastStepName = 'cross_check'
+            const designReview = await crossCheck('strategy' as AgentRole, designOutput, siteContext)
+
+            if (designReview.approved === false && designReview.suggestions) {
+              send({ phase: 'design', agent: '@designer', status: 'retry', feedback: designReview.suggestions })
+              await tracker.markStepRetry(designStepId)
+              const retryInput = `Your design was reviewed. Issues: ${JSON.stringify(designReview.issues)}
 Suggestions: ${JSON.stringify(designReview.suggestions)}
 Original design: ${JSON.stringify(designOutput)}
 Please revise and return improved JSON.`
-            const { result: retryResult } = await callPipelineAgent(designerPrompt, retryInput)
-            finalDesign = retryResult
+              const { result: retryResult } = await callPipelineAgent(designerPrompt, retryInput)
+              finalDesign = retryResult
+            }
+            await tracker.completeStep(crossCheckStepId)
+          } catch (crossCheckErr) {
+            console.warn('[pipeline] Cross-check failed (non-fatal, continuing with original design):', crossCheckErr instanceof Error ? crossCheckErr.message : crossCheckErr)
+            send({ phase: 'design', status: 'cross-check-skipped' })
           }
-          await tracker.completeStep(crossCheckStepId)
 
           // Validate and auto-correct variantIds
           let designSections: Array<Record<string, unknown>> = []
