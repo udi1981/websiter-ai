@@ -1082,30 +1082,45 @@ ${documentText ? `\n=== UPLOADED BUSINESS DOCUMENT ===\nUse this document as a P
 Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": "...", "subheadline": "...", "items": [...], "cta": {...} } ] }`
 
         let contentOutput: Record<string, unknown> = {}
+        let contentSource: 'ai' | 'scan_structured' | 'designer_fallback' = 'ai'
         try {
-          const CONTENT_CHUNK_SIZE = 8
-          if (homepageSections.length > CONTENT_CHUNK_SIZE) {
-            const allContentSections: Record<string, unknown>[] = []
-            for (let i = 0; i < homepageSections.length; i += CONTENT_CHUNK_SIZE) {
-              const chunk = homepageSections.slice(i, i + CONTENT_CHUNK_SIZE)
-              const chunkInput = contentInput.replace(
-                `Generate compelling content for these homepage sections ONLY (max ${homepageSections.length} sections):`,
-                `Generate compelling content for these sections (batch ${Math.floor(i / CONTENT_CHUNK_SIZE) + 1}):`
-              ).replace(
-                `Sections: ${JSON.stringify(homepageSections.map(s => ({ type: (s as Record<string,unknown>).type, variantId: (s as Record<string,unknown>).variantId, title: (s as Record<string,unknown>).title })))}`,
-                `Sections: ${JSON.stringify(chunk.map(s => ({ type: (s as Record<string,unknown>).type, variantId: (s as Record<string,unknown>).variantId, title: (s as Record<string,unknown>).title })))}`
-              )
+          // Split content generation into small chunks (4 sections each) for reliability
+          const CONTENT_CHUNK_SIZE = 4
+          const allContentSections: Record<string, unknown>[] = []
+          const chunks: Array<Record<string, unknown>[]> = []
+          for (let i = 0; i < homepageSections.length; i += CONTENT_CHUNK_SIZE) {
+            chunks.push(homepageSections.slice(i, i + CONTENT_CHUNK_SIZE))
+          }
+
+          send({ phase: 'content', status: 'generating', chunks: chunks.length })
+          console.log(`[pipeline] Content: ${homepageSections.length} sections in ${chunks.length} chunks of ${CONTENT_CHUNK_SIZE}`)
+
+          for (let ci = 0; ci < chunks.length; ci++) {
+            const chunk = chunks[ci]
+            const chunkSectionList = JSON.stringify(chunk.map(s => ({ type: (s as Record<string,unknown>).type, variantId: (s as Record<string,unknown>).variantId })))
+            const chunkInput = `Generate content for these ${chunk.length} sections (batch ${ci + 1}/${chunks.length}):
+Business: ${siteContext.siteName} — ${description}
+Locale: ${locale}
+Sections: ${chunkSectionList}
+${scanDataBlock}
+Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": "...", "subheadline": "...", "items": [...], "cta": {...} } ] }`
+
+            try {
               const { result: chunkResult } = await callPipelineAgent(contentPrompt, chunkInput)
               const chunkSections = (chunkResult.sections || []) as Record<string, unknown>[]
               allContentSections.push(...chunkSections)
+              send({ phase: 'content', status: 'chunk-done', chunk: ci + 1, total: chunks.length })
+            } catch (chunkErr) {
+              console.warn(`[pipeline] Content chunk ${ci + 1}/${chunks.length} failed:`, chunkErr instanceof Error ? chunkErr.message : chunkErr)
+              // Add empty sections for this chunk so we don't lose section count
+              for (const s of chunk) {
+                allContentSections.push({ type: (s as Record<string,unknown>).type, variantId: (s as Record<string,unknown>).variantId })
+              }
             }
-            contentOutput = { sections: allContentSections }
-            await tracker.completeStep(contentStepId)
-          } else {
-            const { result, promptSize, responseSize } = await callPipelineAgent(contentPrompt, contentInput)
-            contentOutput = result
-            await tracker.completeStep(contentStepId, { promptSize, responseSize })
           }
+
+          contentOutput = { sections: allContentSections }
+          await tracker.completeStep(contentStepId)
 
           // Save section_content artifact
           await tracker.saveArtifact({
@@ -1116,11 +1131,35 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
           })
           send({ phase: 'content', status: 'complete', data: contentOutput })
         } catch (contentErr) {
-          console.warn('[pipeline] Content agent failed, using designer content:', contentErr)
-          await tracker.failStep(contentStepId, contentErr instanceof Error ? contentErr.message : 'Content failed')
-          await tracker.markStepRetry(contentStepId, true)
-          contentOutput = { sections: homepageSections }
-          send({ phase: 'content', status: 'complete', data: contentOutput, fallback: true })
+          // NO SILENT FALLBACK — build structured content from scan data instead
+          const errMsg = contentErr instanceof Error ? contentErr.message : 'Content generation failed'
+          console.error(`[pipeline] Content agent failed completely: ${errMsg}`)
+          await tracker.failStep(contentStepId, errMsg)
+
+          // Build content from structured scan data (products, FAQs, CTAs) — not empty designer content
+          if (scanCatalog || scanContentModel) {
+            console.log('[pipeline] Building content from structured scan data (no AI fallback)')
+            contentSource = 'scan_structured'
+            const structuredSections = homepageSections.map(s => {
+              const type = (s as Record<string,unknown>).type as string
+              const variantId = (s as Record<string,unknown>).variantId as string
+              return { type, variantId, headline: '', subheadline: '', items: [] }
+            })
+            contentOutput = { sections: structuredSections }
+            send({ phase: 'content', status: 'content_failed', reason: errMsg, source: 'scan_structured' })
+          } else {
+            console.error('[pipeline] No scan data available — content step truly failed')
+            contentSource = 'designer_fallback'
+            contentOutput = { sections: homepageSections }
+            send({ phase: 'content', status: 'content_failed', reason: errMsg, source: 'designer_fallback' })
+          }
+
+          // Save what we have as artifact (with source marker)
+          await tracker.saveArtifact({
+            jobId: jobId!,
+            artifactType: 'section_content',
+            data: { ...contentOutput, contentSource, failureReason: errMsg },
+          })
         }
 
         // ── PHASE 3.5: IMAGE GENERATION ──
@@ -1266,7 +1305,23 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
             locale,
             businessNameResolved,
           )
-          console.log(`[pipeline] Content bridge applied: ${mergedSections.length} sections`)
+          console.log(`[pipeline] Content bridge applied: ${mergedSections.length} sections (contentSource: ${contentSource})`)
+
+          // Save intermediate: merged sections before compose (for debugging)
+          await tracker.saveArtifact({
+            jobId: jobId!,
+            artifactType: 'section_content' as ArtifactType,
+            data: {
+              _debug: true,
+              contentSource,
+              mergedSectionTypes: mergedSections.map(s => s.type),
+              mergedSectionCount: mergedSections.length,
+              hasProducts: mergedSections.some(s => {
+                const items = s.items as Record<string, unknown>[] | undefined
+                return items && items.some(i => i.name || i.price)
+              }),
+            },
+          })
         }
 
         // Legacy placeholder — replaced by bridge above
