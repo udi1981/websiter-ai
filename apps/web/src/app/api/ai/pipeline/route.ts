@@ -1607,7 +1607,7 @@ Return JSON: {
             try {
               const { bridgeScanContentToSections } = await import('@/lib/scan-content-bridge')
               const fallbackSections = fallback.sections as Array<Record<string, unknown>> || []
-              bridgeScanContentToSections(fallbackSections, scanCatalog, scanContentModel)
+              bridgeScanContentToSections(fallbackSections, scanCatalog, scanContentModel, {}, locale, siteName)
 
               // Re-compose with bridged content
               const pageSections = sectionsToPageSections(fallbackSections)
