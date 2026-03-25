@@ -147,7 +147,7 @@ export const buildPageInventory = (
     classified.push({ page, type: pageType })
   }
 
-  // Select one page per type, in priority order
+  // Select pages: one per type in priority order
   const inventory: PageInventoryItem[] = []
   const selectedTypes = new Set<PageType>()
 
@@ -157,7 +157,6 @@ export const buildPageInventory = (
     const candidates = classified.filter(c => c.type === targetType)
     if (candidates.length === 0) continue
 
-    // Pick the best candidate: prefer homepage for /, longest content otherwise
     const best = candidates.sort((a, b) => {
       const aLen = (a.page.contentLength as number) || 0
       const bLen = (b.page.contentLength as number) || 0
@@ -174,13 +173,48 @@ export const buildPageInventory = (
       sourceUrl: path === '/' ? baseUrl : `${baseUrl}${path}`,
     }
 
-    // Attach products for product-listing pages
     if (targetType === 'product-listing' && contentCatalog) {
       item.products = (contentCatalog.products as Record<string, unknown>[]) || []
     }
 
     inventory.push(item)
     selectedTypes.add(targetType)
+  }
+
+  // Synthesize missing page types from content — even if source site lacks dedicated pages
+  const products = (contentCatalog?.products as Record<string, unknown>[]) || []
+  const faqs = (sourceContentModel?.faqs as Record<string, unknown>[]) || []
+
+  if (!selectedTypes.has('product-listing') && products.length > 0) {
+    inventory.push({
+      pageType: 'product-listing',
+      path: '/products',
+      title: 'מוצרים',
+      sourceUrl: baseUrl + '/products',
+      products,
+    })
+    selectedTypes.add('product-listing')
+  }
+
+  if (!selectedTypes.has('about')) {
+    inventory.push({
+      pageType: 'about',
+      path: '/about',
+      title: 'אודות',
+      sourceUrl: baseUrl + '/about',
+      contentSummary: '',
+    })
+    selectedTypes.add('about')
+  }
+
+  if (!selectedTypes.has('contact')) {
+    inventory.push({
+      pageType: 'contact',
+      path: '/contact',
+      title: 'צור קשר',
+      sourceUrl: baseUrl + '/contact',
+    })
+    selectedTypes.add('contact')
   }
 
   // Always ensure homepage is first
@@ -494,14 +528,28 @@ const buildSectionContent = (
         contact: ds.contactInfo,
       }
 
-    case 'hero':
+    case 'hero': {
+      // Page-specific hero text
+      const heroText: Record<string, { he: string; en: string }> = {
+        'product-listing': { he: `המוצרים של ${ds.siteName}`, en: `${ds.siteName} Products` },
+        'about': { he: `הסיפור של ${ds.siteName}`, en: `About ${ds.siteName}` },
+        'contact': { he: `דברו איתנו`, en: `Get in Touch` },
+        'blog-index': { he: `הבלוג של ${ds.siteName}`, en: `${ds.siteName} Blog` },
+      }
+      const heroSub: Record<string, { he: string; en: string }> = {
+        'product-listing': { he: 'גלו את מגוון המוצרים שלנו', en: 'Discover our full product range' },
+        'about': { he: 'מי אנחנו ולמה אנחנו עושים את מה שאנחנו עושים', en: 'Who we are and why we do what we do' },
+        'contact': { he: 'נשמח לשמוע מכם ולעזור בכל שאלה', en: "We'd love to hear from you" },
+        'blog-index': { he: 'חדשות, טיפים ותובנות', en: 'News, tips and insights' },
+      }
       return {
         ...base,
-        headline: page.title,
-        subheadline: page.contentSummary || '',
+        headline: page.title || heroText[page.pageType]?.[ds.locale] || page.title,
+        subheadline: page.contentSummary || heroSub[page.pageType]?.[ds.locale] || '',
         ctaText: ds.ctaText,
         ctaLink: ds.ctaLink,
       }
+    }
 
     case 'pricing':
       if (page.products && page.products.length > 0) {
@@ -566,9 +614,78 @@ const buildSectionContent = (
       return {
         ...base,
         headline: ds.locale === 'he' ? 'מוכנים להתחיל?' : 'Ready to get started?',
-        subheadline: '',
+        subheadline: ds.locale === 'he' ? `גלו את כל מה ש-${ds.siteName} מציע` : `Discover everything ${ds.siteName} has to offer`,
         ctaText: ds.ctaText,
         ctaLink: ds.ctaLink,
+        items: [
+          { benefit: ds.locale === 'he' ? 'משלוח חינם' : 'Free shipping', description: '' },
+          { benefit: ds.locale === 'he' ? 'אחריות מלאה' : 'Full warranty', description: '' },
+          { benefit: ds.locale === 'he' ? 'שירות לקוחות 24/7' : '24/7 support', description: '' },
+        ],
+      }
+
+    case 'about':
+      return {
+        ...base,
+        headline: ds.locale === 'he' ? `הסיפור של ${ds.siteName}` : `The ${ds.siteName} Story`,
+        subheadline: ds.locale === 'he'
+          ? `${ds.siteName} מובילים בתחום עם חזון ברור ומחויבות לאיכות`
+          : `${ds.siteName} is a leader in the field with a clear vision and commitment to quality`,
+        items: [
+          { title: ds.locale === 'he' ? 'החזון שלנו' : 'Our Vision', description: ds.locale === 'he' ? 'לספק את הפתרונות הטובים ביותר עבור הלקוחות שלנו' : 'To provide the best solutions for our customers', icon: '🎯' },
+          { title: ds.locale === 'he' ? 'הערכים שלנו' : 'Our Values', description: ds.locale === 'he' ? 'איכות, חדשנות ושירות מעולה' : 'Quality, innovation and excellent service', icon: '💎' },
+          { title: ds.locale === 'he' ? 'הניסיון שלנו' : 'Our Experience', description: ds.locale === 'he' ? 'שנים של מומחיות ואלפי לקוחות מרוצים' : 'Years of expertise and thousands of satisfied customers', icon: '🏆' },
+        ],
+      }
+
+    case 'team':
+      return {
+        ...base,
+        headline: ds.locale === 'he' ? 'הצוות שלנו' : 'Our Team',
+        subheadline: ds.locale === 'he' ? 'האנשים מאחורי המוצר' : 'The people behind the product',
+        members: [
+          { name: ds.locale === 'he' ? 'מנכ"ל' : 'CEO', role: ds.locale === 'he' ? 'מייסד ומנכ"ל' : 'Founder & CEO', bio: '', avatar: '👤' },
+          { name: ds.locale === 'he' ? 'סמנכ"ל טכנולוגיה' : 'CTO', role: ds.locale === 'he' ? 'סמנכ"ל טכנולוגיה' : 'Chief Technology Officer', bio: '', avatar: '👤' },
+        ],
+      }
+
+    case 'stats':
+      return {
+        ...base,
+        headline: ds.locale === 'he' ? 'המספרים מדברים' : 'By the Numbers',
+        stats: [
+          { value: '10,000+', label: ds.locale === 'he' ? 'לקוחות מרוצים' : 'Happy Customers' },
+          { value: '98%', label: ds.locale === 'he' ? 'שביעות רצון' : 'Satisfaction Rate' },
+          { value: '24/7', label: ds.locale === 'he' ? 'תמיכה' : 'Support' },
+          { value: '5+', label: ds.locale === 'he' ? 'שנות ניסיון' : 'Years Experience' },
+        ],
+      }
+
+    case 'blog':
+      if (page.blogArticles && page.blogArticles.length > 0) {
+        return {
+          ...base,
+          headline: ds.locale === 'he' ? `הבלוג של ${ds.siteName}` : `${ds.siteName} Blog`,
+          items: page.blogArticles.slice(0, 6).map(a => ({
+            title: (a.title as string) || '',
+            description: (a.excerpt as string) || '',
+            image: (a.image as string) || '',
+            category: (a.tags as string[])?.[0] || '',
+          })),
+        }
+      }
+      return {
+        ...base,
+        headline: ds.locale === 'he' ? 'מאמרים וטיפים' : 'Articles & Tips',
+        items: [],
+      }
+
+    case 'newsletter':
+      return {
+        ...base,
+        headline: ds.locale === 'he' ? 'הישארו מעודכנים' : 'Stay Updated',
+        subheadline: ds.locale === 'he' ? 'הירשמו לניוזלטר שלנו וקבלו עדכונים ומבצעים' : 'Subscribe to our newsletter for updates and offers',
+        ctaText: ds.locale === 'he' ? 'הרשמה' : 'Subscribe',
       }
 
     default:
