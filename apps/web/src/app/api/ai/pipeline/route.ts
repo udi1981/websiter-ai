@@ -41,8 +41,9 @@ const callPipelineAgent = async (
   const claudeKey = process.env.CLAUDE_API_KEY
   const geminiKey = process.env.GEMINI_API_KEY
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 90000) // 90s per agent call (was 150s — reduce to prevent pipeline timeout)
+  const timeout = setTimeout(() => controller.abort(), 120000) // 120s per agent call — Claude needs time for large prompts
   const promptSize = systemPrompt.length + userMessage.length
+  console.log(`[Agent] Calling AI: system=${systemPrompt.length} chars, user=${userMessage.length} chars, total=${promptSize} chars`)
 
   try {
     if (claudeKey) {
