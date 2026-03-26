@@ -53,9 +53,10 @@ export const extractComponentLibrary = async (
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
 
-    // Detect sections
+    // Detect sections and attach page URL for per-page filtering
     const sections = detectSections(cleanHtml, page.url)
     for (const section of sections) {
+      ;(section as Record<string, unknown>).pageUrl = page.url
       allSections.push(section)
 
       // Track distribution

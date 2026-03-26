@@ -19,6 +19,8 @@ import type { SectionPalette, SectionFonts, PageSection, SectionCategory } from 
 import { prefixedId } from '@ubuilder/utils'
 import { composePage } from './section-composer'
 import { bridgeScanContentToSections } from './scan-content-bridge'
+import { mapSourceSectionsToRedesign, buildSectionsFromMapping } from './section-mapper'
+import type { DetectedSection } from './section-mapper'
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -34,6 +36,8 @@ export type PageInventoryItem = {
   products?: Record<string, unknown>[]
   blogArticles?: Record<string, unknown>[]
   extractedImages?: { src: string; alt: string }[]
+  /** Detected sections from scanner Phase 3 — drives redesign */
+  detectedSections?: Record<string, unknown>[]
 }
 
 export type PageMetadata = {
@@ -177,6 +181,22 @@ export const buildPageInventory = (
     // Attach products for product-related pages
     if (pageType === 'product-listing') {
       item.products = products
+    }
+
+    // Attach detected sections from scanner Phase 3 (component library)
+    // These drive source-based redesign — each section maps to a generator
+    const componentLib = scanResult.componentLibrary as Record<string, unknown> | undefined
+    const allDetectedSections = (componentLib?.sections as Record<string, unknown>[]) || []
+    // Filter sections that belong to this page (by pageUrl or order)
+    const pageUrl = item.sourceUrl
+    const pageSections = allDetectedSections.filter(s => {
+      const sPageUrl = s.pageUrl as string | undefined
+      // If section has pageUrl, match it; otherwise assume homepage (order 0)
+      if (sPageUrl) return sPageUrl === pageUrl || sPageUrl.endsWith(path)
+      return path === '/' // Unattributed sections go to homepage
+    })
+    if (pageSections.length >= 2) {
+      item.detectedSections = pageSections
     }
 
     inventory.push(item)
@@ -363,38 +383,68 @@ export const composeInnerPage = (
   homepageSections?: Record<string, unknown>[],
 ): { html: string; metadata: PageMetadata; source: 'redesign' | 'fallback' } => {
   const pageId = prefixedId('page')
-  const template = PAGE_SECTION_TEMPLATES[page.pageType] || PAGE_SECTION_TEMPLATES.about
 
   try {
-    // Build sections with page-specific content + shared design system
-    const sections: PageSection[] = template.map((t, i) => {
-      const content = buildSectionContent(t.category, page, designSystem, bridgeData, homepageSections)
-      // Inject extracted images into hero/gallery sections
-      const images: Record<string, string> = {}
-      if (page.extractedImages && page.extractedImages.length > 0) {
-        if (t.category === 'hero') {
-          images.imageUrl = page.extractedImages[0].src
-        }
-        if (t.category === 'gallery') {
-          page.extractedImages.slice(0, 8).forEach((img, gi) => {
-            images[`gallery_${gi}`] = img.src
-          })
-          images.imageUrl = page.extractedImages[0].src
-        }
-      }
-      return {
+    let sections: PageSection[]
+
+    // ── SOURCE-BASED REDESIGN: use detected sections from scanner ──
+    // This maps the original page's section structure to new design variants,
+    // preserving content (text, images, CTAs) while changing visual treatment
+    if (page.detectedSections && page.detectedSections.length >= 2) {
+      const mapped = mapSourceSectionsToRedesign(
+        page.detectedSections as DetectedSection[],
+        page.sourceUrl,
+      )
+      const builtSections = buildSectionsFromMapping(mapped, {
+        businessName: designSystem.siteName,
+        locale: designSystem.locale,
+        ctaText: designSystem.ctaText,
+        ctaLink: designSystem.ctaLink,
+        logoUrl: designSystem.logoUrl,
+      })
+      sections = builtSections.map((s, i) => ({
         id: `${pageId}-s${i}`,
-        category: t.category,
-        variantId: t.variantId,
+        category: s.category,
+        variantId: s.variantId,
         order: i,
-        content,
-        images,
+        content: s.content,
+        images: {},
+      }))
+      console.log(`[multi-page] Source-based redesign for ${page.path}: ${mapped.length} sections mapped from ${page.detectedSections.length} detected`)
+    } else {
+      // ── TEMPLATE-BASED FALLBACK: no detected sections ──
+      const template = PAGE_SECTION_TEMPLATES[page.pageType] || PAGE_SECTION_TEMPLATES.about
+      sections = template.map((t, i) => {
+        const content = buildSectionContent(t.category, page, designSystem, bridgeData, homepageSections)
+        return {
+          id: `${pageId}-s${i}`,
+          category: t.category,
+          variantId: t.variantId,
+          order: i,
+          content,
+          images: {},
+        }
+      })
+      console.log(`[multi-page] Template-based fallback for ${page.path}: ${sections.length} sections from ${page.pageType} template`)
+    }
+
+    // Inject extracted images into hero/gallery sections
+    if (page.extractedImages && page.extractedImages.length > 0) {
+      for (const section of sections) {
+        if (section.category === 'hero' && !section.images.imageUrl) {
+          section.images.imageUrl = page.extractedImages[0].src
+        }
+        if (section.category === 'gallery') {
+          page.extractedImages.slice(0, 8).forEach((img, gi) => {
+            section.images[`gallery_${gi}`] = img.src
+          })
+          if (!section.images.imageUrl) section.images.imageUrl = page.extractedImages[0].src
+        }
       }
-    })
+    }
 
     // ── RUN CONTENT BRIDGE ON SECTIONS (before composePage) ──
-    // This is the same bridge that runs for homepage — now runs for ALL pages
-    // It injects real products, FAQ, images, nav, footer, CTAs
+    // Injects real products, FAQ, images, nav, footer, CTAs from scan data
     const sectionsAsRecords = sections.map(s => ({ ...s.content, type: s.category, variantId: s.variantId })) as Record<string, unknown>[]
     bridgeScanContentToSections(
       sectionsAsRecords,
