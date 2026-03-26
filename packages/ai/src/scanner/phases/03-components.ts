@@ -82,8 +82,18 @@ export const extractComponentLibrary = async (
   // Deduplicate sections by type+variant (keep first occurrence, increment if repeated)
   const deduped = deduplicateSections(allSections)
 
+  // Also build per-page section map for Mode 3 redesign
+  const perPageSections: Record<string, typeof allSections> = {}
+  for (const section of allSections) {
+    const pageUrl = (section as Record<string, unknown>).pageUrl as string || ''
+    if (!pageUrl) continue
+    if (!perPageSections[pageUrl]) perPageSections[pageUrl] = []
+    perPageSections[pageUrl].push(section)
+  }
+
   return {
     sections: deduped,
+    perPageSections, // NEW: sections grouped by source page URL
     components: allComponents.sort((a, b) => b.count - a.count),
     sectionTypeDistribution,
     totalSections: allSections.length,

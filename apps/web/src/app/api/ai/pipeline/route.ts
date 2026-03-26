@@ -1632,14 +1632,18 @@ Return JSON: {
                     try {
                       const { mapSourceSectionsToRedesign } = await import('@/lib/section-mapper')
                       const componentLib = (scanFullResult as Record<string, unknown>).componentLibrary as Record<string, unknown> | undefined
-                      // Group flat sections array by pageUrl into per-page sections
-                      const allDetectedSections = (componentLib?.sections as Record<string, unknown>[]) || []
-                      const perPageSections: Record<string, Record<string, unknown>[]> = {}
-                      for (const s of allDetectedSections) {
-                        const pageUrl = (s as Record<string, unknown>).pageUrl as string || ''
-                        if (!pageUrl) continue
-                        if (!perPageSections[pageUrl]) perPageSections[pageUrl] = []
-                        perPageSections[pageUrl].push(s)
+                      // Use perPageSections if available (new scans), fall back to grouping by pageUrl (old scans)
+                      let perPageSections = (componentLib?.perPageSections as Record<string, Record<string, unknown>[]>) || {}
+                      if (Object.keys(perPageSections).length === 0) {
+                        // Fallback: group flat sections array by pageUrl
+                        const allDetectedSections = (componentLib?.sections as Record<string, unknown>[]) || []
+                        perPageSections = {}
+                        for (const s of allDetectedSections) {
+                          const pageUrl = (s as Record<string, unknown>).pageUrl as string || ''
+                          if (!pageUrl) continue
+                          if (!perPageSections[pageUrl]) perPageSections[pageUrl] = []
+                          perPageSections[pageUrl].push(s)
+                        }
                       }
 
                       // Get product catalog for content injection
