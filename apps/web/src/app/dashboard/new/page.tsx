@@ -1444,18 +1444,24 @@ const NewSitePage = () => {
           dispatch({ type: 'BUILD_PROGRESS', status: isHe ? '🔍 בודקים סריקות קודמות...' : '🔍 Checking for previous scans...', progress: 2 })
 
           // Try to reuse a recent completed scan for the same URL
+          // Mode 3 (rebuild) always forces a fresh scan to get perPageSections
           let existingScanJobId: string | undefined
-          try {
-            const checkRes = await fetch(`/api/scan/check?url=${encodeURIComponent(url)}`, { headers: getAuthHeaders() })
-            if (checkRes.ok) {
-              const checkData = await checkRes.json()
-              if (checkData.ok && checkData.scanJobId) {
-                existingScanJobId = checkData.scanJobId
-                console.log(`[Build] Found existing scan job: ${existingScanJobId}`)
-                dispatch({ type: 'BUILD_PROGRESS', status: isHe ? '✅ נמצאה סריקה קודמת! ממשיכים לבנייה...' : '✅ Found previous scan! Continuing to build...', progress: 40 })
+          const forceRescan = state.preserveMode === 'rebuild'
+          if (!forceRescan) {
+            try {
+              const checkRes = await fetch(`/api/scan/check?url=${encodeURIComponent(url)}`, { headers: getAuthHeaders() })
+              if (checkRes.ok) {
+                const checkData = await checkRes.json()
+                if (checkData.ok && checkData.scanJobId) {
+                  existingScanJobId = checkData.scanJobId
+                  console.log(`[Build] Found existing scan job: ${existingScanJobId}`)
+                  dispatch({ type: 'BUILD_PROGRESS', status: isHe ? '✅ נמצאה סריקה קודמת! ממשיכים לבנייה...' : '✅ Found previous scan! Continuing to build...', progress: 40 })
+                }
               }
-            }
-          } catch { /* check failed, will do fresh scan */ }
+            } catch { /* check failed, will do fresh scan */ }
+          } else {
+            console.log('[Build] Mode 3 rebuild — forcing fresh scan for perPageSections')
+          }
 
           let scanJobId: string | undefined = existingScanJobId
           let scanResult: Record<string, unknown> | null = null
