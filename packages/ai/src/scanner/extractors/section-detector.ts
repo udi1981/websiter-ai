@@ -243,7 +243,7 @@ export const detectSections = (html: string, url: string): SectionTemplate[] => 
         hasCta,
         itemCount,
       },
-      htmlSnapshot: cleanSnapshot(innerHtml, 2000),
+      htmlSnapshot: cleanSnapshot(innerHtml, 8000), // Increased from 2000 for Mode 3 redesign content fidelity
     })
   }
 

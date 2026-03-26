@@ -1626,6 +1626,114 @@ Return JSON: {
                     : null
                   const allExtractedPages = (siteContentModelForBridge?.pages as Record<string, unknown>[]) || []
 
+                  // ── MODE 3: REDESIGN — use section mapper instead of templates ──
+                  const preserveMode = (discoveryContext?.preserveMode as string) || ''
+                  if (preserveMode === 'rebuild' && scanFullResult) {
+                    try {
+                      const { mapSourceSectionsToRedesign } = await import('@/lib/section-mapper')
+                      const componentLib = (scanFullResult as Record<string, unknown>).componentLibrary as Record<string, unknown> | undefined
+                      // Group flat sections array by pageUrl into per-page sections
+                      const allDetectedSections = (componentLib?.sections as Record<string, unknown>[]) || []
+                      const perPageSections: Record<string, Record<string, unknown>[]> = {}
+                      for (const s of allDetectedSections) {
+                        const pageUrl = (s as Record<string, unknown>).pageUrl as string || ''
+                        if (!pageUrl) continue
+                        if (!perPageSections[pageUrl]) perPageSections[pageUrl] = []
+                        perPageSections[pageUrl].push(s)
+                      }
+
+                      // Get product catalog for content injection
+                      const catalogProducts = ((scanCatalog?.products || []) as Record<string, unknown>[]).map(p => ({
+                        name: p.name as { value: string; confidence: number },
+                        price: p.price as { value: number; confidence: number } | undefined,
+                        originalPrice: p.originalPrice as { value: number; confidence: number } | undefined,
+                        currency: p.currency as { value: string } | undefined,
+                        description: p.description as { value: string } | undefined,
+                        image: p.image as { value: string } | undefined,
+                        additionalImages: p.additionalImages as { value: string }[] | undefined,
+                        category: p.category as { value: string } | undefined,
+                      }))
+
+                      console.log(`[pipeline] Mode 3 REDESIGN: ${Object.keys(perPageSections).length} pages with sections`)
+
+                      for (const [pageUrl, pageSectionsRaw] of Object.entries(perPageSections)) {
+                        const sections = pageSectionsRaw as Record<string, unknown>[]
+                        if (!sections || sections.length === 0) continue
+                        // Skip homepage — already redesigned by main pipeline
+                        const pagePath = new URL(pageUrl).pathname
+                        if (pagePath === '/' || pagePath === '') continue
+
+                        // Find extracted content for this page
+                        const extractedPage = allExtractedPages.find(ep =>
+                          (ep.path as string) === pagePath || (ep.url as string) === pageUrl
+                        ) as Record<string, unknown> | undefined
+
+                        const mappedSections = mapSourceSectionsToRedesign(
+                          sections.map((s, i) => ({
+                            type: (s.type as string) || 'unknown',
+                            variant: (s.variant as string) || '',
+                            order: (s.order as number) ?? i,
+                            layout: (s.layout as { columns: number; alignment: 'left' | 'center' | 'right'; background: 'light' | 'dark' | 'colored' | 'image' | 'gradient' | 'transparent' }) || { columns: 1, alignment: 'center' as const, background: 'light' as const },
+                            content: (s.content as { hasHeading: boolean; hasImage: boolean; hasForm: boolean; hasCta: boolean; itemCount: number }) || { hasHeading: false, hasImage: false, hasForm: false, hasCta: false, itemCount: 0 },
+                            htmlSnapshot: (s.htmlSnapshot as string) || '',
+                          })),
+                          extractedPage ? {
+                            url: (extractedPage.url as string) || pageUrl,
+                            path: (extractedPage.path as string) || pagePath,
+                            title: (extractedPage.title as string) || '',
+                            h1s: (extractedPage.h1s as string[]) || [],
+                            h2s: (extractedPage.h2s as string[]) || [],
+                            paragraphs: (extractedPage.paragraphs as string[]) || [],
+                            images: (extractedPage.images as { src: string; alt: string }[]) || [],
+                          } : null,
+                          catalogProducts,
+                          businessNameResolved,
+                          locale,
+                          designSystem.navLinks,
+                          designSystem.footerColumns,
+                        )
+
+                        if (mappedSections.length === 0) continue
+
+                        // Compose the redesigned page
+                        const pageHtml = composePage({
+                          id: prefixedId('page'),
+                          siteName: businessNameResolved,
+                          locale: locale as 'en' | 'he',
+                          palette: designSystem.palette,
+                          fonts: designSystem.fonts,
+                          sections: mappedSections,
+                        })
+
+                        const pageTitle = extractedPage?.title as string || mappedSections[0]?.content?.headline as string || pagePath
+
+                        // Save to pages table (same as template path below)
+                        const { db: rawDb2, sql: sql2 } = await import('@ubuilder/db')
+                        const pageSlug = pagePath.replace(/^\/+|\/+$/g, '').replace(/[^a-zA-Z0-9\u0590-\u05fe-]/g, '-').replace(/-+/g, '-') || 'page'
+                        const pageId = prefixedId('page')
+                        const blocksJson = JSON.stringify({ html: pageHtml, metadata: { pageType: 'redesign', source: 'section-mapper', sectionCount: mappedSections.length } })
+
+                        try {
+                          // Ensure tenant
+                          const tenantSlug2 = `site-${siteId!.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20)}`
+                          await rawDb2.execute(sql2`INSERT INTO tenants (id, name, slug, created_at, updated_at) VALUES (${siteId}, ${businessNameResolved}, ${tenantSlug2}, NOW(), NOW()) ON CONFLICT (id) DO NOTHING`)
+                          await rawDb2.execute(sql2`
+                            INSERT INTO pages (id, tenant_id, title, slug, page_type, status, blocks, locale, created_at, updated_at)
+                            VALUES (${pageId}, ${siteId}, ${pageTitle}, ${pageSlug}, 'redesign', 'draft', ${blocksJson}::jsonb, ${locale}, NOW(), NOW())
+                            ON CONFLICT (id) DO UPDATE SET blocks = ${blocksJson}::jsonb, updated_at = NOW()
+                          `)
+                          console.log(`[pipeline] Mode 3: Redesigned page ${pageSlug} (${mappedSections.length} sections, ${Buffer.byteLength(pageHtml, 'utf8')} bytes)`)
+                        } catch (pgErr) {
+                          console.error(`[pipeline] Mode 3 page save failed for ${pageSlug}:`, pgErr)
+                        }
+                      }
+                      send({ phase: 'build', status: 'inner-pages-done', mode: 'redesign' })
+                    } catch (mode3Err) {
+                      console.error('[pipeline] Mode 3 redesign error (non-blocking):', mode3Err)
+                    }
+                  }
+
+                  // ── Template-based inner pages (fallback/default) ──
                   const { pages: innerPages } = await generateInnerPages(
                     siteId,
                     pageInventory,

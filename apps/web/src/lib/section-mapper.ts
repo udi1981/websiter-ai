@@ -1,28 +1,33 @@
 /**
- * Section Mapper — Maps source page sections to redesign sections
+ * Section Mapper — Mode 3 Redesign Engine
  *
- * Takes detected sections from the scanner's component library (Phase 3)
- * and maps them to section-composer generator variants, preserving
- * the original content (text, images, CTAs) while applying new design.
+ * Maps source page sections to new section-composer generators
+ * while preserving original content, order, and meaning.
  *
- * This is the key piece that makes "redesign" different from "regenerate":
- * - Source section order is preserved
- * - Source content (headings, text, images) flows into new generators
- * - Only the VISUAL treatment changes, not the content
+ * Input: source sections (from section detector) + extracted content (from Phase 4.5)
+ * Output: PageSection[] ready for composePage() with real content, new design
+ *
+ * Rules:
+ * 1. Preserve source section order
+ * 2. Preserve real content (text, images, products, prices)
+ * 3. Map to best matching section-composer variant
+ * 4. Zero generic placeholders when real content exists
+ * 5. New visual design through section-composer generators
  */
 
-import type { SectionCategory } from '@ubuilder/types'
+import type { SectionCategory, PageSection } from '@ubuilder/types'
+import { prefixedId } from '@ubuilder/utils'
 
 // ─── Types ──────────────────────────────────────────────────────────
 
-export type DetectedSection = {
+export type SourceSection = {
   type: string
   variant: string
   order: number
   layout: {
     columns: number
-    alignment: string
-    background: string
+    alignment: 'left' | 'center' | 'right'
+    background: 'light' | 'dark' | 'colored' | 'image' | 'gradient' | 'transparent'
   }
   content: {
     hasHeading: boolean
@@ -32,327 +37,292 @@ export type DetectedSection = {
     itemCount: number
   }
   htmlSnapshot: string
-  /** URL of the page this section came from */
-  pageUrl?: string
 }
 
-export type MappedSection = {
-  /** Section category for composer */
-  category: SectionCategory
-  /** Variant ID for the generator */
-  variantId: string
-  /** Extracted content from source section */
-  extractedContent: Record<string, unknown>
-  /** Original section order */
-  order: number
-  /** Source section type for debugging */
+export type ExtractedPageData = {
+  url: string
+  path: string
+  title: string
+  h1s: string[]
+  h2s: string[]
+  paragraphs: string[]
+  images: { src: string; alt: string }[]
+  ogImage?: string
+  metaDescription?: string
+}
+
+export type CatalogProduct = {
+  name: { value: string; confidence: number }
+  price?: { value: number; confidence: number }
+  originalPrice?: { value: number; confidence: number }
+  currency?: { value: string }
+  description?: { value: string }
+  image?: { value: string }
+  additionalImages?: { value: string }[]
+  category?: { value: string }
+}
+
+export type MappedSection = PageSection & {
   sourceType: string
-  /** Source variant for debugging */
-  sourceVariant: string
+  contentSource: 'extracted' | 'catalog' | 'generic'
+  contentCompleteness: number
 }
 
-// ─── Source Type → Generator Variant Mapping ────────────────────────
+// ─── Source Type → Composer Variant ─────────────────────────────────
 
-const TYPE_TO_VARIANT: Record<string, { category: SectionCategory; variantId: string }> = {
-  'navbar': { category: 'navbar', variantId: 'navbar-floating' },
-  'hero': { category: 'hero', variantId: 'hero-family-warm' },
-  'features': { category: 'features', variantId: 'features-bento-grid' },
-  'services': { category: 'features', variantId: 'features-icon-grid' },
-  'about': { category: 'about', variantId: 'about-story-timeline' },
-  'testimonials': { category: 'testimonials', variantId: 'testimonials-premium' },
-  'pricing': { category: 'pricing', variantId: 'pricing-premium-showcase' },
-  'products': { category: 'gallery', variantId: 'gallery-masonry' },
-  'faq': { category: 'faq', variantId: 'faq-accordion' },
-  'contact': { category: 'contact', variantId: 'contact-split-form' },
-  'footer': { category: 'footer', variantId: 'footer-multi-column' },
-  'gallery': { category: 'gallery', variantId: 'gallery-carousel' },
-  'portfolio': { category: 'portfolio', variantId: 'portfolio-hover-cards' },
-  'team': { category: 'team', variantId: 'team-cards' },
-  'stats': { category: 'stats', variantId: 'stats-counters' },
-  'cta': { category: 'cta', variantId: 'cta-premium-close' },
-  'blog': { category: 'blog', variantId: 'blog-card-grid' },
-  'newsletter': { category: 'newsletter', variantId: 'newsletter-inline' },
-  'unknown': { category: 'features', variantId: 'features-icon-grid' },
+const SOURCE_TO_COMPOSER: Record<string, { category: SectionCategory; variants: string[] }> = {
+  'hero':         { category: 'hero',         variants: ['hero-family-warm', 'hero-apple-clean', 'hero-gradient-mesh'] },
+  'navbar':       { category: 'navbar',       variants: ['navbar-floating'] },
+  'features':     { category: 'features',     variants: ['features-bento-grid', 'features-icon-grid'] },
+  'services':     { category: 'features',     variants: ['features-icon-grid', 'features-zigzag'] },
+  'products':     { category: 'pricing',      variants: ['pricing-premium-showcase', 'pricing-animated-cards'] },
+  'pricing':      { category: 'pricing',      variants: ['pricing-premium-showcase', 'pricing-animated-cards'] },
+  'testimonials': { category: 'testimonials', variants: ['testimonials-premium', 'testimonials-wall'] },
+  'faq':          { category: 'faq',          variants: ['faq-accordion'] },
+  'contact':      { category: 'contact',      variants: ['contact-split-form'] },
+  'gallery':      { category: 'gallery',      variants: ['gallery-masonry', 'gallery-carousel'] },
+  'footer':       { category: 'footer',       variants: ['footer-multi-column'] },
+  'about':        { category: 'about',        variants: ['about-story-timeline', 'about-split-image'] },
+  'team':         { category: 'team',         variants: ['team-cards'] },
+  'stats':        { category: 'stats',        variants: ['stats-counters'] },
+  'cta':          { category: 'cta',          variants: ['cta-premium-close', 'cta-gradient-banner'] },
+  'blog':         { category: 'blog',         variants: ['blog-card-grid'] },
+  'newsletter':   { category: 'newsletter',   variants: ['newsletter-inline'] },
+  'portfolio':    { category: 'portfolio',     variants: ['portfolio-filter-grid'] },
+  'unknown':      { category: 'features',     variants: ['features-icon-grid'] },
 }
 
-// ─── Content Extraction from HTML Snapshot ───────────────────────────
+// ─── Content Extraction from htmlSnapshot ───────────────────────────
 
-/** Extract structured content from a section's HTML snapshot */
-const extractContentFromSnapshot = (snapshot: string, sectionType: string): Record<string, unknown> => {
-  const content: Record<string, unknown> = {}
+const extractFromSnapshot = (html: string) => {
+  const strip = (s: string) => s.replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ').trim()
 
-  // Extract headings
-  const h1Match = snapshot.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
-  const h2Match = snapshot.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i)
-  const h3Matches = [...snapshot.matchAll(/<h3[^>]*>([\s\S]*?)<\/h3>/gi)]
-
-  const headline = stripTags(h1Match?.[1] || h2Match?.[1] || '').trim()
-  if (headline && headline.length > 2) {
-    content.headline = headline
-    content.title = headline
+  const headings: string[] = []
+  let m
+  const hRe = /<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi
+  while ((m = hRe.exec(html)) !== null) {
+    const t = strip(m[1])
+    if (t.length > 2 && t.length < 200) headings.push(t)
   }
 
-  // Extract subtitle (first p after heading, or second heading)
-  const pMatches = [...snapshot.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
-  const firstP = pMatches[0] ? stripTags(pMatches[0][1]).trim() : ''
-  if (firstP && firstP.length > 10) {
-    content.subheadline = firstP
-    content.subtitle = firstP
+  const paragraphs: string[] = []
+  const pRe = /<p[^>]*>([\s\S]*?)<\/p>/gi
+  while ((m = pRe.exec(html)) !== null) {
+    const t = strip(m[1])
+    if (t.length > 15) paragraphs.push(t)
   }
 
-  // Extract images
-  const imgMatches = [...snapshot.matchAll(/<img[^>]*src=["']([^"']+)["'][^>]*/gi)]
-  const images = imgMatches
-    .map(m => {
-      const src = m[1]
-      const alt = (m[0].match(/alt=["']([^"']*)["']/i) || [])[1] || ''
-      return { src, alt }
-    })
-    .filter(i => !i.src.startsWith('data:image/svg') && !i.src.includes('pixel') && !i.src.includes('spacer'))
-
-  if (images.length > 0) {
-    content.imageUrl = images[0].src
-    content.images = images
+  const listItems: string[] = []
+  const liRe = /<li[^>]*>([\s\S]*?)<\/li>/gi
+  while ((m = liRe.exec(html)) !== null) {
+    const t = strip(m[1])
+    if (t.length > 3 && t.length < 200) listItems.push(t)
   }
 
-  // Extract links/CTAs
-  const linkMatches = [...snapshot.matchAll(/<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
-  const ctaLinks = linkMatches
-    .filter(m => /btn|button|cta|primary/i.test(m[0]))
-    .map(m => ({ href: m[1], text: stripTags(m[2]).trim() }))
-    .filter(l => l.text.length > 1 && l.text.length < 50)
-
-  if (ctaLinks.length > 0) {
-    content.ctaText = ctaLinks[0].text
-    content.ctaLink = ctaLinks[0].href
+  const images: { src: string; alt: string }[] = []
+  const imgRe = /<img[^>]*\bsrc=["']([^"']+)["'][^>]*/gi
+  while ((m = imgRe.exec(html)) !== null) {
+    if (m[1].startsWith('data:image/svg') || m[1].includes('pixel')) continue
+    const alt = (m[0].match(/alt=["']([^"']*)["']/i) || [])[1] || ''
+    images.push({ src: m[1], alt })
   }
 
-  // Extract list items (for features, FAQ, etc.)
-  const liMatches = [...snapshot.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
-  if (liMatches.length >= 2) {
-    content.listItems = liMatches
-      .map(m => stripTags(m[1]).trim())
-      .filter(t => t.length > 3)
-      .slice(0, 12)
+  const links: { text: string; href: string }[] = []
+  const aRe = /<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi
+  while ((m = aRe.exec(html)) !== null) {
+    const t = strip(m[2])
+    if (t.length > 1 && t.length < 60) links.push({ text: t, href: m[1] })
   }
 
-  // Type-specific extraction
-  switch (sectionType) {
-    case 'faq': {
-      // Extract Q&A pairs from h3 + p patterns
-      const faqs: { question: string; answer: string }[] = []
-      for (let i = 0; i < h3Matches.length; i++) {
-        const question = stripTags(h3Matches[i][1]).trim()
-        const answer = pMatches[i + 1] ? stripTags(pMatches[i + 1][1]).trim() : ''
-        if (question.length > 5) {
-          faqs.push({ question, answer })
-        }
-      }
-      if (faqs.length > 0) {
-        content.items = faqs.map(f => ({
-          title: f.question,
-          question: f.question,
-          description: f.answer,
-          answer: f.answer,
-        }))
-      }
-      break
-    }
+  const btnRe = /<(?:button|a)[^>]*class=["'][^"']*(?:btn|cta|button|primary)[^"']*["'][^>]*>([\s\S]*?)<\/(?:button|a)>/gi
+  const ctaMatch = btnRe.exec(html)
+  const ctaText = ctaMatch ? strip(ctaMatch[1]) : null
 
-    case 'features':
-    case 'services': {
-      // Extract feature items from repeated card/item patterns
-      if (h3Matches.length >= 2) {
-        content.items = h3Matches.slice(0, 6).map((m, i) => ({
-          title: stripTags(m[1]).trim(),
-          description: pMatches[i] ? stripTags(pMatches[i][1]).trim() : '',
-          icon: '✦',
-        }))
-      }
-      break
-    }
-
-    case 'testimonials': {
-      // Extract quotes
-      const quoteMatches = [...snapshot.matchAll(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi)]
-      if (quoteMatches.length > 0) {
-        content.items = quoteMatches.slice(0, 4).map(m => ({
-          quote: stripTags(m[1]).trim(),
-          author: '',
-          role: '',
-          rating: 5,
-        }))
-      }
-      break
-    }
-
-    case 'pricing':
-    case 'products': {
-      // Extract product cards
-      if (h3Matches.length >= 2) {
-        content.items = h3Matches.slice(0, 4).map((m, i) => {
-          const name = stripTags(m[1]).trim()
-          const desc = pMatches[i] ? stripTags(pMatches[i][1]).trim() : ''
-          const img = images[i]?.src || ''
-          return { name, title: name, description: desc, image: img }
-        })
-      }
-      break
-    }
-
-    case 'gallery': {
-      if (images.length >= 2) {
-        content.items = images.slice(0, 8).map(img => ({
-          title: img.alt || '',
-          image: img.src,
-          description: '',
-        }))
-      }
-      break
-    }
-
-    case 'stats': {
-      // Look for number + label patterns
-      const statMatches = [...snapshot.matchAll(/(\d[\d,]*\+?%?)\s*(?:<[^>]+>\s*)*([^<]{3,30})/g)]
-      if (statMatches.length >= 2) {
-        content.stats = statMatches.slice(0, 4).map(m => ({
-          value: m[1].trim(),
-          label: m[2].trim(),
-        }))
-      }
-      break
-    }
-
-    case 'navbar': {
-      // Extract nav links
-      const navLinks = linkMatches
-        .map(m => ({ label: stripTags(m[2]).trim(), href: m[1] }))
-        .filter(l => l.label.length > 1 && l.label.length < 40 && !l.href.startsWith('javascript'))
-      if (navLinks.length > 0) {
-        content.links = navLinks.slice(0, 10)
-      }
-      break
-    }
-
-    case 'footer': {
-      // Extract footer links grouped by columns
-      content.items = linkMatches
-        .map(m => ({
-          text: stripTags(m[2]).trim(),
-          href: m[1],
-        }))
-        .filter(l => l.text.length > 1 && l.text.length < 50)
-        .slice(0, 20)
-      break
-    }
-  }
-
-  // Extract all paragraphs as description/body
-  const allText = pMatches
-    .map(m => stripTags(m[1]).trim())
-    .filter(t => t.length > 20)
-    .slice(0, 5)
-  if (allText.length > 0) {
-    content.paragraphs = allText
-    if (!content.subheadline) {
-      content.subheadline = allText[0]
-      content.subtitle = allText[0]
-    }
-  }
-
-  return content
+  return { headings, paragraphs, listItems, images, links, ctaText }
 }
 
-// ─── Main Mapper ────────────────────────────────────────────────────
+// ─── Main Section Mapper ────────────────────────────────────────────
 
-/**
- * Map detected sections from source page to redesign sections.
- *
- * Preserves: section order, content (text, images, CTAs)
- * Changes: visual treatment (variant, design system)
- *
- * @param detectedSections - Sections from scanner's component library
- * @param pageUrl - URL of the source page (for filtering)
- * @returns Array of mapped sections ready for composePage()
- */
 export const mapSourceSectionsToRedesign = (
-  detectedSections: DetectedSection[],
-  pageUrl?: string,
+  sourceSections: SourceSection[],
+  extractedPage: ExtractedPageData | null,
+  products: CatalogProduct[],
+  siteName: string,
+  locale: string,
+  navLinks?: { label: string; href: string }[],
+  footerColumns?: { title: string; links: { label: string; href: string }[] }[],
 ): MappedSection[] => {
-  // Filter to sections from this specific page if pageUrl provided
-  const pageSections = pageUrl
-    ? detectedSections.filter(s => s.pageUrl === pageUrl || !s.pageUrl)
-    : detectedSections
-
-  // Sort by original order
-  const sorted = [...pageSections].sort((a, b) => a.order - b.order)
-
-  // Map each source section to a redesign section
   const mapped: MappedSection[] = []
-  const seenTypes = new Set<string>()
+  const isHe = locale === 'he'
+  const sorted = [...sourceSections].sort((a, b) => a.order - b.order)
 
-  for (const section of sorted) {
-    const sourceType = section.type || 'unknown'
+  for (const source of sorted) {
+    const mapping = SOURCE_TO_COMPOSER[source.type] || SOURCE_TO_COMPOSER['unknown']
+    const variantId = mapping.variants[0]
+    const snap = extractFromSnapshot(source.htmlSnapshot)
+    const pageH1s = extractedPage?.h1s || []
+    const pageH2s = extractedPage?.h2s || []
+    const pageParagraphs = extractedPage?.paragraphs || []
+    const pageImages = extractedPage?.images || []
 
-    // Skip duplicate section types (e.g., two hero sections)
-    // Exception: features/products/gallery can appear multiple times
-    if (seenTypes.has(sourceType) && !['features', 'products', 'gallery', 'unknown'].includes(sourceType)) {
-      continue
-    }
-    seenTypes.add(sourceType)
+    const content = buildContent(
+      source.type, snap,
+      { h1s: pageH1s, h2s: pageH2s, paragraphs: pageParagraphs, images: pageImages },
+      products, siteName, isHe, navLinks, footerColumns,
+    )
 
-    // Find the best generator variant for this source section type
-    const mapping = TYPE_TO_VARIANT[sourceType] || TYPE_TO_VARIANT['unknown']
-
-    // Extract content from the HTML snapshot
-    const extractedContent = extractContentFromSnapshot(section.htmlSnapshot, sourceType)
+    const completeness = calcCompleteness(content, source.type, products)
 
     mapped.push({
+      id: prefixedId('sec'),
       category: mapping.category,
-      variantId: mapping.variantId,
-      extractedContent,
-      order: section.order,
-      sourceType,
-      sourceVariant: section.variant,
+      variantId,
+      order: source.order,
+      content,
+      images: buildImages(snap.images, pageImages, source.type),
+      sourceType: source.type,
+      contentSource: completeness > 50 ? 'extracted' : products.length > 0 ? 'catalog' : 'generic',
+      contentCompleteness: completeness,
     })
   }
 
   return mapped
 }
 
-/**
- * Build PageSection[] from mapped sections, ready for composePage().
- * Merges extracted content with design system globals.
- */
-export const buildSectionsFromMapping = (
-  mapped: MappedSection[],
-  globals: {
-    businessName: string
-    locale: string
-    ctaText?: string
-    ctaLink?: string
-    logoUrl?: string
-  },
-): { category: SectionCategory; variantId: string; content: Record<string, unknown> }[] => {
-  return mapped.map(m => ({
-    category: m.category,
-    variantId: m.variantId,
-    content: {
-      ...m.extractedContent,
-      businessName: globals.businessName,
-      brand: globals.businessName,
-      locale: globals.locale,
-      // Don't override extracted CTA with generic if source has one
-      ctaText: m.extractedContent.ctaText || globals.ctaText || '',
-      ctaLink: m.extractedContent.ctaLink || globals.ctaLink || '#',
-      logoUrl: globals.logoUrl,
-    },
-  }))
+// ─── Content Builder ────────────────────────────────────────────────
+
+const buildContent = (
+  type: string,
+  snap: ReturnType<typeof extractFromSnapshot>,
+  page: { h1s: string[]; h2s: string[]; paragraphs: string[]; images: { src: string; alt: string }[] },
+  products: CatalogProduct[],
+  siteName: string,
+  isHe: boolean,
+  navLinks?: { label: string; href: string }[],
+  footerColumns?: { title: string; links: { label: string; href: string }[] }[],
+): Record<string, unknown> => {
+  const base = { businessName: siteName, locale: isHe ? 'he' : 'en', brand: siteName }
+
+  switch (type) {
+    case 'hero':
+      return { ...base,
+        headline: snap.headings[0] || page.h1s[0] || siteName,
+        subheadline: snap.paragraphs[0] || page.paragraphs[0] || '',
+        ctaText: snap.ctaText || (isHe ? 'לרכישה' : 'Get Started'),
+        ctaLink: '#products',
+        imageUrl: snap.images[0]?.src || page.images[0]?.src,
+      }
+
+    case 'navbar':
+      return { ...base,
+        links: navLinks || snap.links.slice(0, 8).map(l => ({ label: l.text, href: l.href })),
+        ctaText: snap.ctaText || (isHe ? 'לרכישה' : 'Buy Now'),
+        ctaLink: '#',
+      }
+
+    case 'products':
+    case 'pricing':
+      if (products.length > 0) {
+        return { ...base,
+          headline: snap.headings[0] || (isHe ? 'המוצרים שלנו' : 'Our Products'),
+          subheadline: snap.paragraphs[0] || '',
+          items: products.slice(0, 4).map(p => ({
+            name: p.name?.value || '', price: p.price?.value ? String(p.price.value) : '',
+            originalPrice: p.originalPrice?.value ? String(p.originalPrice.value) : undefined,
+            currency: p.currency?.value || '₪', description: p.description?.value || '',
+            image: p.image?.value || '', features: [],
+            cta: isHe ? 'לפרטים' : 'Details', popular: false,
+          })),
+        }
+      }
+      return { ...base, headline: snap.headings[0] || '', items: snap.headings.slice(1).map(h => ({ title: h, description: '', icon: '✨' })) }
+
+    case 'features':
+    case 'services':
+      return { ...base,
+        headline: snap.headings[0] || (isHe ? 'היתרונות' : 'Features'),
+        subheadline: snap.paragraphs[0] || '',
+        items: snap.headings.slice(1).map((h, i) => ({
+          title: h, description: snap.paragraphs[i + 1] || snap.listItems[i] || '',
+          icon: ['🛡️', '📍', '💬', '⚡', '🎯', '💎'][i] || '✨',
+        })),
+      }
+
+    case 'testimonials':
+      return { ...base,
+        headline: snap.headings[0] || (isHe ? 'מה הלקוחות אומרים' : 'Testimonials'),
+        items: snap.paragraphs.slice(0, 4).map((p, i) => ({
+          quote: p, text: p, author: snap.headings[i + 1] || '', role: '', rating: 5,
+        })),
+      }
+
+    case 'faq':
+      return { ...base,
+        headline: snap.headings[0] || (isHe ? 'שאלות נפוצות' : 'FAQ'),
+        items: snap.headings.slice(1).map((q, i) => ({
+          question: q, title: q, answer: snap.paragraphs[i] || '', description: snap.paragraphs[i] || '',
+        })),
+      }
+
+    case 'contact':
+      return { ...base, headline: snap.headings[0] || (isHe ? 'צרו קשר' : 'Contact'), subheadline: snap.paragraphs[0] || '' }
+
+    case 'gallery':
+      return { ...base,
+        headline: snap.headings[0] || (isHe ? 'גלריה' : 'Gallery'),
+        items: (snap.images.length > 0 ? snap.images : page.images).slice(0, 8).map(i => ({ title: i.alt, image: i.src, description: '' })),
+      }
+
+    case 'about':
+      return { ...base,
+        headline: snap.headings[0] || page.h2s.find(h => /about|אודות/i.test(h)) || `${siteName}`,
+        subheadline: snap.paragraphs[0] || page.paragraphs[0] || '',
+        items: snap.headings.slice(1, 4).map((h, i) => ({ title: h, description: snap.paragraphs[i + 1] || '', icon: ['🎯', '💎', '🏆'][i] || '✨' })),
+      }
+
+    case 'footer':
+      return { ...base, items: footerColumns || [{ title: isHe ? 'ניווט' : 'Navigation', links: snap.links.slice(0, 10) }], contact: {} }
+
+    case 'stats':
+      return { ...base, headline: snap.headings[0] || '',
+        stats: snap.headings.slice(1).map((h, i) => ({ value: h.match(/[\d,]+/)?.[0] || h, label: snap.paragraphs[i] || '' })),
+      }
+
+    case 'cta':
+      return { ...base, headline: snap.headings[0] || (isHe ? 'מוכנים?' : 'Ready?'),
+        subheadline: snap.paragraphs[0] || '', ctaText: snap.ctaText || (isHe ? 'התחילו' : 'Start'), ctaLink: '#',
+      }
+
+    case 'blog':
+      return { ...base, headline: snap.headings[0] || (isHe ? 'בלוג' : 'Blog'),
+        items: snap.headings.slice(1).map((h, i) => ({ title: h, excerpt: snap.paragraphs[i] || '', image: snap.images[i]?.src || '' })),
+      }
+
+    default:
+      return { ...base, headline: snap.headings[0] || page.h2s[0] || '', subheadline: snap.paragraphs[0] || '',
+        items: snap.headings.slice(1).map((h, i) => ({ title: h, description: snap.paragraphs[i + 1] || '' })),
+      }
+  }
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────
+const buildImages = (snapImgs: { src: string; alt: string }[], pageImgs: { src: string; alt: string }[], type: string): Record<string, string> => {
+  const images: Record<string, string> = {}
+  const all = snapImgs.length > 0 ? snapImgs : pageImgs
+  if (all[0]) images.imageUrl = all[0].src.startsWith('//') ? `https:${all[0].src}` : all[0].src
+  if (type === 'gallery' || type === 'products') {
+    all.slice(0, 8).forEach((img, i) => { images[`gallery_${i}`] = img.src.startsWith('//') ? `https:${img.src}` : img.src })
+  }
+  return images
+}
 
-const stripTags = (html: string): string =>
-  html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
-    .replace(/&#\d+;/g, ' ').replace(/\s+/g, ' ')
+const calcCompleteness = (content: Record<string, unknown>, type: string, products: CatalogProduct[]): number => {
+  let score = 0
+  const h = content.headline as string || ''
+  if (h.length > 5) score += 30
+  const items = content.items as unknown[]
+  if (items?.length > 0) score += 30
+  if (content.imageUrl) score += 20
+  if ((type === 'pricing' || type === 'products') && products.length > 0) score += 20
+  else if ((content.subheadline as string || '').length > 20) score += 20
+  return Math.min(score, 100)
+}
