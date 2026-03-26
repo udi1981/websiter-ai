@@ -19,8 +19,8 @@ import type { SectionPalette, SectionFonts, PageSection, SectionCategory } from 
 import { prefixedId } from '@ubuilder/utils'
 import { composePage } from './section-composer'
 import { bridgeScanContentToSections } from './scan-content-bridge'
-import { mapSourceSectionsToRedesign, buildSectionsFromMapping } from './section-mapper'
-import type { DetectedSection } from './section-mapper'
+import { mapSourceSectionsToRedesign } from './section-mapper'
+import type { SourceSection, CatalogProduct } from './section-mapper'
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -388,29 +388,41 @@ export const composeInnerPage = (
     let sections: PageSection[]
 
     // ── SOURCE-BASED REDESIGN: use detected sections from scanner ──
-    // This maps the original page's section structure to new design variants,
+    // Maps original page section structure to new design variants,
     // preserving content (text, images, CTAs) while changing visual treatment
     if (page.detectedSections && page.detectedSections.length >= 2) {
+      // Find page-specific extracted content
+      const pageExtracted = bridgeData?.pageExtractedContent
+      const catalogProducts = ((bridgeData?.scanCatalog?.products || []) as Record<string, unknown>[]).map(p => ({
+        name: p.name as { value: string; confidence: number },
+        price: p.price as { value: number; confidence: number } | undefined,
+        originalPrice: p.originalPrice as { value: number; confidence: number } | undefined,
+        currency: p.currency as { value: string } | undefined,
+        description: p.description as { value: string } | undefined,
+        image: p.image as { value: string } | undefined,
+        additionalImages: p.additionalImages as { value: string }[] | undefined,
+        category: p.category as { value: string } | undefined,
+      })) as CatalogProduct[]
+
       const mapped = mapSourceSectionsToRedesign(
-        page.detectedSections as DetectedSection[],
-        page.sourceUrl,
+        (page.detectedSections as SourceSection[]),
+        pageExtracted ? {
+          url: (pageExtracted.url as string) || page.sourceUrl,
+          path: (pageExtracted.path as string) || page.path,
+          title: (pageExtracted.title as string) || page.title,
+          h1s: (pageExtracted.h1s as string[]) || [],
+          h2s: (pageExtracted.h2s as string[]) || [],
+          paragraphs: (pageExtracted.paragraphs as string[]) || [],
+          images: (pageExtracted.images as { src: string; alt: string }[]) || [],
+        } : null,
+        catalogProducts,
+        designSystem.siteName,
+        designSystem.locale,
+        designSystem.navLinks,
+        designSystem.footerColumns,
       )
-      const builtSections = buildSectionsFromMapping(mapped, {
-        businessName: designSystem.siteName,
-        locale: designSystem.locale,
-        ctaText: designSystem.ctaText,
-        ctaLink: designSystem.ctaLink,
-        logoUrl: designSystem.logoUrl,
-      })
-      sections = builtSections.map((s, i) => ({
-        id: `${pageId}-s${i}`,
-        category: s.category,
-        variantId: s.variantId,
-        order: i,
-        content: s.content,
-        images: {},
-      }))
-      console.log(`[multi-page] Source-based redesign for ${page.path}: ${mapped.length} sections mapped from ${page.detectedSections.length} detected`)
+      sections = mapped
+      console.log(`[multi-page] Source-based redesign for ${page.path}: ${mapped.length} sections from ${page.detectedSections.length} detected`)
     } else {
       // ── TEMPLATE-BASED FALLBACK: no detected sections ──
       const template = PAGE_SECTION_TEMPLATES[page.pageType] || PAGE_SECTION_TEMPLATES.about
