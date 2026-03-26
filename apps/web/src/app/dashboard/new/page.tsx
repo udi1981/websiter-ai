@@ -1446,7 +1446,8 @@ const NewSitePage = () => {
           // Try to reuse a recent completed scan for the same URL
           // Mode 3 (rebuild) always forces a fresh scan to get perPageSections
           let existingScanJobId: string | undefined
-          const forceRescan = state.preserveMode === 'rebuild'
+          // Force rescan disabled for now — latest scan already has perPageSections
+          const forceRescan = false
           if (!forceRescan) {
             try {
               const checkRes = await fetch(`/api/scan/check?url=${encodeURIComponent(url)}`, { headers: getAuthHeaders() })
