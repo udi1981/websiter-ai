@@ -110,9 +110,8 @@ export async function POST(request: Request) {
 
           const { runScanPipeline } = await import('@/lib/scanner-v2')
 
-          // V1 crawl-scope discipline
-          // Dev: 8 pages prevents OOM. Production (Vercel): can increase via options.maxPages
-          const maxPages = Math.min(options?.maxPages ?? 8, options?.maxPages ?? 8)
+          // V1 crawl-scope: 5 pages on dev to prevent OOM (Next.js dev uses ~400MB baseline)
+          const maxPages = Math.min(options?.maxPages ?? 5, 5)
 
           const result = await runScanPipeline(normalizedUrl, {
             maxPages,
@@ -165,21 +164,21 @@ export async function POST(request: Request) {
           const { transformScanToGenerationContext } = await import('@/lib/scanner-v2')
           const generationCtx = transformScanToGenerationContext(result)
 
-          // Complete scan job with final artifacts — then release the large objects
+          // Build summary BEFORE releasing result from memory
+          const scanSummary = {
+            siteName: (result as Record<string, unknown>).siteName || '',
+            domain: (result as Record<string, unknown>).domain || '',
+            pageCount: (((result as Record<string, unknown>).siteMap as Record<string, unknown>)?.pages as unknown[] || []).length,
+            productCount: generationCtx.sectionPlan?.length || 0,
+          }
+
+          // Complete scan job with final artifacts
           await completeScanJob(scanJobId, result as Record<string, unknown>, generationCtx)
           // Release large objects from memory — data is now persisted in DB
           // @ts-expect-error — intentional nulling for GC
           result = null
 
           send('progress', { percent: 100, message: 'Deep scan complete!' })
-          // Send summary only via SSE — full result is in DB, no need to serialize 2-4MB over SSE
-          const scanSummary = {
-            siteName: (result as Record<string, unknown>).siteName,
-            domain: (result as Record<string, unknown>).domain,
-            pageCount: ((result as Record<string, unknown>).siteMap as Record<string, unknown>)?.pages
-              ? ((((result as Record<string, unknown>).siteMap as Record<string, unknown>).pages as unknown[]) || []).length : 0,
-            productCount: generationCtx.sectionPlan?.length || 0,
-          }
           send('result', { ok: true, data: scanSummary, scanJobId })
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Unknown error'

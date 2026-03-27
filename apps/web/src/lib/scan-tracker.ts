@@ -494,7 +494,7 @@ const extractContentCatalog = (scanResult: Record<string, unknown>): Record<stri
 /** Fetch product pages and extract prices, descriptions, images (bounded) */
 const enrichProductsFromPages = async (
   products: Record<string, unknown>[],
-  maxFetches: number = 6,
+  maxFetches: number = 3, // Reduced from 6 to prevent OOM on dev machines
 ): Promise<void> => {
   const fetchableProducts = products
     .filter(p => {
@@ -503,13 +503,14 @@ const enrichProductsFromPages = async (
     })
     .slice(0, maxFetches)
 
-  // Sequential enrichment — one page at a time to prevent OOM on dev server
-  // Each page HTML is ~400-700KB, processing 6+ simultaneously crashes Node
+  console.log(`[scan-tracker] Enriching ${fetchableProducts.length} products (max ${maxFetches})`)
+
+  // Sequential enrichment — one page at a time to prevent OOM
   for (const product of fetchableProducts) {
     const url = (product.productUrl as Record<string, unknown>)?.value as string
     try {
       const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), 8000)
+      const timer = setTimeout(() => controller.abort(), 6000) // Reduced from 8s
 
       const res = await fetch(url, {
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; UBuilder/1.0)' },
@@ -520,7 +521,9 @@ const enrichProductsFromPages = async (
 
       if (!res.ok) continue
 
-      const html = await res.text()
+      let html = await res.text()
+      // Truncate huge pages to save memory — we only need first 100KB for price/desc extraction
+      if (html.length > 100000) html = html.slice(0, 100000)
 
       // Extract price from multiple sources
       const price = extractPriceFromHtml(html)
@@ -549,6 +552,8 @@ const enrichProductsFromPages = async (
           )
         }
       }
+      // Release page HTML from memory immediately
+      html = ''
     } catch {
       // Non-blocking — product remains with nav-level data, continue to next
     }
