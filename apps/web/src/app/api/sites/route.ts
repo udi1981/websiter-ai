@@ -25,7 +25,7 @@ export const GET = async (req: NextRequest) => {
         updatedAt: sites.updatedAt,
       })
       .from(sites)
-      .where(and(eq(sites.userId, userId), ne(sites.status, 'generation_failed')))
+      .where(and(eq(sites.userId, userId), ne(sites.status, 'generation_failed'), ne(sites.status, 'archived')))
       .orderBy(desc(sites.updatedAt))
 
     return NextResponse.json({ ok: true, data: userSites })

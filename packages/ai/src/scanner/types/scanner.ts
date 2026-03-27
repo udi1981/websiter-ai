@@ -81,6 +81,7 @@ export type ComponentPattern = {
 export type ComponentLibrary = {
   sections: SectionTemplate[]
   components: ComponentPattern[]
+  perPageSections?: Record<string, SectionTemplate[]>
   sectionTypeDistribution: Record<SectionType, number>
   totalSections: number
   totalComponents: number

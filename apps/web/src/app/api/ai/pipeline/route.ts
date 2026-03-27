@@ -11,7 +11,7 @@ import { createDb, sites, eq } from '@ubuilder/db'
 import { prefixedId } from '@ubuilder/utils'
 import { getAuthUser } from '@/lib/auth-middleware'
 import * as tracker from '@/lib/generation-tracker'
-import type { GenerationStepName } from '@ubuilder/types'
+import type { GenerationStepName, ArtifactType } from '@ubuilder/types'
 
 // ─── AI Call Infrastructure ──────────────────────────────────────────
 
@@ -1346,7 +1346,8 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
               cta: 'לרכישה',
               popular: i === 1,
             }))
-            mergedSections.splice(insertIdx, 0, {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ;(mergedSections as any[]).splice(insertIdx, 0, {
               type: 'pricing',
               variantId: 'pricing-animated-cards',
               headline: locale === 'he' ? 'בחרו את המוצר המתאים לכם' : 'Choose Your Product',
@@ -1368,7 +1369,7 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
             }))
             const newFooterIdx = mergedSections.findIndex(s => s.type === 'footer')
             const faqInsertIdx = newFooterIdx >= 0 ? newFooterIdx : mergedSections.length
-            mergedSections.splice(faqInsertIdx, 0, {
+            ;(mergedSections as any[]).splice(faqInsertIdx, 0, {
               type: 'faq',
               variantId: 'faq-accordion',
               headline: locale === 'he' ? 'שאלות נפוצות' : 'Frequently Asked Questions',
@@ -1391,7 +1392,7 @@ Return JSON: { "sections": [ { "type": "...", "variantId": "...", "headline": ".
             }))
             const ctaIdx = mergedSections.findIndex(s => s.type === 'cta')
             const galInsertIdx = ctaIdx >= 0 ? ctaIdx : (mergedSections.findIndex(s => s.type === 'footer') >= 0 ? mergedSections.findIndex(s => s.type === 'footer') : mergedSections.length)
-            mergedSections.splice(galInsertIdx, 0, {
+            ;(mergedSections as any[]).splice(galInsertIdx, 0, {
               type: 'gallery',
               variantId: 'gallery-masonry',
               headline: locale === 'he' ? 'המוצרים שלנו' : 'Our Products',
@@ -1580,15 +1581,42 @@ Return JSON: {
           }).where(eq(sites.id, siteId))
 
           // ── MULTI-PAGE GENERATION (V1: up to 4 inner pages) ──
-          if (scanCatalog || scanContentModel) {
+          if (scanCatalog || scanContentModel || scanMode === 'copy') {
             try {
               send({ phase: 'build', status: 'inner-pages' })
               const { buildPageInventory, buildGlobalDesignSystem, generateInnerPages } = await import('@/lib/multi-page-builder')
 
               // Load scan result for page inventory
-              const scanFullResult = scanJobId
-                ? await tracker.getArtifact(scanJobId, 'scan_full_result').catch(() => null)
+              let scanFullResult = scanJobId
+                ? await tracker.getArtifact(scanJobId, 'scan_full_result').catch((err) => {
+                    console.warn(`[pipeline] Could not load scan_full_result for scanJobId=${scanJobId}:`, err?.message || err)
+                    return null
+                  })
                 : null
+
+              // Fallback: if no stored artifact but deepScanData was provided, use it
+              if (!scanFullResult && deepScanSourceUrl) {
+                console.log(`[pipeline] No scan_full_result artifact — using deepScanData as fallback`)
+                // The pipeline extracted deepScanSourceUrl/deepScanSiteName/deepScanBusinessType at init
+                // Reconstruct minimal scanFullResult from available context
+                const scanCtx = scanGenerationCtx as Record<string, unknown> | null
+                if (scanCtx) {
+                  scanFullResult = {
+                    url: deepScanSourceUrl,
+                    siteName: deepScanSiteName || businessNameResolved,
+                    businessType: deepScanBusinessType || businessType,
+                    siteMap: { pages: [] },
+                    componentLibrary: { sections: [], perPageSections: {} },
+                    contentArchitecture: { pages: [] },
+                    ...scanCtx,
+                  }
+                }
+              }
+
+              if (!scanFullResult) {
+                console.warn(`[pipeline] Multi-page skipped: no scan_full_result (scanJobId=${scanJobId || 'none'}, deepScanSourceUrl=${deepScanSourceUrl || 'none'})`)
+                send({ phase: 'build', status: 'inner-pages-skipped', reason: 'no-scan-result' })
+              }
 
               if (scanFullResult) {
                 // Load deep content model for per-page extracted content
@@ -1603,6 +1631,7 @@ Return JSON: {
                   siteContentModelForPages || undefined,
                 )
 
+                console.log(`[pipeline] Page inventory: ${pageInventory.length} pages found`)
                 if (pageInventory.length > 1) {
                   const designSystem = buildGlobalDesignSystem({
                     palette: resolvePalette(palette),
@@ -1628,8 +1657,12 @@ Return JSON: {
                   const allExtractedPages = (siteContentModelForBridge?.pages as Record<string, unknown>[]) || []
 
                   // ── MODE 3: REDESIGN — use section mapper instead of templates ──
+                  // Trigger when: preserveMode is 'rebuild' OR scanMode is 'copy' (user wants to clone & redesign)
                   const preserveMode = (discoveryContext?.preserveMode as string) || ''
-                  if (preserveMode === 'rebuild' && scanFullResult) {
+                  const shouldRedesign = preserveMode === 'rebuild' || scanMode === 'copy'
+                  console.log(`[pipeline] Mode 3 check: preserveMode=${preserveMode}, scanMode=${scanMode}, shouldRedesign=${shouldRedesign}`)
+                  let mode3PageCount = 0
+                  if (shouldRedesign && scanFullResult) {
                     try {
                       const { mapSourceSectionsToRedesign } = await import('@/lib/section-mapper')
                       const componentLib = (scanFullResult as Record<string, unknown>).componentLibrary as Record<string, unknown> | undefined
@@ -1659,11 +1692,16 @@ Return JSON: {
                         category: p.category as { value: string } | undefined,
                       }))
 
-                      console.log(`[pipeline] Mode 3 REDESIGN: ${Object.keys(perPageSections).length} pages with sections`)
+                      const perPageCount = Object.keys(perPageSections).length
+                      console.log(`[pipeline] Mode 3 REDESIGN: ${perPageCount} pages with sections`)
+                      if (perPageCount === 0) {
+                        console.warn(`[pipeline] Mode 3: perPageSections is empty! componentLib keys: ${Object.keys(componentLib || {}).join(',')}`)
+                        console.warn(`[pipeline] Mode 3: flat sections count: ${((componentLib?.sections as unknown[]) || []).length}`)
+                      }
 
                       for (const [pageUrl, pageSectionsRaw] of Object.entries(perPageSections)) {
                         const sections = pageSectionsRaw as Record<string, unknown>[]
-                        if (!sections || sections.length === 0) continue
+                        if (!sections || sections.length === 0) { console.log(`[pipeline] Mode 3: skipping ${pageUrl} — no sections`); continue }
                         // Skip homepage — already redesigned by main pipeline
                         const pagePath = new URL(pageUrl).pathname
                         if (pagePath === '/' || pagePath === '') continue
@@ -1698,7 +1736,7 @@ Return JSON: {
                           designSystem.footerColumns,
                         )
 
-                        if (mappedSections.length === 0) continue
+                        if (mappedSections.length === 0) { console.log(`[pipeline] Mode 3: skipping ${pagePath} — 0 mapped sections`); continue }
 
                         // Compose the redesigned page
                         const pageHtml = composePage({
@@ -1727,19 +1765,28 @@ Return JSON: {
                             VALUES (${pageId}, ${siteId}, ${pageTitle}, ${pageSlug}, 'redesign', 'draft', ${blocksJson}::jsonb, ${locale}, NOW(), NOW())
                             ON CONFLICT (id) DO UPDATE SET blocks = ${blocksJson}::jsonb, updated_at = NOW()
                           `)
+                          mode3PageCount++
                           console.log(`[pipeline] Mode 3: Redesigned page ${pageSlug} (${mappedSections.length} sections, ${Buffer.byteLength(pageHtml, 'utf8')} bytes)`)
                         } catch (pgErr) {
                           console.error(`[pipeline] Mode 3 page save failed for ${pageSlug}:`, pgErr)
                         }
                       }
-                      send({ phase: 'build', status: 'inner-pages-done', mode: 'redesign' })
+                      console.log(`[pipeline] Mode 3 REDESIGN complete: ${mode3PageCount} inner pages generated`)
+                      if (mode3PageCount > 0) {
+                        send({ phase: 'build', status: 'inner-pages-done', mode: 'redesign', pageCount: mode3PageCount })
+                      }
                     } catch (mode3Err) {
                       console.error('[pipeline] Mode 3 redesign error (non-blocking):', mode3Err)
                     }
                   }
 
-                  // ── Template-based inner pages (fallback/default) ──
-                  const { pages: innerPages } = await generateInnerPages(
+                  // ── Template-based inner pages (fallback/default — skip if Mode 3 produced pages) ──
+                  if (shouldRedesign && mode3PageCount > 0) {
+                    console.log(`[pipeline] Skipping template generation — Mode 3 already produced ${mode3PageCount} pages`)
+                  }
+                  const { pages: innerPages } = (shouldRedesign && mode3PageCount > 0)
+                    ? { pages: [] }
+                    : await generateInnerPages(
                     siteId,
                     pageInventory,
                     designSystem,
