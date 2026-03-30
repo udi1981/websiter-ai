@@ -22,7 +22,7 @@ export type SectionCategory =
   | 'timeline'
 
 /** Animation intensity level for a section */
-export type AnimationLevel = 'none' | 'subtle' | 'moderate' | 'dramatic'
+export type AnimationLevel = 'none' | 'minimal' | 'subtle' | 'moderate' | 'dramatic'
 
 /** Visual theme mode */
 export type SectionTheme = 'light' | 'dark' | 'glass' | 'transparent'

@@ -6,7 +6,7 @@ const { Pool } = require('pg')
 export const auth = betterAuth({
   database: new Pool({
     connectionString: process.env.DATABASE_URL!,
-    ssl: { rejectUnauthorized: false },
+    ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false },
     max: 5,
   }),
   user: {

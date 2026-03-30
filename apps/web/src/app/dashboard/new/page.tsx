@@ -1407,7 +1407,7 @@ const NewSitePage = () => {
     dispatch({ type: 'START_BUILD' })
 
     // Enrich discoveryContext with onboarding question answers
-    const enrichedContext = {
+    const enrichedContext: Record<string, unknown> = {
       ...state.discoveryContext,
       ...state.questionAnswers,
       preserveMode: state.preserveMode,
@@ -2166,7 +2166,7 @@ const NewSitePage = () => {
                       key={chip.value}
                       onClick={() => {
                         dispatch({ type: 'SET_QUESTION_ANSWER', key: currentQuestion.key, value: chip.value })
-                        if (!currentQuestion.multiSelect) {
+                        if (!('multiSelect' in currentQuestion && currentQuestion.multiSelect)) {
                           if (isLastQuestion) {
                             dispatch({ type: 'GO_STEP', step: 'summary' })
                           } else {
@@ -2180,7 +2180,7 @@ const NewSitePage = () => {
                     </button>
                   ))}
                 </div>
-                {currentQuestion.multiSelect && (
+                {'multiSelect' in currentQuestion && currentQuestion.multiSelect && (
                   <button
                     onClick={() => {
                       if (isLastQuestion) dispatch({ type: 'GO_STEP', step: 'summary' })

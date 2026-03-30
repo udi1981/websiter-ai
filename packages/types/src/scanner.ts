@@ -370,6 +370,14 @@ export type ComponentLibrary = {
   components: ComponentPattern[]
   /** Page-level section templates */
   sections: SectionTemplate[]
+  /** Sections grouped by source page URL (populated by Phase 3) */
+  perPageSections?: Record<string, SectionTemplate[]>
+  /** Distribution of section types across all pages */
+  sectionTypeDistribution?: Record<string, number>
+  /** Total detected sections */
+  totalSections?: number
+  /** Total detected components */
+  totalComponents?: number
 }
 
 /** Classification of UI component types. */

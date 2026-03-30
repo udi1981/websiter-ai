@@ -57,6 +57,7 @@ export type ArtifactType =
   | 'source_content_model'
   | 'content_catalog'
   | 'content_migration_manifest'
+  | 'site_content_model'
 
 // ─── Source Ownership + Scan Mode ────────────────────────────────────
 

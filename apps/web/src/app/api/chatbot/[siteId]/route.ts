@@ -107,7 +107,7 @@ const getSessionHistory = async (
     .orderBy(chatbotMessages.createdAt)
     .limit(20) // Last 20 messages for context
 
-  return messages.map(m => ({
+  return messages.map((m: { role: string; content: string }) => ({
     role: m.role === 'visitor' ? 'user' : 'assistant',
     content: m.content,
   }))

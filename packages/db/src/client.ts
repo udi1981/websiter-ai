@@ -1,6 +1,6 @@
-import { neon } from '@neondatabase/serverless'
-import { drizzle } from 'drizzle-orm/neon-http'
 import * as schema from './schema'
+
+const isLocalhost = (process.env.DATABASE_URL || '').includes('localhost')
 
 /** Creates database connection. Requires DATABASE_URL env var. */
 export const createDb = () => {
@@ -8,8 +8,22 @@ export const createDb = () => {
   if (!url) {
     throw new Error('DATABASE_URL environment variable is required')
   }
-  const sql = neon(url)
-  return drizzle(sql, { schema })
+
+  if (isLocalhost) {
+    // Local dev: use node-postgres driver (standard TCP)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { Pool } = require('pg')
+    const { drizzle } = require('drizzle-orm/node-postgres')
+    const pool = new Pool({ connectionString: url, max: 10 })
+    return drizzle(pool, { schema }) as any
+  } else {
+    // Production: use Neon HTTP driver (serverless)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { neon } = require('@neondatabase/serverless')
+    const { drizzle } = require('drizzle-orm/neon-http')
+    const sql = neon(url)
+    return drizzle(sql, { schema })
+  }
 }
 
 /** Lazy-initialized database instance */

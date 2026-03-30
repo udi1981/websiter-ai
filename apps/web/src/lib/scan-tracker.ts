@@ -9,7 +9,7 @@ import * as tracker from '@/lib/generation-tracker'
 import type { GenerationStepName, ArtifactType, SourceOwnership, ScanModeV1 } from '@ubuilder/types'
 
 /** Scanner progress status — matches ScanProgress['status'] from scanner pipeline */
-type ScanPhaseStatus = 'running' | 'done' | 'error' | 'skipped'
+type ScanPhaseStatus = 'pending' | 'running' | 'done' | 'error' | 'skipped'
 
 /** Phase name from scanner → step name for DB */
 const PHASE_TO_STEP: Record<string, GenerationStepName> = {
@@ -77,7 +77,7 @@ export const trackScanPhase = async (
     // Find the step and complete it
     const jobStatus = await tracker.getJobStatus(jobId)
     if (!jobStatus) return
-    const step = jobStatus.steps.find(s => s.stepName === stepName && s.status === 'running')
+    const step = jobStatus.steps.find((s: Record<string, unknown>) => s.stepName === stepName && s.status === 'running')
     if (step) {
       await tracker.completeStep(step.id)
     }
@@ -97,7 +97,7 @@ export const trackScanPhase = async (
   if (status === 'error') {
     const jobStatus = await tracker.getJobStatus(jobId)
     if (!jobStatus) return
-    const step = jobStatus.steps.find(s => s.stepName === stepName && s.status === 'running')
+    const step = jobStatus.steps.find((s: Record<string, unknown>) => s.stepName === stepName && s.status === 'running')
     if (step) {
       await tracker.failStep(step.id, `Phase ${phaseName} failed`)
     }
